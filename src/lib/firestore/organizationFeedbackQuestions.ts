@@ -24,11 +24,17 @@ export const createOrganizationFeedbackQuestion = async (
       console.error('Error getting collection reference:', collectionError);
       throw collectionError;
     }
-    const docRef = await addDoc(questionsRef, {
-      ...question,
-      createdAt: serverTimestamp(),
-    });
-    console.log('Question added to Firestore with ID: ', docRef.id); // NEW LOG
+    let docRef;
+    try {
+      docRef = await addDoc(questionsRef, {
+        ...question,
+        createdAt: serverTimestamp(),
+      });
+      console.log('Question added to Firestore with ID: ', docRef.id); // NEW LOG
+    } catch (addDocError: any) {
+      console.error('Error adding document:', addDocError);
+      throw addDocError;
+    }
     return docRef.id;
   } catch (error) {
     console.error('Error creating question in Firestore: ', error);
