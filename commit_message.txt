@@ -1,17 +1,3 @@
-feat: add modular questions for volunteer portal and improve staff navigation
+fix: add detailed error logging to firestore functions
 
-This commit introduces a modular question system for the volunteer portal and improves the navigation for the staff portal.
-
-Key changes include:
-- **Modular Volunteer Questions:**
-    - A new `VolunteerQuestion` interface has been added to `src/lib/types/index.ts`.
-    - Firestore functions for managing volunteer questions have been created in `src/lib/firestore/volunteerQuestions.ts`.
-    - A new page has been added at `app/staff/volunteer-questions/page.tsx` for staff to manage volunteer questions.
-    - The "Detailed Data Entry" page for volunteers (`app/volunteer/data-entry/page.tsx`) has been updated to dynamically render these questions.
-- **Improved Staff Portal Navigation:**
-    - A new layout with a sidebar navigation has been created for the staff portal (`app/staff/layout.tsx`).
-    - The staff layout includes links to "Organizations", "Organization Feedback Questions", and "Volunteer Questions" management pages.
-    - The redundant navigation button has been removed from the organizations page.
-- **Data Model Clarity:**
-    - The `FeedbackQuestion` interface has been renamed to `OrganizationFeedbackQuestion` for better clarity.
-    - The corresponding files and functions have been renamed accordingly.
+This commit adds more detailed error logging to the Firestore functions for managing organization and volunteer feedback questions. Each function is now wrapped in a `try...catch` block that logs any potential errors to the console with a descriptive message before re-throwing the error. This will provide better visibility into any issues with Firestore interactions and help diagnose the problem of questions not being saved.
