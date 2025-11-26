@@ -1,9 +1,3 @@
-debug: add detailed console logs for question creation flow
+clean: remove temporary commit_message.txt file
 
-This commit adds detailed `console.log` statements to various points in the question creation and submission flow for both organization and volunteer feedback questions. These logs are intended to pinpoint the exact location where the execution might be failing or hanging, as the user is reporting no visible response after clicking the "Add Question" button.
-
-Specifically, logs have been added:
-- Inside the `createOrganizationFeedbackQuestion` and `createVolunteerQuestion` functions to confirm successful Firestore writes.
-- Inside the `finally` block of the `handleAddQuestion` function to ensure `setLoading(false)` is reached.
-
-These logs, combined with the existing `handleAddQuestion started` log, should provide comprehensive insight into the function's execution path and help diagnose the silent failure.
+This commit removes the temporary `commit_message.txt` file from Git tracking. This file was created by the agent to store commit messages when the shell was unable to parse multiline commit messages directly. Since its purpose is fulfilled, it is now removed to maintain a clean working directory.
