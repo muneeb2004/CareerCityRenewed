@@ -46,24 +46,18 @@ export default function OrganizationFeedbackQuestionManagement() {
   const handleAddQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    try {
-      if (editingQuestion) {
-        await updateOrganizationFeedbackQuestion(editingQuestion.questionId, form);
-        toast.success('Question updated!');
-        setEditingQuestion(null);
-      } else {
-        await createOrganizationFeedbackQuestion(form);
-        toast.success('Question added!');
-      }
-      setForm({ text: '', type: 'text' });
-      setShowAddForm(false);
-      fetchQuestions();
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to save question');
-    } finally {
-      setLoading(false);
+    if (editingQuestion) {
+      await updateOrganizationFeedbackQuestion(editingQuestion.questionId, form);
+      toast.success('Question updated!');
+      setEditingQuestion(null);
+    } else {
+      await createOrganizationFeedbackQuestion(form);
+      toast.success('Question added!');
     }
+    setForm({ text: '', type: 'text' });
+    setShowAddForm(false);
+    fetchQuestions();
+    setLoading(false);
   };
 
   const handleEdit = (question: OrganizationFeedbackQuestion) => {

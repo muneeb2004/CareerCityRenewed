@@ -46,24 +46,18 @@ export default function VolunteerQuestionManagement() {
   const handleAddQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    try {
-      if (editingQuestion) {
-        await updateVolunteerQuestion(editingQuestion.questionId, form);
-        toast.success('Question updated!');
-        setEditingQuestion(null);
-      } else {
-        await createVolunteerQuestion(form);
-        toast.success('Question added!');
-      }
-      setForm({ text: '', type: 'text' });
-      setShowAddForm(false);
-      fetchQuestions();
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to save question');
-    } finally {
-      setLoading(false);
+    if (editingQuestion) {
+      await updateVolunteerQuestion(editingQuestion.questionId, form);
+      toast.success('Question updated!');
+      setEditingQuestion(null);
+    } else {
+      await createVolunteerQuestion(form);
+      toast.success('Question added!');
     }
+    setForm({ text: '', type: 'text' });
+    setShowAddForm(false);
+    fetchQuestions();
+    setLoading(false);
   };
 
   const handleEdit = (question: VolunteerQuestion) => {
