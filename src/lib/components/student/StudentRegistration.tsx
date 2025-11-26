@@ -3,23 +3,31 @@
 'use client';
 
 import { useState } from 'react';
-import { validateStudentId, generateEmail, validateProgram } from '../../validation';
-import { createStudent, getStudent, updateStudentVisit } from '../../firestore/student';
+import {
+  validateStudentId,
+  generateEmail,
+  validateProgram,
+} from '../../validation';
+import {
+  createStudent,
+  getStudent,
+  updateStudentVisit,
+} from '../../firestore/student';
 import { createScan } from '../../firestore/scans';
 import { saveStudentSession } from '../../storage';
 import { PROGRAMS, Program } from '../../types';
 import toast from 'react-hot-toast';
 
 interface StudentRegistrationProps {
-  employerId: string;
-  employerName: string;
+  organizationId: string;
+  organizationName: string;
   boothNumber: string;
   onComplete: () => void;
 }
 
 export default function StudentRegistration({
-  employerId,
-  employerName,
+  organizationId,
+  organizationName,
   boothNumber,
   onComplete,
 }: StudentRegistrationProps) {
@@ -32,7 +40,7 @@ export default function StudentRegistration({
   const handleStudentIdChange = (value: string) => {
     const cleanId = value.toLowerCase().trim();
     setStudentId(cleanId);
-    
+
     const validation = validateStudentId(cleanId);
     if (validation.isValid) {
       setEmail(generateEmail(cleanId));
@@ -64,10 +72,10 @@ export default function StudentRegistration({
 
       if (!existingStudent) {
         // Create new student
-        await createStudent(studentId, email, program, employerId);
+        await createStudent(studentId, email, program, organizationId);
       } else {
         // Update existing student
-        await updateStudentVisit(studentId, employerId);
+        await updateStudentVisit(studentId, organizationId);
       }
 
       // Create scan record
@@ -75,8 +83,8 @@ export default function StudentRegistration({
         studentId,
         email,
         program,
-        employerId,
-        employerName,
+        organizationId,
+        organizationName,
         boothNumber
       );
 
@@ -97,8 +105,10 @@ export default function StudentRegistration({
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 max-w-md mx-auto">
       <h2 className="text-2xl font-bold mb-2">First Visit - Register</h2>
-      <p className="text-gray-600 mb-6">Enter your details to start tracking visits</p>
-      
+      <p className="text-gray-600 mb-6">
+        Enter your details to start tracking visits
+      </p>
+
       {/* Student ID Input */}
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-2">

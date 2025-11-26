@@ -9,7 +9,7 @@ import { getStudentSession } from '../../storage';
 import toast from 'react-hot-toast';
 
 interface QRScannerProps {
-  onScanSuccess: (employerId: string) => void;
+  onScanSuccess: (organizationId: string) => void;
 }
 
 export default function QRScanner({ onScanSuccess }: QRScannerProps) {
@@ -59,13 +59,16 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
   };
 
   const handleScanSuccess = async (decodedText: string) => {
-    // Assuming QR code contains: employer_id
-    const employerId = decodedText;
+    // Assuming QR code contains: organization_id
+    const organizationId = decodedText;
 
     // Check for duplicate visit
     const session = getStudentSession();
     if (session) {
-      const alreadyVisited = await checkIfVisited(session.studentId, employerId);
+      const alreadyVisited = await checkIfVisited(
+        session.studentId,
+        organizationId
+      );
       if (alreadyVisited) {
         toast.error('You have already visited this stall!');
         return;
@@ -73,7 +76,7 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
     }
 
     if (typeof onScanSuccess === 'function') {
-      onScanSuccess(employerId);
+      onScanSuccess(organizationId);
     }
   };
 
@@ -90,7 +93,9 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
         </div>
       )}
       <div className="mt-4 text-center">
-        <p className="text-gray-600">Point your camera at an employer's QR code</p>
+        <p className="text-gray-600">
+          Point your camera at an organization's QR code
+        </p>
       </div>
     </div>
   );

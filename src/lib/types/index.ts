@@ -25,8 +25,8 @@ export interface Student {
   feedbackId?: string;
 }
 
-export interface Employer {
-  employerId: string;
+export interface Organization {
+  organizationId: string;
   name: string;
   industry: string;
   boothNumber: string;
@@ -44,8 +44,8 @@ export interface Scan {
   studentId: string;
   studentEmail: string;
   studentProgram: Program;
-  employerId: string;
-  employerName: string;
+  organizationId: string;
+  organizationName: string;
   boothNumber: string;
   timestamp: Timestamp;
   scanMethod: 'qr_code';
@@ -63,9 +63,9 @@ export interface StudentFeedback {
   };
 }
 
-export interface EmployerFeedback {
+export interface OrganizationFeedback {
   feedbackId: string;
-  employerId: string;
+  organizationId: string;
   timestamp: Timestamp;
   responses: {
     studentEngagement: number; // 1-5
@@ -76,9 +76,51 @@ export interface EmployerFeedback {
 }
 
 export interface Staff {
+
   staffId: string;
+
   name: string;
+
   email: string;
+
   role: 'admin' | 'coordinator';
+
   permissions: string[];
+
+}
+
+
+
+export interface Volunteer {
+
+  volunteerId: string;
+
+  name: string;
+
+  email: string;
+
+  phone: string;
+
+  role: 'Captain' | 'Member';
+
+}
+
+
+
+export interface VolunteerLog {
+  logId: string;
+  volunteerId: string;
+  timestamp: Timestamp;
+  action: 'check-in' | 'check-out' | 'cv-check' | 'quality-check';
+  studentId?: string; // for cv-check and quality-check
+  notes?: string;
+}
+
+export interface InteractionLog {
+  logId: string;
+  volunteerId: string;
+  studentId: string;
+  organizationId: string;
+  timestamp: Timestamp;
+  notes: string;
 }

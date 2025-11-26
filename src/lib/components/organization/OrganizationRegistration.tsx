@@ -3,10 +3,10 @@
 'use client';
 
 import { useState } from 'react';
-import { createEmployer } from '../../firestore/employers';
+import { createOrganization } from '../../firestore/organizations';
 import { slugify } from '../../utils';
 import toast from 'react-hot-toast';
-import { Employer } from '../../types';
+import { Organization } from '../../types';
 import { serverTimestamp } from 'firebase/firestore';
 
 const CATEGORIES = [
@@ -21,7 +21,7 @@ const CATEGORIES = [
   'Other',
 ];
 
-export default function EmployerRegistration() {
+export default function OrganizationRegistration() {
   const [formData, setFormData] = useState({
     name: '',
     contactPerson: '',
@@ -29,14 +29,15 @@ export default function EmployerRegistration() {
     contactEmail: '',
     boothNumber: '',
     category: '',
+    industry: '',
   });
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
-  const [employerId, setEmployerId] = useState('');
+  const [organizationId, setOrganizationId] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validation
     if (!formData.name || !formData.contactPerson || !formData.boothNumber) {
       toast.error('Please fill all required fields');
@@ -46,32 +47,30 @@ export default function EmployerRegistration() {
     setLoading(true);
 
     try {
-      // Generate employer ID from company name
-      const empId = slugify(formData.name);
-      
-      // Create employer record
-      const employer: Omit<Employer, 'visitors' | 'visitorCount'> = {
-        employerId: empId,
+      // Generate organization ID from company name
+      const orgId = slugify(formData.name);
+
+      // Create organization record
+      const organization: Omit<Organization, 'visitors' | 'visitorCount'> = {
+        organizationId: orgId,
         name: formData.name,
         industry: formData.category,
         boothNumber: formData.boothNumber,
-        qrCode: empId, // QR will encode this ID
+        qrCode: orgId, // QR will encode this ID
         contactPerson: formData.contactPerson,
         email: formData.contactEmail,
         category: formData.category,
-        // feedbackLink and registeredAt are not in Employer type, so omit them
       };
 
-      await createEmployer(employer);
-      
-      setEmployerId(empId);
+      await createOrganization(organization);
+
+      setOrganizationId(orgId);
       setRegistered(true);
       toast.success('Registration successful!');
-      
+
       // Save to localStorage for quick access
-      localStorage.setItem('employer_id', empId);
-      localStorage.setItem('employer_name', formData.name);
-      
+      localStorage.setItem('organization_id', orgId);
+      localStorage.setItem('organization_name', formData.name);
     } catch (err) {
       console.error('Registration error:', err);
       toast.error('Registration failed. Please try again.');
@@ -89,22 +88,22 @@ export default function EmployerRegistration() {
           <p className="text-gray-600 mb-6">
             Your QR code and booth information have been generated.
           </p>
-          
+
           <div className="bg-blue-50 p-4 rounded-lg mb-6">
             <p className="font-semibold">Company: {formData.name}</p>
             <p className="text-gray-600">Booth: {formData.boothNumber}</p>
-            <p className="text-gray-600">Employer ID: {employerId}</p>
+            <p className="text-gray-600">Organization ID: {organizationId}</p>
           </div>
 
           <div className="space-y-3">
             <a
-              href={`/employer/qr/${employerId}`}
+              href={`/organization/qr/${organizationId}`}
               className="block w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
             >
               View & Download QR Code
             </a>
             <a
-              href={`/employer/feedback/${employerId}`}
+              href={`/organization/feedback/${organizationId}`}
               className="block w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition"
             >
               Access Feedback Portal
@@ -117,7 +116,7 @@ export default function EmployerRegistration() {
 
   return (
     <div className="bg-white p-8 rounded-lg shadow-lg max-w-2xl mx-auto">
-      <h2 className="text-3xl font-bold mb-2">Employer Registration</h2>
+      <h2 className="text-3xl font-bold mb-2">Organization Registration</h2>
       <p className="text-gray-600 mb-6">
         Quick registration for Career City 2026
       </p>
@@ -145,7 +144,9 @@ export default function EmployerRegistration() {
             type="text"
             required
             value={formData.contactPerson}
-            onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, contactPerson: e.target.value })
+            }
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             placeholder="e.g., Ahmed Khan"
           />
@@ -160,7 +161,9 @@ export default function EmployerRegistration() {
               type="tel"
               required
               value={formData.contactNumber}
-              onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, contactNumber: e.target.value })
+              }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               placeholder="03XX-XXXXXXX"
             />
@@ -173,7 +176,9 @@ export default function EmployerRegistration() {
             <input
               type="email"
               value={formData.contactEmail}
-              onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, contactEmail: e.target.value })
+              }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               placeholder="recruiter@company.com"
             />
@@ -189,7 +194,9 @@ export default function EmployerRegistration() {
               type="text"
               required
               value={formData.boothNumber}
-              onChange={(e) => setFormData({ ...formData, boothNumber: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, boothNumber: e.target.value })
+              }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               placeholder="e.g., B12"
             />
@@ -197,19 +204,34 @@ export default function EmployerRegistration() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
+              Industry *
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.industry}
+              onChange={(e) =>
+                setFormData({ ...formData, industry: e.target.value })
+              }
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              placeholder="Industry (e.g. healthcare, technology, manufacturing, retail)"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Category *
             </label>
-            <select
+            <input
+              type="text"
               required
               value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, category: e.target.value })
+              }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">-- Select --</option>
-              {CATEGORIES.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
+              placeholder="Category (e.g. smartphones, athletic shoes, soft drinks, sedans)"
+            />
           </div>
         </div>
 
