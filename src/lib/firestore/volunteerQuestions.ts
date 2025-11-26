@@ -19,6 +19,7 @@ export const createVolunteerQuestion = async (
       ...question,
       createdAt: serverTimestamp(),
     });
+    console.log("Volunteer Question added to Firestore with ID: ", docRef.id); // NEW LOG
     return docRef.id;
   } catch (error) {
     console.error('Error creating volunteer question in Firestore: ', error);

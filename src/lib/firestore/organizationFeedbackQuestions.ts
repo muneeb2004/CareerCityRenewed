@@ -19,6 +19,7 @@ export const createOrganizationFeedbackQuestion = async (
       ...question,
       createdAt: serverTimestamp(),
     });
+    console.log("Question added to Firestore with ID: ", docRef.id); // NEW LOG
     return docRef.id;
   } catch (error) {
     console.error('Error creating question in Firestore: ', error);

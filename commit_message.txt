@@ -1,3 +1,9 @@
-debug: add console logs to handleAddQuestion
+debug: add detailed console logs for question creation flow
 
-This commit adds `console.log` statements to the beginning of the `handleAddQuestion` function in both organization and volunteer question management pages. This is a debugging measure to verify if the function is being called when the form is submitted, as the user is reporting no console output upon clicking the add button.
+This commit adds detailed `console.log` statements to various points in the question creation and submission flow for both organization and volunteer feedback questions. These logs are intended to pinpoint the exact location where the execution might be failing or hanging, as the user is reporting no visible response after clicking the "Add Question" button.
+
+Specifically, logs have been added:
+- Inside the `createOrganizationFeedbackQuestion` and `createVolunteerQuestion` functions to confirm successful Firestore writes.
+- Inside the `finally` block of the `handleAddQuestion` function to ensure `setLoading(false)` is reached.
+
+These logs, combined with the existing `handleAddQuestion started` log, should provide comprehensive insight into the function's execution path and help diagnose the silent failure.
