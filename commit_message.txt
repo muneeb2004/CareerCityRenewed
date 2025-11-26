@@ -1,6 +1,9 @@
-refactor: remove CV Check feature
+feat: implement modular feedback questions
 
-This commit removes the "CV Check" feature from the application. The following changes have been made:
-- The link to the "CV Check" page has been removed from the volunteer portal.
-- The "CV Check" page file (`app/volunteer/cv-check/page.tsx`) has been deleted.
-- The `cv-check` action has been removed from the `VolunteerLog` interface in `src/lib/types/index.ts`.
+This commit introduces a new feature that allows staff to dynamically manage feedback questions for organizations. This makes the feedback system more flexible and extensible.
+
+The following changes have been made:
+- **Data Models:** A new `FeedbackQuestion` interface has been added to `src/lib/types/index.ts`, and the `OrganizationFeedback` interface has been updated to support a dynamic `responses` map.
+- **Firestore Functions:** A new file `src/lib/firestore/feedbackQuestions.ts` has been created with functions to create, read, update, and delete feedback questions in Firestore.
+- **Staff UI:** A new page has been added at `app/staff/feedback-questions/page.tsx` that provides a user interface for staff to manage the feedback questions. A link to this page has also been added to the main staff portal.
+- **Dynamic Feedback Form:** The organization feedback form at `app/organization/feedback/[organizationId]/page.tsx` has been completely redesigned to fetch questions from Firestore and dynamically render the form fields. The submission logic has also been updated to handle the new flexible response format.

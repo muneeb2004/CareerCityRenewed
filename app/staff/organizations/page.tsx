@@ -1,10 +1,8 @@
 // Prompt for Copilot: "Create Next.js page for staff to add employers, generate QR codes in bulk, display employer list with QR preview"
 
-'use client';
-
-
-
 import { useState, useEffect } from 'react';
+
+import Link from 'next/link';
 
 import {
 
@@ -210,17 +208,33 @@ export default function OrganizationManagement() {
 
         </h1>
 
-        <button
+        <div className="flex space-x-2">
 
-          className="bg-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-600"
+          <Link
 
-          onClick={() => setShowAddForm(!showAddForm)}
+            href="/staff/feedback-questions"
 
-        >
+            className="bg-accent text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-600"
 
-          {showAddForm ? 'Cancel' : 'Add Organization'}
+          >
 
-        </button>
+            Manage Feedback Questions
+
+          </Link>
+
+          <button
+
+            className="bg-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-600"
+
+            onClick={() => setShowAddForm(!showAddForm)}
+
+          >
+
+            {showAddForm ? 'Cancel' : 'Add Organization'}
+
+          </button>
+
+        </div>
 
       </div>
 

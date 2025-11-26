@@ -63,16 +63,21 @@ export interface StudentFeedback {
   };
 }
 
+export const FEEDBACK_QUESTION_TYPES = ['range', 'text', 'textarea'] as const;
+export type FeedbackQuestionType = typeof FEEDBACK_QUESTION_TYPES[number];
+
+export interface FeedbackQuestion {
+  questionId: string;
+  text: string;
+  type: FeedbackQuestionType;
+  options?: string[]; // For multiple choice, etc.
+}
+
 export interface OrganizationFeedback {
   feedbackId: string;
   organizationId: string;
   timestamp: Timestamp;
-  responses: {
-    studentEngagement: number; // 1-5
-    qualityOfInteractions: number; // 1-5
-    hiringInterest: string[];
-    suggestions: string;
-  };
+  responses: { [questionId: string]: string | number | string[] };
 }
 
 export interface Staff {

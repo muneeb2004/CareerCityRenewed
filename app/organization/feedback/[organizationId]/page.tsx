@@ -1,24 +1,46 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../../src/lib/firebase';
-import { OrganizationFeedback } from '../../../../src/lib/types';
+import {
+  OrganizationFeedback,
+  FeedbackQuestion,
+} from '../../../../src/lib/types';
+import { getAllFeedbackQuestions } from '../../../../src/lib/firestore/feedbackQuestions';
 import toast, { Toaster } from 'react-hot-toast';
 
 export default function OrganizationFeedbackPage() {
   const params = useParams();
   const organizationId = params.organizationId as string;
 
-  const [formData, setFormData] = useState({
-    studentEngagement: 3,
-    qualityOfInteractions: 3,
-    hiringInterest: '',
-    suggestions: '',
-  });
+  const [questions, setQuestions] = useState<FeedbackQuestion[]>([]);
+  const [responses, setResponses] = useState<{ [key: string]: any }>({});
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      const allQuestions = await getAllFeedbackQuestions();
+      setQuestions(allQuestions);
+      // Initialize responses state
+      const initialResponses: { [key: string]: any } = {};
+      allQuestions.forEach((q) => {
+        if (q.type === 'range') {
+          initialResponses[q.questionId] = 3; // Default for range
+        } else {
+          initialResponses[q.questionId] = '';
+        }
+      });
+      setResponses(initialResponses);
+    };
+    fetchQuestions();
+  }, []);
+
+  const handleResponseChange = (questionId: string, value: any) => {
+    setResponses((prev) => ({ ...prev, [questionId]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,18 +50,28 @@ export default function OrganizationFeedbackPage() {
       const feedbackId = `${organizationId}_${new Date().toISOString()}`;
       const feedbackRef = doc(db, 'organizationFeedback', feedbackId);
 
+      // Process responses to fit the data model
+      const processedResponses: { [key: string]: string | number | string[] } =
+        {};
+      for (const questionId in responses) {
+        const question = questions.find((q) => q.questionId === questionId);
+        if (question) {
+          if (question.type === 'text' && question.text.toLowerCase().includes('student ids')) {
+             processedResponses[questionId] = (responses[questionId] as string)
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean);
+          } else {
+            processedResponses[questionId] = responses[questionId];
+          }
+        }
+      }
+
+
       const feedbackData: Omit<OrganizationFeedback, 'feedbackId'> = {
         organizationId,
         timestamp: serverTimestamp(),
-        responses: {
-          studentEngagement: formData.studentEngagement,
-          qualityOfInteractions: formData.qualityOfInteractions,
-          hiringInterest: formData.hiringInterest
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean),
-          suggestions: formData.suggestions,
-        },
+        responses: processedResponses,
       };
 
       await setDoc(feedbackRef, feedbackData);
@@ -82,83 +114,55 @@ export default function OrganizationFeedbackPage() {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Student Engagement (1-5)
-            </label>
-            <input
-              type="range"
-              min="1"
-              max="5"
-              value={formData.studentEngagement}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  studentEngagement: parseInt(e.target.value),
-                })
-              }
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-            />
-            <div className="flex justify-between text-xs text-gray-600">
-              <span>Low</span>
-              <span>Medium</span>
-              <span>High</span>
+          {questions.map((question) => (
+            <div key={question.questionId}>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {question.text}
+              </label>
+              {question.type === 'range' && (
+                <>
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    value={responses[question.questionId] || 3}
+                    onChange={(e) =>
+                      handleResponseChange(
+                        question.questionId,
+                        parseInt(e.target.value)
+                      )
+                    }
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  />
+                  <div className="flex justify-between text-xs text-gray-600">
+                    <span>Low</span>
+                    <span>Medium</span>
+                    <span>High</span>
+                  </div>
+                </>
+              )}
+              {question.type === 'text' && (
+                <input
+                  type="text"
+                  value={responses[question.questionId] || ''}
+                  onChange={(e) =>
+                    handleResponseChange(question.questionId, e.target.value)
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                />
+              )}
+              {question.type === 'textarea' && (
+                <textarea
+                  value={responses[question.questionId] || ''}
+                  onChange={(e) =>
+                    handleResponseChange(question.questionId, e.target.value)
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                  rows={4}
+                ></textarea>
+              )}
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Quality of Interactions (1-5)
-            </label>
-            <input
-              type="range"
-              min="1"
-              max="5"
-              value={formData.qualityOfInteractions}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  qualityOfInteractions: parseInt(e.target.value),
-                })
-              }
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-            />
-            <div className="flex justify-between text-xs text-gray-600">
-              <span>Poor</span>
-              <span>Average</span>
-              <span>Excellent</span>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Students You Are Interested In (optional)
-            </label>
-            <textarea
-              value={formData.hiringInterest}
-              onChange={(e) =>
-                setFormData({ ...formData, hiringInterest: e.target.value })
-              }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
-              placeholder="Enter student IDs, separated by commas (e.g., ab12345, cd67890)"
-              rows={3}
-            ></textarea>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Suggestions for Improvement (optional)
-            </label>
-            <textarea
-              value={formData.suggestions}
-              onChange={(e) =>
-                setFormData({ ...formData, suggestions: e.target.value })
-              }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
-              placeholder="What can we do better next year?"
-              rows={4}
-            ></textarea>
-          </div>
+          ))}
 
           <button
             type="submit"
