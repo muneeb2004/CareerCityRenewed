@@ -1,9 +1,3 @@
-feat: implement modular feedback questions
+fix: add use client directive to staff organization page
 
-This commit introduces a new feature that allows staff to dynamically manage feedback questions for organizations. This makes the feedback system more flexible and extensible.
-
-The following changes have been made:
-- **Data Models:** A new `FeedbackQuestion` interface has been added to `src/lib/types/index.ts`, and the `OrganizationFeedback` interface has been updated to support a dynamic `responses` map.
-- **Firestore Functions:** A new file `src/lib/firestore/feedbackQuestions.ts` has been created with functions to create, read, update, and delete feedback questions in Firestore.
-- **Staff UI:** A new page has been added at `app/staff/feedback-questions/page.tsx` that provides a user interface for staff to manage the feedback questions. A link to this page has also been added to the main staff portal.
-- **Dynamic Feedback Form:** The organization feedback form at `app/organization/feedback/[organizationId]/page.tsx` has been completely redesigned to fetch questions from Firestore and dynamically render the form fields. The submission logic has also been updated to handle the new flexible response format.
+This commit resolves a build error in `app/staff/organizations/page.tsx` by adding the `"use client"` directive. The page uses React Hooks (`useState`, `useEffect`) and the `Link` component from `next/link`, which require it to be a Client Component. Adding `"use client"` at the top of the file explicitly marks it as such, allowing these features to function correctly and resolving the build failure.

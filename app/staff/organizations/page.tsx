@@ -1,21 +1,15 @@
-// Prompt for Copilot: "Create Next.js page for staff to add employers, generate QR codes in bulk, display employer list with QR preview"
+'use client';
 
 import { useState, useEffect } from 'react';
 
 import Link from 'next/link';
 
 import {
-
   getAllOrganizations,
-
   createOrganization,
-
 } from '../../../src/lib/firestore/organizations';
-
 import QRCodeGenerator from '../../../src/lib/components/organization/QRCodeGenerator';
-
 import { Organization } from '../../../src/lib/types';
-
 import toast, { Toaster } from 'react-hot-toast';
 
 
