@@ -1,10 +1,7 @@
-refactor: redesign UI for a cleaner and more professional look
+fix: resolve final tailwindcss build error
 
-This commit introduces a significant UI redesign across the entire application to create a cleaner, more modern, and professional user experience. The previous design, which featured a prominent pastel gradient and glassmorphic effects, has been replaced with a more subtle and conventional card-based UI.
+This commit resolves a final build error related to Tailwind CSS. The error "Cannot apply unknown utility class `bg-gray-100`" indicated that the default Tailwind CSS utility classes were not being loaded.
 
-Key changes include:
-- **Background:** The global background is now a clean, solid light gray (`bg-gray-100`).
-- **Color Palette:** A new, more cohesive color palette has been introduced, featuring a primary blue, a secondary violet, and an accent green. These colors are used consistently for interactive elements like buttons and links.
-- **Card-based UI:** The `glassmorphic` effect has been removed in favor of a standard card-based design using `bg-white` and `shadow-lg` for all main content containers. This improves readability and provides a more structured layout.
-- **Typography:** Text colors have been updated to darker shades for better contrast and readability against the new light background.
-- **Consistency:** The new design has been applied consistently across all portals (Student, Staff, Organization, Volunteer) and pages, ensuring a unified and professional look and feel.
+The fix involves adding the `@import "tailwindcss";` directive back to the top of `app/globals.css`. This directive is required in Tailwind CSS v4 to inject the base, components, and utilities styles. The redundant `@tailwind base;`, `@tailwind components;`, and `@tailwind utilities;` directives were also removed.
+
+This change ensures that all Tailwind CSS classes, including the default ones, are correctly loaded and applied, allowing the project to build successfully.
