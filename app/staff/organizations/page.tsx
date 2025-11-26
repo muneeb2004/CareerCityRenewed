@@ -104,15 +104,9 @@ export default function OrganizationManagement() {
 
     e.preventDefault();
 
-    console.log('Add Organization button pressed');
-
-    console.log('Form data:', form);
-
     setLoading(true);
 
     try {
-
-      // Generate organizationId if not provided
 
       const organizationId =
 
@@ -141,8 +135,6 @@ export default function OrganizationManagement() {
       });
 
       toast.success('Organization added!');
-
-      setLoading(false);
 
       setForm({
 
@@ -206,13 +198,13 @@ export default function OrganizationManagement() {
 
   return (
 
-    <div className="min-h-screen p-8">
+    <div className="min-h-screen p-4 sm:p-6 lg:p-8">
 
       <Toaster position="top-center" />
 
       <div className="flex items-center justify-between mb-6">
 
-        <h1 className="text-3xl font-bold text-white">
+        <h1 className="text-3xl font-bold text-gray-800">
 
           Staff Organization Management
 
@@ -220,7 +212,7 @@ export default function OrganizationManagement() {
 
         <button
 
-          className="bg-pastel-blue text-blue-800 px-4 py-2 rounded-lg font-semibold hover:bg-blue-300"
+          className="bg-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-600"
 
           onClick={() => setShowAddForm(!showAddForm)}
 
@@ -238,7 +230,7 @@ export default function OrganizationManagement() {
 
           onSubmit={handleAddOrganization}
 
-          className="glassmorphic p-6 mb-8 grid grid-cols-2 gap-4"
+          className="bg-white shadow-lg rounded-lg p-6 mb-8 grid grid-cols-2 gap-4"
 
         >
 
@@ -250,9 +242,9 @@ export default function OrganizationManagement() {
 
             onChange={handleInputChange}
 
-            placeholder="Organization ID (e.g. google-pakistan, apple-20251125)"
+            placeholder="Organization ID (e.g. google-pakistan)"
 
-            className="border p-2 rounded bg-white/20 text-white placeholder-gray-200"
+            className="border p-2 rounded"
 
           />
 
@@ -266,7 +258,7 @@ export default function OrganizationManagement() {
 
             placeholder="Name"
 
-            className="border p-2 rounded bg-white/20 text-white placeholder-gray-200"
+            className="border p-2 rounded"
 
             required
 
@@ -280,9 +272,9 @@ export default function OrganizationManagement() {
 
             onChange={handleInputChange}
 
-            placeholder="Industry (e.g. healthcare, technology, manufacturing, retail)"
+            placeholder="Industry"
 
-            className="border p-2 rounded bg-white/20 text-white placeholder-gray-200"
+            className="border p-2 rounded"
 
           />
 
@@ -294,9 +286,9 @@ export default function OrganizationManagement() {
 
             onChange={handleInputChange}
 
-            placeholder="Booth Number (e.g. B12, A01, C7)"
+            placeholder="Booth Number"
 
-            className="border p-2 rounded bg-white/20 text-white placeholder-gray-200"
+            className="border p-2 rounded"
 
           />
 
@@ -310,7 +302,7 @@ export default function OrganizationManagement() {
 
             placeholder="Contact Person"
 
-            className="border p-2 rounded bg-white/20 text-white placeholder-gray-200"
+            className="border p-2 rounded"
 
           />
 
@@ -324,7 +316,7 @@ export default function OrganizationManagement() {
 
             placeholder="Email"
 
-            className="border p-2 rounded bg-white/20 text-white placeholder-gray-200"
+            className="border p-2 rounded"
 
           />
 
@@ -336,9 +328,9 @@ export default function OrganizationManagement() {
 
             onChange={handleInputChange}
 
-            placeholder="Category (e.g. smartphones, athletic shoes, soft drinks, sedans)"
+            placeholder="Category"
 
-            className="border p-2 rounded bg-white/20 text-white placeholder-gray-200"
+            className="border p-2 rounded"
 
           />
 
@@ -346,7 +338,7 @@ export default function OrganizationManagement() {
 
             type="submit"
 
-            className="col-span-2 bg-pastel-green text-green-800 py-2 rounded-lg font-semibold hover:bg-green-300"
+            className="col-span-2 bg-accent text-white py-2 rounded-lg font-semibold hover:bg-emerald-600"
 
             disabled={loading}
 
@@ -364,7 +356,7 @@ export default function OrganizationManagement() {
 
         <button
 
-          className="bg-pastel-purple text-purple-800 px-4 py-2 rounded-lg font-semibold hover:bg-purple-300"
+          className="bg-secondary text-white px-4 py-2 rounded-lg font-semibold hover:bg-violet-600"
 
           onClick={handleBulkQR}
 
@@ -378,15 +370,15 @@ export default function OrganizationManagement() {
 
       {bulkQR && (
 
-        <div className="glassmorphic p-6 mb-8">
+        <div className="bg-white shadow-lg rounded-lg p-6 mb-8">
 
-          <h2 className="text-xl font-bold mb-4 text-white">
+          <h2 className="text-xl font-bold mb-4 text-gray-800">
 
             Bulk QR Code Generator
 
           </h2>
 
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 
             {organizations.map((organization) => (
 
@@ -394,7 +386,7 @@ export default function OrganizationManagement() {
 
                 key={organization.organizationId}
 
-                className="glassmorphic border p-2 rounded flex flex-col items-center"
+                className="bg-gray-50 p-4 rounded-lg flex flex-col items-center"
 
               >
 
@@ -406,11 +398,17 @@ export default function OrganizationManagement() {
 
                   onChange={() => handleSelectOrganization(organization.organizationId)}
 
+                  className="mb-2"
+
                 />
 
                 <QRCodeGenerator organization={organization} />
 
-                <span className="mt-2 text-sm text-white">{organization.name}</span>
+                <span className="mt-2 text-sm font-semibold text-gray-800">
+
+                  {organization.name}
+
+                </span>
 
               </div>
 
@@ -422,11 +420,15 @@ export default function OrganizationManagement() {
 
       )}
 
-      <div className="glassmorphic p-6">
+      <div className="bg-white shadow-lg rounded-lg p-6">
 
-        <h2 className="text-xl font-bold mb-4 text-white">Organization List</h2>
+        <h2 className="text-xl font-bold mb-4 text-gray-800">
 
-        <div className="grid grid-cols-4 gap-4">
+          Organization List
+
+        </h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 
           {organizations.map((organization) => (
 
@@ -434,25 +436,25 @@ export default function OrganizationManagement() {
 
               key={organization.organizationId}
 
-              className="glassmorphic border p-2 rounded flex flex-col items-center"
+              className="bg-gray-50 p-4 rounded-lg flex flex-col items-center"
 
             >
 
               <QRCodeGenerator organization={organization} />
 
-              <span className="mt-2 text-sm font-semibold text-white">
+              <span className="mt-2 text-sm font-semibold text-gray-800">
 
                 {organization.name}
 
               </span>
 
-              <span className="text-xs text-gray-200">
+              <span className="text-xs text-gray-500">
 
                 Booth: {organization.boothNumber}
 
               </span>
 
-              <span className="text-xs text-gray-200">
+              <span className="text-xs text-gray-500">
 
                 Industry: {organization.industry}
 

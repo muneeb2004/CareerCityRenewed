@@ -64,15 +64,15 @@ export default function DataEntryPage() {
   };
 
   return (
-    <div className="min-h-screen p-8">
+    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <Toaster position="top-center" />
-      <div className="glassmorphic max-w-lg mx-auto p-8">
-        <h1 className="text-3xl font-bold text-center text-white mb-6">
+      <div className="bg-white shadow-lg rounded-lg p-8 max-w-lg mx-auto">
+        <h1 className="text-3xl font-bold text-center text-secondary mb-6">
           Detailed Data Entry
         </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-200 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Student ID
             </label>
             <input
@@ -82,11 +82,11 @@ export default function DataEntryPage() {
               value={formData.studentId}
               onChange={handleChange}
               maxLength={7}
-              className="w-full px-4 py-2 border border-white/20 rounded-lg focus:ring-2 focus:ring-pastel-purple bg-white/20 text-white placeholder-gray-300"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-200 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Organization ID
             </label>
             <input
@@ -95,27 +95,27 @@ export default function DataEntryPage() {
               placeholder="e.g., google-pakistan"
               value={formData.organizationId}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-white/20 rounded-lg focus:ring-2 focus:ring-pastel-purple bg-white/20 text-white placeholder-gray-300"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-200 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Notes
             </label>
             <textarea
               name="notes"
               value={formData.notes}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-white/20 rounded-lg focus:ring-2 focus:ring-pastel-purple bg-white/20 text-white placeholder-gray-300"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary"
               placeholder="Enter any relevant notes about the interaction"
               rows={5}
             ></textarea>
           </div>
-          {error && <p className="text-pastel-pink text-sm mt-1">{error}</p>}
+          {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-pastel-purple text-purple-800 py-3 rounded-lg font-semibold hover:bg-purple-300 disabled:bg-gray-300 transition"
+            className="w-full bg-secondary text-white py-3 rounded-lg font-semibold hover:bg-violet-600 disabled:bg-gray-300 transition"
           >
             {loading ? 'Submitting...' : 'Log Interaction'}
           </button>

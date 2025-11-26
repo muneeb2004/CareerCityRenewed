@@ -3,23 +3,21 @@
 @tailwind utilities;
 
 @theme {
-  --color-pastel-blue: #A7C7E7;
-  --color-pastel-green: #B2D8B2;
-  --color-pastel-purple: #C3B1E1;
-  --color-pastel-pink: #F3CFC6;
-  --color-pastel-yellow: #FDFD96;
+  --color-primary: #3B82F6; /* blue-500 */
+  --color-secondary: #8B5CF6; /* violet-500 */
+  --color-accent: #10B981; /* emerald-500 */
 }
 
 @layer base {
   body {
-    @apply bg-gradient-to-br from-pastel-blue via-pastel-purple to-pastel-pink;
+    @apply bg-gray-100;
   }
 }
 
 .glassmorphic {
-  background-color: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(12px);
   border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }

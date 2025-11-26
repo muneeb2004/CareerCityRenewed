@@ -90,36 +90,36 @@ export default function StudentPortal() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen p-4 sm:p-6 lg:p-8">
       <Toaster position="top-center" />
       {/* Header */}
-      <div className="glassmorphic p-6 m-4">
-        <h1 className="text-3xl font-bold text-white">
+      <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
+        <h1 className="text-3xl font-bold text-primary">
           🎓 HU Career City 2026
         </h1>
         {session && (
           <div className="mt-2">
-            <p className="text-gray-200">Welcome back, {session.studentId}!</p>
-            <p className="text-sm text-gray-300">{session.program}</p>
+            <p className="text-gray-600">Welcome back, {session.studentId}!</p>
+            <p className="text-sm text-gray-500">{session.program}</p>
           </div>
         )}
       </div>
       {/* Stats */}
       {student && (
-        <div className="glassmorphic p-6 m-4">
-          <h2 className="text-lg font-semibold mb-3 text-white">
+        <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-3 text-gray-800">
             📊 Your Progress
           </h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-gray-200 text-sm">Stalls Visited</p>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-gray-600 text-sm">Stalls Visited</p>
+              <p className="text-2xl font-bold text-primary">
                 {student.scanCount}
               </p>
             </div>
             <div>
-              <p className="text-gray-200 text-sm">Last Visit</p>
-              <p className="text-lg font-semibold text-white">
+              <p className="text-gray-600 text-sm">Last Visit</p>
+              <p className="text-lg font-semibold text-gray-800">
                 {mounted && student.lastScanTime?.toDate().toLocaleTimeString()}
               </p>
             </div>
@@ -128,29 +128,29 @@ export default function StudentPortal() {
       )}
       {/* Visit History */}
       {scans.length > 0 && (
-        <div className="glassmorphic p-6 m-4">
-          <h2 className="text-lg font-semibold mb-3 text-white">
+        <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-3 text-gray-800">
             🕒 Your Visit History
           </h2>
           <div className="space-y-4">
             {scans.map((scan) => (
               <div
                 key={scan.scanId}
-                className="flex items-center justify-between p-4 bg-white/20 rounded-lg"
+                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
               >
                 <div>
-                  <p className="font-semibold text-white">
+                  <p className="font-semibold text-gray-800">
                     {scan.organizationName}
                   </p>
-                  <p className="text-sm text-gray-200">
+                  <p className="text-sm text-gray-500">
                     Booth: {scan.boothNumber}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-gray-200">
+                  <p className="text-sm text-gray-500">
                     {mounted && scan.timestamp?.toDate().toLocaleDateString()}
                   </p>
-                  <p className="text-sm text-gray-200">
+                  <p className="text-sm text-gray-500">
                     {mounted && scan.timestamp?.toDate().toLocaleTimeString()}
                   </p>
                 </div>
@@ -160,18 +160,16 @@ export default function StudentPortal() {
         </div>
       )}
       {/* QR Scanner */}
-      <div className="p-4">
-        <div className="glassmorphic p-6">
-          <h2 className="text-xl font-bold mb-4 text-white">Scan QR Code</h2>
-          <QRScanner onScanSuccess={handleScanSuccess} />
-        </div>
+      <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
+        <h2 className="text-xl font-bold mb-4 text-gray-800">Scan QR Code</h2>
+        <QRScanner onScanSuccess={handleScanSuccess} />
       </div>
       {/* Logout */}
       {session && (
         <div className="p-4">
           <button
             onClick={handleLogout}
-            className="w-full bg-white/20 text-white py-3 rounded-lg font-semibold hover:bg-white/30 transition"
+            className="w-full bg-secondary text-white py-3 rounded-lg font-semibold hover:bg-violet-600 transition"
           >
             Logout
           </button>

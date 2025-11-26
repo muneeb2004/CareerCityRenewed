@@ -31,24 +31,24 @@ export default function TimeLogPage() {
   };
 
   return (
-    <div className="min-h-screen p-8">
+    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <Toaster position="top-center" />
-      <div className="glassmorphic max-w-md mx-auto p-8">
-        <h1 className="text-3xl font-bold text-center text-white mb-6">
+      <div className="bg-white shadow-lg rounded-lg p-8 max-w-md mx-auto">
+        <h1 className="text-3xl font-bold text-center text-secondary mb-6">
           Time Log
         </h1>
         <div className="space-y-4">
           <button
             onClick={() => handleTimeLog('check-in')}
             disabled={loading}
-            className="w-full bg-pastel-green text-green-800 py-3 rounded-lg font-semibold hover:bg-green-300 disabled:bg-gray-300 transition"
+            className="w-full bg-accent text-white py-3 rounded-lg font-semibold hover:bg-emerald-600 disabled:bg-gray-300 transition"
           >
             {loading ? 'Processing...' : 'Check-in'}
           </button>
           <button
             onClick={() => handleTimeLog('check-out')}
             disabled={loading}
-            className="w-full bg-pastel-pink text-red-800 py-3 rounded-lg font-semibold hover:bg-red-300 disabled:bg-gray-300 transition"
+            className="w-full bg-red-500 text-white py-3 rounded-lg font-semibold hover:bg-red-600 disabled:bg-gray-300 transition"
           >
             {loading ? 'Processing...' : 'Check-out'}
           </button>

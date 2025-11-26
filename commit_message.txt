@@ -1,0 +1,10 @@
+refactor: redesign UI for a cleaner and more professional look
+
+This commit introduces a significant UI redesign across the entire application to create a cleaner, more modern, and professional user experience. The previous design, which featured a prominent pastel gradient and glassmorphic effects, has been replaced with a more subtle and conventional card-based UI.
+
+Key changes include:
+- **Background:** The global background is now a clean, solid light gray (`bg-gray-100`).
+- **Color Palette:** A new, more cohesive color palette has been introduced, featuring a primary blue, a secondary violet, and an accent green. These colors are used consistently for interactive elements like buttons and links.
+- **Card-based UI:** The `glassmorphic` effect has been removed in favor of a standard card-based design using `bg-white` and `shadow-lg` for all main content containers. This improves readability and provides a more structured layout.
+- **Typography:** Text colors have been updated to darker shades for better contrast and readability against the new light background.
+- **Consistency:** The new design has been applied consistently across all portals (Student, Staff, Organization, Volunteer) and pages, ensuring a unified and professional look and feel.

@@ -56,32 +56,34 @@ export default function OrganizationFeedbackPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="glassmorphic p-8 max-w-lg mx-auto text-center">
+      <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8">
+        <div className="bg-white shadow-lg rounded-lg p-8 max-w-lg mx-auto text-center">
           <div className="text-6xl mb-4">✅</div>
-          <h2 className="text-3xl font-bold mb-4 text-white">
+          <h2 className="text-3xl font-bold mb-4 text-gray-800">
             Feedback Submitted!
           </h2>
-          <p className="text-gray-200">Thank you for your valuable feedback.</p>
+          <p className="text-gray-600">
+            Thank you for your valuable feedback.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-8">
+    <div className="min-h-screen p-4 sm:p-6 lg:p-8">
       <Toaster position="top-center" />
-      <div className="glassmorphic p-8 max-w-2xl mx-auto">
-        <h2 className="text-3xl font-bold mb-2 text-white">
+      <div className="bg-white shadow-lg rounded-lg p-8 max-w-2xl mx-auto">
+        <h2 className="text-3xl font-bold mb-2 text-gray-800">
           End-of-Day Feedback
         </h2>
-        <p className="text-gray-200 mb-6">
+        <p className="text-gray-600 mb-6">
           Please share your experience at Career City 2026.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-200 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Student Engagement (1-5)
             </label>
             <input
@@ -95,9 +97,9 @@ export default function OrganizationFeedbackPage() {
                   studentEngagement: parseInt(e.target.value),
                 })
               }
-              className="w-full h-2 bg-white/30 rounded-lg appearance-none cursor-pointer range-lg"
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
             />
-            <div className="flex justify-between text-xs text-gray-300">
+            <div className="flex justify-between text-xs text-gray-600">
               <span>Low</span>
               <span>Medium</span>
               <span>High</span>
@@ -105,7 +107,7 @@ export default function OrganizationFeedbackPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-200 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Quality of Interactions (1-5)
             </label>
             <input
@@ -119,9 +121,9 @@ export default function OrganizationFeedbackPage() {
                   qualityOfInteractions: parseInt(e.target.value),
                 })
               }
-              className="w-full h-2 bg-white/30 rounded-lg appearance-none cursor-pointer range-lg"
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
             />
-            <div className="flex justify-between text-xs text-gray-300">
+            <div className="flex justify-between text-xs text-gray-600">
               <span>Poor</span>
               <span>Average</span>
               <span>Excellent</span>
@@ -129,7 +131,7 @@ export default function OrganizationFeedbackPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-200 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Students You Are Interested In (optional)
             </label>
             <textarea
@@ -137,14 +139,14 @@ export default function OrganizationFeedbackPage() {
               onChange={(e) =>
                 setFormData({ ...formData, hiringInterest: e.target.value })
               }
-              className="w-full px-4 py-2 border border-white/20 rounded-lg focus:ring-2 focus:ring-pastel-blue bg-white/20 text-white placeholder-gray-300"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
               placeholder="Enter student IDs, separated by commas (e.g., ab12345, cd67890)"
               rows={3}
             ></textarea>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-200 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Suggestions for Improvement (optional)
             </label>
             <textarea
@@ -152,7 +154,7 @@ export default function OrganizationFeedbackPage() {
               onChange={(e) =>
                 setFormData({ ...formData, suggestions: e.target.value })
               }
-              className="w-full px-4 py-2 border border-white/20 rounded-lg focus:ring-2 focus:ring-pastel-blue bg-white/20 text-white placeholder-gray-300"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
               placeholder="What can we do better next year?"
               rows={4}
             ></textarea>
@@ -161,7 +163,7 @@ export default function OrganizationFeedbackPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-pastel-blue text-blue-800 py-3 rounded-lg font-semibold hover:bg-blue-300 disabled:bg-gray-300 transition"
+            className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-blue-600 disabled:bg-gray-300 transition"
           >
             {loading ? 'Submitting...' : 'Submit Feedback'}
           </button>

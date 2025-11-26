@@ -98,13 +98,13 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <div className="min-h-screen p-8">
+    <div className="min-h-screen p-4 sm:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold text-white">Live Analytics</h1>
+          <h1 className="text-4xl font-bold text-gray-800">Live Analytics</h1>
           <button
             onClick={exportToCSV}
-            className="bg-pastel-blue text-blue-800 px-4 py-2 rounded-lg font-semibold hover:bg-blue-300"
+            className="bg-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-600"
           >
             Export to CSV
           </button>
@@ -112,19 +112,19 @@ export default function AnalyticsPage() {
 
         {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="glassmorphic p-6">
-            <h3 className="text-lg font-semibold text-gray-200">
+          <div className="bg-white shadow-lg rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-gray-600">
               Total Students
             </h3>
-            <p className="text-4xl font-bold text-white">
+            <p className="text-4xl font-bold text-primary">
               {data.totalStudents}
             </p>
           </div>
-          <div className="glassmorphic p-6">
-            <h3 className="text-lg font-semibold text-gray-200">
+          <div className="bg-white shadow-lg rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-gray-600">
               Total Scans
             </h3>
-            <p className="text-4xl font-bold text-white">
+            <p className="text-4xl font-bold text-accent">
               {data.totalScans}
             </p>
           </div>
@@ -133,49 +133,51 @@ export default function AnalyticsPage() {
         {/* Charts */}
         {mounted && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="glassmorphic p-6">
-              <h3 className="text-xl font-semibold mb-4 text-white">
+            <div className="bg-white shadow-lg rounded-lg p-6">
+              <h3 className="text-xl font-semibold mb-4 text-gray-800">
                 Scans per Organization
               </h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={data.scansPerOrg}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" stroke="#cbd5e1" />
-                  <YAxis stroke="#cbd5e1" />
+                  <XAxis dataKey="name" stroke="#4b5563" />
+                  <YAxis stroke="#4b5563" />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                      backdropFilter: 'blur(10px)',
+                      backgroundColor: '#fff',
                       borderRadius: '8px',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
                     }}
                     itemStyle={{ color: '#333' }}
                   />
                   <Legend />
-                  <Bar dataKey="scans" fill="#A7C7E7" />
+                  <Bar dataKey="scans" fill="var(--color-primary)" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="glassmorphic p-6">
-              <h3 className="text-xl font-semibold mb-4 text-white">
+            <div className="bg-white shadow-lg rounded-lg p-6">
+              <h3 className="text-xl font-semibold mb-4 text-gray-800">
                 Scans over Time
               </h3>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={data.scansOverTime}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="time" stroke="#cbd5e1" />
-                  <YAxis stroke="#cbd5e1" />
+                  <XAxis dataKey="time" stroke="#4b5563" />
+                  <YAxis stroke="#4b5563" />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                      backdropFilter: 'blur(10px)',
+                      backgroundColor: '#fff',
                       borderRadius: '8px',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
                     }}
                     itemStyle={{ color: '#333' }}
                   />
                   <Legend />
-                  <Line type="monotone" dataKey="scans" stroke="#B2D8B2" />
+                  <Line
+                    type="monotone"
+                    dataKey="scans"
+                    stroke="var(--color-accent)"
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </div>
