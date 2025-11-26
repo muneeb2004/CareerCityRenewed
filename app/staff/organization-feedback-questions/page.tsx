@@ -44,6 +44,7 @@ export default function OrganizationFeedbackQuestionManagement() {
   };
 
   const handleAddQuestion = async (e: React.FormEvent) => {
+    console.log('handleAddQuestion started'); // Debug log
     e.preventDefault();
     setLoading(true);
     try {
