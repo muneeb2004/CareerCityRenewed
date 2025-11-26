@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@theme {
+  --color-pastel-blue: #A7C7E7;
+  --color-pastel-green: #B2D8B2;
+  --color-pastel-purple: #C3B1E1;
+  --color-pastel-pink: #F3CFC6;
+  --color-pastel-yellow: #FDFD96;
+}
+
 @layer base {
   body {
     @apply bg-gradient-to-br from-pastel-blue via-pastel-purple to-pastel-pink;
