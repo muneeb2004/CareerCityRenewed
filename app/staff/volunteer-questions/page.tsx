@@ -134,6 +134,7 @@ export default function VolunteerQuestionManagement() {
             type="submit"
             className="bg-accent text-white py-2 rounded-lg font-semibold hover:bg-emerald-600"
             disabled={loading}
+            onClick={() => console.log('Add Question button clicked')}
           >
             {loading
               ? editingQuestion

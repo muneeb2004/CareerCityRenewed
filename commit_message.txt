@@ -1,3 +1,3 @@
-fix: restore error handling with detailed error messages
+fix: add console log to debug question creation
 
-This commit restores the `try...catch...finally` blocks to the `handleAddQuestion` functions in the organization and volunteer question management pages. The `catch` blocks have been enhanced to display a more informative error message in the toast notification, including the actual error message (`err.message`). This provides better feedback to the user in case of a Firestore operation failure and helps in diagnosing the root cause of the problem where no response was being displayed.
+This commit adds an `onClick` handler with a `console.log` statement to the submit buttons in the organization and volunteer question management pages. This is a debugging measure to verify whether the button click event is being registered correctly, as there is currently no response when adding a new question. This will help to narrow down the source of the problem.
