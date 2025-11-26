@@ -2,38 +2,38 @@
 
 import { useState, useEffect } from 'react';
 import {
-  createFeedbackQuestion,
-  getAllFeedbackQuestions,
-  updateFeedbackQuestion,
-  deleteFeedbackQuestion,
-} from '../../../src/lib/firestore/feedbackQuestions';
+  createVolunteerQuestion,
+  getAllVolunteerQuestions,
+  updateVolunteerQuestion,
+  deleteVolunteerQuestion,
+} from '../../../src/lib/firestore/volunteerQuestions';
 import {
-  FeedbackQuestion,
-  FEEDBACK_QUESTION_TYPES,
-  FeedbackQuestionType,
+  VolunteerQuestion,
+  QUESTION_TYPES,
+  QuestionType,
 } from '../../../src/lib/types';
 import toast, { Toaster } from 'react-hot-toast';
 
-export default function FeedbackQuestionManagement() {
-  const [questions, setQuestions] = useState<FeedbackQuestion[]>([]);
+export default function VolunteerQuestionManagement() {
+  const [questions, setQuestions] = useState<VolunteerQuestion[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState<{
     text: string;
-    type: FeedbackQuestionType;
+    type: QuestionType;
   }>({
     text: '',
     type: 'text',
   });
   const [loading, setLoading] = useState(false);
   const [editingQuestion, setEditingQuestion] =
-    useState<FeedbackQuestion | null>(null);
+    useState<VolunteerQuestion | null>(null);
 
   useEffect(() => {
     fetchQuestions();
   }, []);
 
   const fetchQuestions = async () => {
-    const data = await getAllFeedbackQuestions();
+    const data = await getAllVolunteerQuestions();
     setQuestions(data);
   };
 
@@ -48,11 +48,11 @@ export default function FeedbackQuestionManagement() {
     setLoading(true);
     try {
       if (editingQuestion) {
-        await updateFeedbackQuestion(editingQuestion.questionId, form);
+        await updateVolunteerQuestion(editingQuestion.questionId, form);
         toast.success('Question updated!');
         setEditingQuestion(null);
       } else {
-        await createFeedbackQuestion(form);
+        await createVolunteerQuestion(form);
         toast.success('Question added!');
       }
       setForm({ text: '', type: 'text' });
@@ -66,7 +66,7 @@ export default function FeedbackQuestionManagement() {
     }
   };
 
-  const handleEdit = (question: FeedbackQuestion) => {
+  const handleEdit = (question: VolunteerQuestion) => {
     setEditingQuestion(question);
     setForm({ text: question.text, type: question.type });
     setShowAddForm(true);
@@ -75,7 +75,7 @@ export default function FeedbackQuestionManagement() {
   const handleDelete = async (questionId: string) => {
     if (window.confirm('Are you sure you want to delete this question?')) {
       try {
-        await deleteFeedbackQuestion(questionId);
+        await deleteVolunteerQuestion(questionId);
         toast.success('Question deleted!');
         fetchQuestions();
       } catch (err) {
@@ -90,7 +90,7 @@ export default function FeedbackQuestionManagement() {
       <Toaster position="top-center" />
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold text-gray-800">
-          Feedback Questions Management
+          Volunteer Questions Management
         </h1>
         <button
           className="bg-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-600"
@@ -124,7 +124,7 @@ export default function FeedbackQuestionManagement() {
             onChange={handleInputChange}
             className="border p-2 rounded"
           >
-            {FEEDBACK_QUESTION_TYPES.map((type) => (
+            {QUESTION_TYPES.map((type) => (
               <option key={type} value={type}>
                 {type}
               </option>

@@ -1,3 +1,17 @@
-fix: add use client directive to staff organization page
+feat: add modular questions for volunteer portal and improve staff navigation
 
-This commit resolves a build error in `app/staff/organizations/page.tsx` by adding the `"use client"` directive. The page uses React Hooks (`useState`, `useEffect`) and the `Link` component from `next/link`, which require it to be a Client Component. Adding `"use client"` at the top of the file explicitly marks it as such, allowing these features to function correctly and resolving the build failure.
+This commit introduces a modular question system for the volunteer portal and improves the navigation for the staff portal.
+
+Key changes include:
+- **Modular Volunteer Questions:**
+    - A new `VolunteerQuestion` interface has been added to `src/lib/types/index.ts`.
+    - Firestore functions for managing volunteer questions have been created in `src/lib/firestore/volunteerQuestions.ts`.
+    - A new page has been added at `app/staff/volunteer-questions/page.tsx` for staff to manage volunteer questions.
+    - The "Detailed Data Entry" page for volunteers (`app/volunteer/data-entry/page.tsx`) has been updated to dynamically render these questions.
+- **Improved Staff Portal Navigation:**
+    - A new layout with a sidebar navigation has been created for the staff portal (`app/staff/layout.tsx`).
+    - The staff layout includes links to "Organizations", "Organization Feedback Questions", and "Volunteer Questions" management pages.
+    - The redundant navigation button has been removed from the organizations page.
+- **Data Model Clarity:**
+    - The `FeedbackQuestion` interface has been renamed to `OrganizationFeedbackQuestion` for better clarity.
+    - The corresponding files and functions have been renamed accordingly.

@@ -196,41 +196,29 @@ export default function OrganizationManagement() {
 
       <div className="flex items-center justify-between mb-6">
 
-        <h1 className="text-3xl font-bold text-gray-800">
+              <h1 className="text-3xl font-bold text-gray-800">
 
-          Staff Organization Management
+                Staff Organization Management
 
-        </h1>
+              </h1>
 
-        <div className="flex space-x-2">
+              <div className="flex space-x-2">
 
-          <Link
+                <button
 
-            href="/staff/feedback-questions"
+                  className="bg-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-600"
 
-            className="bg-accent text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-600"
+                  onClick={() => setShowAddForm(!showAddForm)}
 
-          >
+                >
 
-            Manage Feedback Questions
+                  {showAddForm ? 'Cancel' : 'Add Organization'}
 
-          </Link>
+                </button>
 
-          <button
+              </div>
 
-            className="bg-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-600"
-
-            onClick={() => setShowAddForm(!showAddForm)}
-
-          >
-
-            {showAddForm ? 'Cancel' : 'Add Organization'}
-
-          </button>
-
-        </div>
-
-      </div>
+            </div>
 
       {showAddForm && (
 

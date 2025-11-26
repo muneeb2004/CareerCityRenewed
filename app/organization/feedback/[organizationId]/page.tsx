@@ -6,23 +6,23 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../../src/lib/firebase';
 import {
   OrganizationFeedback,
-  FeedbackQuestion,
+  OrganizationFeedbackQuestion,
 } from '../../../../src/lib/types';
-import { getAllFeedbackQuestions } from '../../../../src/lib/firestore/feedbackQuestions';
+import { getAllOrganizationFeedbackQuestions } from '../../../../src/lib/firestore/organizationFeedbackQuestions';
 import toast, { Toaster } from 'react-hot-toast';
 
 export default function OrganizationFeedbackPage() {
   const params = useParams();
   const organizationId = params.organizationId as string;
 
-  const [questions, setQuestions] = useState<FeedbackQuestion[]>([]);
+  const [questions, setQuestions] = useState<OrganizationFeedbackQuestion[]>([]);
   const [responses, setResponses] = useState<{ [key: string]: any }>({});
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     const fetchQuestions = async () => {
-      const allQuestions = await getAllFeedbackQuestions();
+      const allQuestions = await getAllOrganizationFeedbackQuestions();
       setQuestions(allQuestions);
       // Initialize responses state
       const initialResponses: { [key: string]: any } = {};

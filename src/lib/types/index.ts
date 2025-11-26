@@ -63,14 +63,21 @@ export interface StudentFeedback {
   };
 }
 
-export const FEEDBACK_QUESTION_TYPES = ['range', 'text', 'textarea'] as const;
-export type FeedbackQuestionType = typeof FEEDBACK_QUESTION_TYPES[number];
+export const QUESTION_TYPES = ['range', 'text', 'textarea'] as const;
+export type QuestionType = typeof QUESTION_TYPES[number];
 
-export interface FeedbackQuestion {
+export interface OrganizationFeedbackQuestion {
   questionId: string;
   text: string;
-  type: FeedbackQuestionType;
+  type: QuestionType;
   options?: string[]; // For multiple choice, etc.
+}
+
+export interface VolunteerQuestion {
+  questionId: string;
+  text: string;
+  type: QuestionType;
+  options?: string[];
 }
 
 export interface OrganizationFeedback {
@@ -81,36 +88,20 @@ export interface OrganizationFeedback {
 }
 
 export interface Staff {
-
   staffId: string;
-
   name: string;
-
   email: string;
-
   role: 'admin' | 'coordinator';
-
   permissions: string[];
-
 }
-
-
 
 export interface Volunteer {
-
   volunteerId: string;
-
   name: string;
-
   email: string;
-
   phone: string;
-
   role: 'Captain' | 'Member';
-
 }
-
-
 
 export interface VolunteerLog {
   logId: string;
@@ -127,5 +118,5 @@ export interface InteractionLog {
   studentId: string;
   organizationId: string;
   timestamp: Timestamp;
-  notes: string;
+  responses: { [questionId: string]: string | number | string[] };
 }
