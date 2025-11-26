@@ -14,7 +14,9 @@ export const createOrganizationFeedbackQuestion = async (
   question: Omit<OrganizationFeedbackQuestion, 'questionId'>
 ): Promise<string> => {
   try {
+    console.log('Firestore instance:', db); // Debug log
     const questionsRef = collection(db, 'organizationFeedbackQuestions');
+    console.log('Firestore: collection ref obtained.'); // Debug log
     const docRef = await addDoc(questionsRef, {
       ...question,
       createdAt: serverTimestamp(),

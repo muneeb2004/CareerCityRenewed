@@ -52,20 +52,21 @@ export default function VolunteerQuestionManagement() {
         await updateVolunteerQuestion(editingQuestion.questionId, form);
         toast.success('Question updated!');
         setEditingQuestion(null);
-      } else {
-        await createVolunteerQuestion(form);
-        toast.success('Question added!');
-      }
-      setForm({ text: '', type: 'text' });
-      setShowAddForm(false);
-      fetchQuestions();
-    } catch (err: any) {
-      console.error(err);
-      toast.error(`Failed to save question: ${err.message}`);
-    } finally {
-      console.log('setLoading(false) in finally'); // Debug log
-      setLoading(false);
-    }
+          } else {
+            console.log('Attempting to create volunteer question...'); // Debug log
+            await createVolunteerQuestion(form);
+            console.log('createVolunteerQuestion resolved.'); // Debug log
+            toast.success('Question added!');
+          }
+          setForm({ text: '', type: 'text' });
+          setShowAddForm(false);
+          fetchQuestions();
+        } catch (err: any) {
+          console.error('Error caught in handleAddQuestion:', err); // Debug log
+          toast.error(`Failed to save question: ${err.message}`);
+        } finally {
+          console.log('setLoading(false) in finally'); // Debug log
+          setLoading(false);    }
   };
 
   const handleEdit = (question: VolunteerQuestion) => {

@@ -52,20 +52,21 @@ export default function OrganizationFeedbackQuestionManagement() {
         await updateOrganizationFeedbackQuestion(editingQuestion.questionId, form);
         toast.success('Question updated!');
         setEditingQuestion(null);
-      } else {
-        await createOrganizationFeedbackQuestion(form);
-        toast.success('Question added!');
-      }
-      setForm({ text: '', type: 'text' });
-      setShowAddForm(false);
-      fetchQuestions();
-    } catch (err: any) {
-      console.error(err);
-      toast.error(`Failed to save question: ${err.message}`);
-    } finally {
-      console.log('setLoading(false) in finally'); // Debug log
-      setLoading(false);
-    }
+          } else {
+            console.log('Attempting to create question...'); // Debug log
+            await createOrganizationFeedbackQuestion(form);
+            console.log('createOrganizationFeedbackQuestion resolved.'); // Debug log
+            toast.success('Question added!');
+          }
+          setForm({ text: '', type: 'text' });
+          setShowAddForm(false);
+          fetchQuestions();
+        } catch (err: any) {
+          console.error('Error caught in handleAddQuestion:', err); // Debug log
+          toast.error(`Failed to save question: ${err.message}`);
+        } finally {
+          console.log('setLoading(false) in finally'); // Debug log
+          setLoading(false);    }
   };
 
   const handleEdit = (question: OrganizationFeedbackQuestion) => {
