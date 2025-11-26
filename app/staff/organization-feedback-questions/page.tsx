@@ -46,18 +46,24 @@ export default function OrganizationFeedbackQuestionManagement() {
   const handleAddQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    if (editingQuestion) {
-      await updateOrganizationFeedbackQuestion(editingQuestion.questionId, form);
-      toast.success('Question updated!');
-      setEditingQuestion(null);
-    } else {
-      await createOrganizationFeedbackQuestion(form);
-      toast.success('Question added!');
+    try {
+      if (editingQuestion) {
+        await updateOrganizationFeedbackQuestion(editingQuestion.questionId, form);
+        toast.success('Question updated!');
+        setEditingQuestion(null);
+      } else {
+        await createOrganizationFeedbackQuestion(form);
+        toast.success('Question added!');
+      }
+      setForm({ text: '', type: 'text' });
+      setShowAddForm(false);
+      fetchQuestions();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`Failed to save question: ${err.message}`);
+    } finally {
+      setLoading(false);
     }
-    setForm({ text: '', type: 'text' });
-    setShowAddForm(false);
-    fetchQuestions();
-    setLoading(false);
   };
 
   const handleEdit = (question: OrganizationFeedbackQuestion) => {
@@ -72,9 +78,9 @@ export default function OrganizationFeedbackQuestionManagement() {
         await deleteOrganizationFeedbackQuestion(questionId);
         toast.success('Question deleted!');
         fetchQuestions();
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
-        toast.error('Failed to delete question');
+        toast.error(`Failed to delete question: ${err.message}`);
       }
     }
   };

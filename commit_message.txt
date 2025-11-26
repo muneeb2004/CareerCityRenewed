@@ -1,3 +1,3 @@
-fix: remove error handling to debug question creation
+fix: restore error handling with detailed error messages
 
-This commit temporarily removes the `try...catch...finally` blocks from the `handleAddQuestion` functions in the organization and volunteer question management pages. This is a debugging measure to expose any unhandled promise rejections that might be occurring during the Firestore write operations. By letting the errors surface in the browser console, it will be easier to diagnose why no response is being displayed when a new question is added.
+This commit restores the `try...catch...finally` blocks to the `handleAddQuestion` functions in the organization and volunteer question management pages. The `catch` blocks have been enhanced to display a more informative error message in the toast notification, including the actual error message (`err.message`). This provides better feedback to the user in case of a Firestore operation failure and helps in diagnosing the root cause of the problem where no response was being displayed.
