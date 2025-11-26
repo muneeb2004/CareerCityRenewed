@@ -15,8 +15,15 @@ export const createVolunteerQuestion = async (
 ): Promise<string> => {
   try {
     console.log('Firestore instance:', db); // Debug log
-    const questionsRef = collection(db, 'volunteerQuestions');
-    console.log('Firestore: collection ref obtained.'); // Debug log
+    let questionsRef;
+    try {
+      console.log('Firestore: Attempting to get collection reference.'); // Debug log
+      questionsRef = collection(db, 'volunteerQuestions');
+      console.log('Firestore: collection ref obtained.'); // Debug log
+    } catch (collectionError: any) {
+      console.error('Error getting collection reference:', collectionError);
+      throw collectionError;
+    }
     const docRef = await addDoc(questionsRef, {
       ...question,
       createdAt: serverTimestamp(),

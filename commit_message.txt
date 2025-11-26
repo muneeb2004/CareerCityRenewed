@@ -1,16 +1,5 @@
-debug: add extensive console logs to pinpoint question creation failure
+debug: add nested try-catch to collection call
 
-This commit adds extensive `console.log` statements to various critical points in the question creation and submission flow for both organization and volunteer feedback questions. These logs are designed to pinpoint the exact stage where the execution might be silently failing or hanging, as previous debugging attempts indicated the process was stopping without visible errors.
+This commit adds a nested `try...catch` block around the `collection(db, 'collectionName')` calls within the `createOrganizationFeedbackQuestion` and `createVolunteerQuestion` functions. This is a debugging measure to pinpoint the exact location of a silent failure, as previous logs indicated the execution was stopping immediately after the Firestore instance was logged but before the collection reference was obtained.
 
-Specifically, logs have been added:
-- In `handleAddQuestion`:
-    - `Attempting to create question...` before the Firestore call.
-    - `createOrganizationFeedbackQuestion resolved.` (or `createVolunteerQuestion resolved.`) after the Firestore call.
-    - `Error caught in handleAddQuestion:` within the `catch` block.
-    - `setLoading(false) in finally` within the `finally` block.
-- In `createOrganizationFeedbackQuestion` and `createVolunteerQuestion`:
-    - `Firestore instance:` to check the `db` object's validity.
-    - `Firestore: collection ref obtained.` before the `addDoc` call.
-    - `Question added to Firestore with ID:` upon successful document addition.
-
-These comprehensive logs will provide a step-by-step trace of the execution, helping to diagnose the root cause of the silent failure in question persistence.
+The `collection` calls are now explicitly logged before execution, and any error encountered during their execution will be caught and logged with a specific message, providing more granular insight into whether the issue lies with obtaining the collection reference itself.

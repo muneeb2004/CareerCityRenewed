@@ -15,13 +15,20 @@ export const createOrganizationFeedbackQuestion = async (
 ): Promise<string> => {
   try {
     console.log('Firestore instance:', db); // Debug log
-    const questionsRef = collection(db, 'organizationFeedbackQuestions');
-    console.log('Firestore: collection ref obtained.'); // Debug log
+    let questionsRef;
+    try {
+      console.log('Firestore: Attempting to get collection reference.'); // Debug log
+      questionsRef = collection(db, 'organizationFeedbackQuestions');
+      console.log('Firestore: collection ref obtained.'); // Debug log
+    } catch (collectionError: any) {
+      console.error('Error getting collection reference:', collectionError);
+      throw collectionError;
+    }
     const docRef = await addDoc(questionsRef, {
       ...question,
       createdAt: serverTimestamp(),
     });
-    console.log("Question added to Firestore with ID: ", docRef.id); // NEW LOG
+    console.log('Question added to Firestore with ID: ', docRef.id); // NEW LOG
     return docRef.id;
   } catch (error) {
     console.error('Error creating question in Firestore: ', error);
