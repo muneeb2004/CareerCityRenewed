@@ -111,8 +111,8 @@ export interface VolunteerLog {
   logId: string;
   volunteerId: string;
   timestamp: Timestamp;
-  action: 'check-in' | 'check-out' | 'cv-check' | 'quality-check';
-  studentId?: string; // for cv-check and quality-check
+  action: 'check-in' | 'check-out' | 'quality-check';
+  studentId?: string; // for quality-check
   notes?: string;
 }
 

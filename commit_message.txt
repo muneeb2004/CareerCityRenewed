@@ -1,7 +1,6 @@
-fix: resolve final tailwindcss build error
+refactor: remove CV Check feature
 
-This commit resolves a final build error related to Tailwind CSS. The error "Cannot apply unknown utility class `bg-gray-100`" indicated that the default Tailwind CSS utility classes were not being loaded.
-
-The fix involves adding the `@import "tailwindcss";` directive back to the top of `app/globals.css`. This directive is required in Tailwind CSS v4 to inject the base, components, and utilities styles. The redundant `@tailwind base;`, `@tailwind components;`, and `@tailwind utilities;` directives were also removed.
-
-This change ensures that all Tailwind CSS classes, including the default ones, are correctly loaded and applied, allowing the project to build successfully.
+This commit removes the "CV Check" feature from the application. The following changes have been made:
+- The link to the "CV Check" page has been removed from the volunteer portal.
+- The "CV Check" page file (`app/volunteer/cv-check/page.tsx`) has been deleted.
+- The `cv-check` action has been removed from the `VolunteerLog` interface in `src/lib/types/index.ts`.

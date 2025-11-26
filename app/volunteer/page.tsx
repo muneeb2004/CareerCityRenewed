@@ -29,18 +29,6 @@ export default function VolunteerPortal() {
           </Link>
 
           <Link
-            href="/volunteer/cv-check"
-            className="block bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
-          >
-            <h3 className="text-xl font-semibold text-secondary mb-2">
-              CV Check
-            </h3>
-            <p className="text-gray-600">
-              Mark students whose CVs you have checked.
-            </p>
-          </Link>
-
-          <Link
             href="/volunteer/data-entry"
             className="block bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
           >
