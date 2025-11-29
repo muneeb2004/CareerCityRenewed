@@ -20,7 +20,7 @@ export const createOrganizationFeedbackQuestion = async (
       console.log('Firestore: Attempting to get collection reference.'); // Debug log
       questionsRef = collection(db, 'organizationFeedbackQuestions');
       console.log('Firestore: collection ref obtained.'); // Debug log
-    } catch (collectionError: any) {
+    } catch (collectionError: unknown) {
       console.error('Error getting collection reference:', collectionError);
       throw collectionError;
     }
@@ -31,7 +31,7 @@ export const createOrganizationFeedbackQuestion = async (
         createdAt: serverTimestamp(),
       });
       console.log('Question added to Firestore with ID: ', docRef.id); // NEW LOG
-    } catch (addDocError: any) {
+    } catch (addDocError: unknown) {
       console.error('Error adding document:', addDocError);
       throw addDocError;
     }

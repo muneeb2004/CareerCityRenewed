@@ -24,8 +24,14 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
-// Use DEFAULT Firestore database (no billing required)
-export const db = getFirestore(app); // This connects to (default) database
+// Log useful info during development to confirm env usage
+if (process.env.NODE_ENV === 'development') {
+  // eslint-disable-next-line no-console
+  console.log('[firebase] config projectId=', firebaseConfig.projectId);
+}
+
+// Use default Firestore database
+export const db = getFirestore(app);
 
 export const auth = getAuth(app);
 export default app;

@@ -1,5 +1,0 @@
-debug: add nested try-catch to addDoc call
-
-This commit adds a nested `try...catch` block around the `await addDoc(...)` calls within the `createOrganizationFeedbackQuestion` and `createVolunteerQuestion` functions. This is a debugging measure to pinpoint the exact location of a silent failure, as previous logs indicated the execution was stopping immediately after obtaining the collection reference but before the document was confirmed to be added.
-
-Now, any error encountered during the `addDoc` execution will be caught and logged with a specific message (`Error adding document:`), providing more granular insight into whether the issue lies with the actual document write operation itself. This will help to diagnose the root cause of the silent failure in question persistence.

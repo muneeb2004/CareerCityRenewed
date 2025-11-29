@@ -35,50 +35,55 @@ export default function OrganizationRegistration() {
   const [registered, setRegistered] = useState(false);
   const [organizationId, setOrganizationId] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validation
-    if (!formData.name || !formData.contactPerson || !formData.boothNumber) {
-      toast.error('Please fill all required fields');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // Generate organization ID from company name
-      const orgId = slugify(formData.name);
-
-      // Create organization record
-      const organization: Omit<Organization, 'visitors' | 'visitorCount'> = {
-        organizationId: orgId,
-        name: formData.name,
-        industry: formData.category,
-        boothNumber: formData.boothNumber,
-        qrCode: orgId, // QR will encode this ID
-        contactPerson: formData.contactPerson,
-        email: formData.contactEmail,
-        category: formData.category,
-      };
-
-      await createOrganization(organization);
-
-      setOrganizationId(orgId);
-      setRegistered(true);
-      toast.success('Registration successful!');
-
-      // Save to localStorage for quick access
-      localStorage.setItem('organization_id', orgId);
-      localStorage.setItem('organization_name', formData.name);
-    } catch (err) {
-      console.error('Registration error:', err);
-      toast.error('Registration failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+      const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      console.log('Form submitted');
+  
+      // Validation
+      if (!formData.name || !formData.contactPerson || !formData.boothNumber) {
+        toast.error('Please fill all required fields');
+        return;
+      }
+  
+      setLoading(true);
+  
+      try {
+        // Generate organization ID from company name
+        const orgId = slugify(formData.name);
+        console.log('Generated organization ID:', orgId);
+  
+        // Create organization record
+        const organization: Omit<Organization, 'visitors' | 'visitorCount'> = {
+          organizationId: orgId,
+          name: formData.name,
+          industry: formData.category,
+          boothNumber: formData.boothNumber,
+          qrCode: orgId, // QR will encode this ID
+          contactPerson: formData.contactPerson,
+          email: formData.contactEmail,
+          category: formData.category,
+        };
+  
+        console.log('Organization data:', organization);
+  
+        await createOrganization(organization);
+  
+        console.log('Organization created successfully');
+  
+        setOrganizationId(orgId);
+        setRegistered(true);
+        toast.success('Registration successful!');
+  
+        // Save to localStorage for quick access
+        localStorage.setItem('organization_id', orgId);
+        localStorage.setItem('organization_name', formData.name);
+      } catch (err) {
+        console.error('Registration failed with error:', err);
+        toast.error('Registration failed. Please check the console for details.');
+      } finally {
+        setLoading(false);
+      }
+    };
   if (registered) {
     return (
       <div className="bg-white p-8 rounded-lg shadow-lg max-w-2xl mx-auto">

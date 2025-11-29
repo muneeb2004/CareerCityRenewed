@@ -1,0 +1,8 @@
+{
+  "firestore": {
+    "database": "hucareercity2026",
+    "location": "asia-east1",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}

@@ -27,6 +27,7 @@ export const getOrganization = async (organizationId: string): Promise<Organizat
 };
 
 export const createOrganization = async (organization: Omit<Organization, 'visitors' | 'visitorCount'>): Promise<void> => {
+  console.log('Creating organization in Firestore:', organization);
   const organizationRef = doc(db, 'organizations', organization.organizationId);
 
   await setDoc(organizationRef, {

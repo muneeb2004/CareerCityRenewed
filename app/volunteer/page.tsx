@@ -15,30 +15,30 @@ export default function VolunteerPortal() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Link
-            href="/volunteer/time-log"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <a
+            href="/volunteer/student-feedback"
             className="block bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
           >
             <h3 className="text-xl font-semibold text-secondary mb-2">
-              Time Log
+              Student Feedback Form
             </h3>
             <p className="text-gray-600">
-              Check-in and check-out for your shift.
+              Submit feedback for a student.
             </p>
-          </Link>
+          </a>
 
-          <Link
-            href="/volunteer/data-entry"
+          <a
+            href="/volunteer/organization-feedback"
             className="block bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
           >
             <h3 className="text-xl font-semibold text-secondary mb-2">
-              Detailed Data Entry
+              Organization Feedback Form
             </h3>
             <p className="text-gray-600">
-              Log detailed interactions with students.
+              Submit feedback for an organization on behalf of an employer.
             </p>
-          </Link>
+          </a>
         </div>
       </div>
     </div>

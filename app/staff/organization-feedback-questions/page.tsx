@@ -61,9 +61,13 @@ export default function OrganizationFeedbackQuestionManagement() {
           setForm({ text: '', type: 'text' });
           setShowAddForm(false);
           fetchQuestions();
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error('Error caught in handleAddQuestion:', err); // Debug log
-          toast.error(`Failed to save question: ${err.message}`);
+          if (err instanceof Error) {
+            toast.error(`Failed to save question: ${err.message}`);
+          } else {
+            toast.error('An unknown error occurred.');
+          }
         } finally {
           console.log('setLoading(false) in finally'); // Debug log
           setLoading(false);    }
@@ -81,9 +85,13 @@ export default function OrganizationFeedbackQuestionManagement() {
         await deleteOrganizationFeedbackQuestion(questionId);
         toast.success('Question deleted!');
         fetchQuestions();
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error(err);
-        toast.error(`Failed to delete question: ${err.message}`);
+        if (err instanceof Error) {
+          toast.error(`Failed to delete question: ${err.message}`);
+        } else {
+          toast.error('An unknown error occurred while deleting the question.');
+        }
       }
     }
   };

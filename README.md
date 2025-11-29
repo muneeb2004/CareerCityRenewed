@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Career City 2026
+
+This is a [Next.js](https://nextjs.org) project for managing student and organization feedback at the Career City 2026 event.
 
 ## Getting Started
 
-First, run the development server:
+To get a local copy up and running, follow these simple steps.
+
+### Prerequisites
+
+*   npm
+    ```sh
+    npm install npm@latest -g
+    ```
+
+### Installation
+
+1.  Clone the repo
+    ```sh
+    git clone https://github.com/your_username_/your_repository_name.git
+    ```
+2.  Install NPM packages
+    ```sh
+    npm install
+    ```
+
+### Environment Variables
+
+To run the project, you need to set up the environment variables for Firebase.
+
+1.  Create a `.env.local` file in the root of the project.
+2.  Copy the contents of `.env.example` into the `.env.local` file.
+3.  Fill in the values for the Firebase configuration.
+
+### Running the Development Server
+
+Once you have installed the dependencies and set up the environment variables, you can run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Firebase Security Rules
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+This project includes a `firestore.rules` file with role-based security rules for Firestore. To deploy these rules to your Firebase project, you can use the Firebase CLI.
 
-## Learn More
+1.  Install the Firebase CLI if you haven't already:
+    ```sh
+    npm install -g firebase-tools
+    ```
+2.  Login to Firebase:
+    ```sh
+    firebase login
+    ```
+3.  Deploy the Firestore rules:
+    ```sh
+    firebase deploy --only firestore:rules
+    ```
 
-To learn more about Next.js, take a look at the following resources:
+**Disclaimer:** The provided security rules assume that you have a `users` collection in Firestore where each document has the user's UID as the document ID and a `role` field. The `role` field can be `'admin'`, `'coordinator'`, `'volunteer'`, or `'student'`. You should review and adapt these rules to your specific security needs. For more information on writing Firestore security rules, please refer to the [official documentation](https://firebase.google.com/docs/firestore/security/get-started).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Available Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+In the project directory, you can run:
 
-## Deploy on Vercel
+### `npm run dev`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Runs the app in the development mode.
+Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### `npm test`
+
+Launches the test runner in the interactive watch mode.
+
+### `npm run build`
+
+Builds the app for production to the `.next` folder.
+
+### `npm run start`
+
+Starts a Next.js production server.
+
+### `npm run lint`
+
+Runs the linter to check for code quality issues.
