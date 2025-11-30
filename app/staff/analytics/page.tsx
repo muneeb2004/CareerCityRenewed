@@ -98,92 +98,113 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <div className="min-h-screen p-4 sm:p-6 lg:p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800">Live Analytics</h1>
-          <button
-            onClick={exportToCSV}
-            className="bg-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-600"
-          >
-            Export to CSV
-          </button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="card-modern flex flex-col md:flex-row items-center justify-between gap-4">
+        <div>
+            <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">
+            Live Analytics
+            </h1>
+            <p className="text-gray-500 text-sm mt-1">Real-time insights into event activity</p>
         </div>
+        <button
+            onClick={exportToCSV}
+            className="btn-secondary flex items-center gap-2"
+        >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            Export to CSV
+        </button>
+      </div>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white shadow-lg rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-600">
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="card-modern flex items-center justify-between">
+          <div>
+            <h3 className="text-gray-500 text-sm font-medium uppercase tracking-wider">
               Total Students
             </h3>
-            <p className="text-4xl font-bold text-primary">
+            <p className="text-4xl font-bold text-blue-600 mt-2">
               {data.totalStudents}
             </p>
           </div>
-          <div className="bg-white shadow-lg rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-600">
+          <div className="p-4 bg-blue-100 rounded-full text-blue-600">
+             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+          </div>
+        </div>
+        <div className="card-modern flex items-center justify-between">
+          <div>
+            <h3 className="text-gray-500 text-sm font-medium uppercase tracking-wider">
               Total Scans
             </h3>
-            <p className="text-4xl font-bold text-accent">
+            <p className="text-4xl font-bold text-emerald-600 mt-2">
               {data.totalScans}
             </p>
           </div>
-        </div>
-
-        {/* Charts */}
-        {mounted && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-white shadow-lg rounded-lg p-6">
-              <h3 className="text-xl font-semibold mb-4 text-gray-800">
-                Scans per Organization
-              </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={data.scansPerOrg}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" stroke="#4b5563" />
-                  <YAxis stroke="#4b5563" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#fff',
-                      borderRadius: '8px',
-                      boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-                    }}
-                    itemStyle={{ color: '#333' }}
-                  />
-                  <Legend />
-                  <Bar dataKey="scans" fill="var(--color-primary)" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="bg-white shadow-lg rounded-lg p-6">
-              <h3 className="text-xl font-semibold mb-4 text-gray-800">
-                Scans over Time
-              </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={data.scansOverTime}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="time" stroke="#4b5563" />
-                  <YAxis stroke="#4b5563" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#fff',
-                      borderRadius: '8px',
-                      boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-                    }}
-                    itemStyle={{ color: '#333' }}
-                  />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="scans"
-                    stroke="var(--color-accent)"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+           <div className="p-4 bg-emerald-100 rounded-full text-emerald-600">
+             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4c1 1 0 0 1 1 1v3c0 1-1 1-1 1h-1v-1a2 2 0 1 0-2 0v1h-1a2 2 0 0 0-2 0v-1H9.05a1 1 0 0 0-.82-1.566a2 2 0 0 0-2.806 0A1 1 0 0 0 5 12v2a1 1 0 0 0 1 1h1v1c0 1 0 1 1 1h1v-1.82a1 1 0 0 0-.26-.726A2 2 0 0 0 7.17 11H7v-.17a1 1 0 0 0-1.147-.983A2 2 0 0 0 5 11h.02a1 1 0 0 0 .01-1.832A1 1 0 0 0 5.03 7h.05a2 2 0 0 0 3.84 0h.05A1 1 0 0 0 9 7h1.05a1 1 0 0 0 .82-1.566A2 2 0 0 0 10.05 5H9a1 1 0 0 0-1 .99V7m3 0h5" /></svg>
           </div>
-        )}
+        </div>
       </div>
+
+      {/* Charts */}
+      {mounted && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="card-modern">
+            <h3 className="text-xl font-bold mb-6 text-gray-800">
+              Scans per Organization
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={data.scansPerOrg}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="name" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip
+                  cursor={{ fill: '#f3f4f6' }}
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    borderRadius: '12px',
+                    border: 'none',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                  }}
+                  itemStyle={{ color: '#374151', fontWeight: 600 }}
+                />
+                <Legend />
+                <Bar dataKey="scans" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="card-modern">
+            <h3 className="text-xl font-bold mb-6 text-gray-800">
+              Scans over Time
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={data.scansOverTime}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="time" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    borderRadius: '12px',
+                    border: 'none',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                  }}
+                  itemStyle={{ color: '#374151', fontWeight: 600 }}
+                />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="scans"
+                  stroke="#10B981"
+                  strokeWidth={3}
+                  dot={{ fill: '#10B981', r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

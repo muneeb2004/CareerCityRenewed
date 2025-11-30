@@ -71,6 +71,8 @@ export interface OrganizationFeedbackQuestion {
   text: string;
   type: QuestionType;
   options?: string[]; // For multiple choice, etc.
+  minLabel?: string;
+  maxLabel?: string;
 }
 
 export interface VolunteerQuestion {
@@ -78,6 +80,8 @@ export interface VolunteerQuestion {
   text: string;
   type: QuestionType;
   options?: string[];
+  minLabel?: string;
+  maxLabel?: string;
 }
 
 export interface OrganizationFeedback {

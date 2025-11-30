@@ -13,6 +13,7 @@ import {
   query,
   where,
   documentId,
+  deleteDoc,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Organization } from '../types';
@@ -35,6 +36,19 @@ export const createOrganization = async (organization: Omit<Organization, 'visit
     visitors: [],
     visitorCount: 0,
   });
+};
+
+export const updateOrganization = async (
+  organizationId: string,
+  data: Partial<Organization>
+): Promise<void> => {
+  const organizationRef = doc(db, 'organizations', organizationId);
+  await updateDoc(organizationRef, data);
+};
+
+export const deleteOrganization = async (organizationId: string): Promise<void> => {
+  const organizationRef = doc(db, 'organizations', organizationId);
+  await deleteDoc(organizationRef);
 };
 
 export const getAllOrganizations = async (): Promise<Organization[]> => {

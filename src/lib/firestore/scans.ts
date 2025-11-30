@@ -16,8 +16,8 @@ export const createScan = async (
   studentId: string,
   studentEmail: string,
   studentProgram: Program,
-  employerId: string,
-  employerName: string,
+  organizationId: string,
+  organizationName: string,
   boothNumber: string
 ): Promise<void> => {
   const scansRef = collection(db, 'scans');
@@ -26,8 +26,8 @@ export const createScan = async (
     studentId,
     studentEmail,
     studentProgram,
-    employerId,
-    employerName,
+    organizationId,
+    organizationName,
     boothNumber,
     timestamp: serverTimestamp(),
     scanMethod: 'qr_code',

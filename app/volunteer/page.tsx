@@ -4,41 +4,53 @@ import Link from 'next/link';
 
 export default function VolunteerPortal() {
   return (
-    <div className="min-h-screen p-4 sm:p-6 lg:p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white shadow-lg rounded-lg p-8 mb-8">
-          <h1 className="text-4xl font-bold text-center text-secondary mb-4">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-4xl space-y-8">
+        <div className="card-modern text-center">
+          <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-teal-500 mb-2">
             Volunteer Portal
           </h1>
-          <p className="text-lg text-center text-gray-600">
-            Welcome, Volunteer! Thank you for your service.
+          <p className="text-lg text-gray-600">
+            Welcome! Thank you for helping us make Career City a success.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <a
+          <Link
             href="/volunteer/student-feedback"
-            className="block bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+            className="card-modern glass-hover group block text-left relative overflow-hidden"
           >
-            <h3 className="text-xl font-semibold text-secondary mb-2">
-              Student Feedback Form
-            </h3>
-            <p className="text-gray-600">
-              Submit feedback for a student.
-            </p>
-          </a>
+             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <svg className="w-24 h-24 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"></path></svg>
+             </div>
+             <div className="relative z-10">
+                <h3 className="text-2xl font-bold text-gray-800 group-hover:text-emerald-600 transition-colors mb-2 flex items-center gap-2">
+                    <svg className="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                    Student Feedback
+                </h3>
+                <p className="text-gray-600">
+                Submit feedback for a student interaction. Help us track engagement and student performance.
+                </p>
+            </div>
+          </Link>
 
-          <a
+          <Link
             href="/volunteer/organization-feedback"
-            className="block bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+            className="card-modern glass-hover group block text-left relative overflow-hidden"
           >
-            <h3 className="text-xl font-semibold text-secondary mb-2">
-              Organization Feedback Form
-            </h3>
-            <p className="text-gray-600">
-              Submit feedback for an organization on behalf of an employer.
-            </p>
-          </a>
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <svg className="w-24 h-24 text-teal-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd"></path></svg>
+            </div>
+            <div className="relative z-10">
+                <h3 className="text-2xl font-bold text-gray-800 group-hover:text-teal-600 transition-colors mb-2 flex items-center gap-2">
+                    <svg className="w-6 h-6 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                    Org Feedback
+                </h3>
+                <p className="text-gray-600">
+                Collect and submit feedback from organizations. Ensure their experience is being recorded.
+                </p>
+            </div>
+          </Link>
         </div>
       </div>
     </div>

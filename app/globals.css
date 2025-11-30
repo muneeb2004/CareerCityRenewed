@@ -4,18 +4,65 @@
   --color-primary: #3B82F6; /* blue-500 */
   --color-secondary: #8B5CF6; /* violet-500 */
   --color-accent: #10B981; /* emerald-500 */
+  
+  --animate-fade-in-up: fadeInUp 0.5s ease-out forwards;
+  --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 @layer base {
   body {
-    @apply bg-gray-100;
+    @apply bg-slate-50 text-gray-800 antialiased;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.15) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, rgba(244, 114, 182, 0.15) 0px, transparent 50%);
+    background-attachment: fixed;
+    min-height: 100vh;
   }
 }
 
-.glassmorphic {
-  background-color: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(12px);
-  border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+@layer utilities {
+  .glass {
+    @apply bg-white/60 backdrop-blur-lg border border-white/40 shadow-xl;
+  }
+  
+  .glass-hover {
+    @apply hover:bg-white/70 transition-all duration-300 hover:shadow-2xl hover:-translate-y-0.5 hover:border-white/60;
+  }
+
+  .btn-primary {
+    @apply bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 px-6 rounded-xl 
+    shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all duration-300 active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply bg-gradient-to-r from-violet-500 to-violet-600 text-white font-semibold py-3 px-6 rounded-xl 
+    shadow-lg hover:shadow-violet-500/30 hover:-translate-y-0.5 transition-all duration-300 active:scale-95;
+  }
+
+  .btn-accent {
+    @apply bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold py-3 px-6 rounded-xl 
+    shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 transition-all duration-300 active:scale-95;
+  }
+  
+  .input-modern {
+    @apply bg-white/50 border border-gray-200 text-gray-800 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full p-3 
+    backdrop-blur-sm transition-all duration-200 hover:bg-white/80 placeholder-gray-400 shadow-sm;
+  }
+  
+  .card-modern {
+    @apply bg-white/60 backdrop-blur-lg border border-white/40 shadow-xl rounded-2xl p-6 md:p-8 animate-fade-in-up;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

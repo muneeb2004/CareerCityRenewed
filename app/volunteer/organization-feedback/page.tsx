@@ -1,17 +1,38 @@
 'use client';
 
-import { useState } from 'react';
-import FeedbackForm from '@/lib/components/volunteer/FeedbackForm';
-import { addOrganizationFeedback } from '@/lib/firestore/organizationFeedback';
+import { useState, useEffect } from 'react';
+import FeedbackForm from '../../../src/lib/components/volunteer/FeedbackForm';
+import { addOrganizationFeedback } from '../../../src/lib/firestore/organizationFeedback';
+import { getAllOrganizationFeedbackQuestions } from '../../../src/lib/firestore/organizationFeedbackQuestions';
+import { OrganizationFeedbackQuestion } from '../../../src/lib/types';
 import toast, { Toaster } from 'react-hot-toast';
 
 export default function OrganizationFeedbackPage() {
   const [loading, setLoading] = useState(false);
+  const [questions, setQuestions] = useState<OrganizationFeedbackQuestion[]>([]);
 
-  const handleSubmit = async (organizationId: string, feedback: string) => {
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        console.log('Fetching organization feedback questions...');
+        const data = await getAllOrganizationFeedbackQuestions();
+        console.log('Fetched questions:', data);
+        setQuestions(data);
+      } catch (error) {
+        console.error('Error fetching questions:', error);
+        toast.error('Failed to load questions.');
+      }
+    };
+    fetchQuestions();
+  }, []);
+
+  const handleSubmit = async (
+    organizationId: string,
+    responses: Record<string, string>
+  ) => {
     setLoading(true);
     try {
-      await addOrganizationFeedback(organizationId, feedback);
+      await addOrganizationFeedback(organizationId, responses);
       toast.success('Feedback submitted successfully!');
     } catch (error) {
       console.error(error);
@@ -28,8 +49,7 @@ export default function OrganizationFeedbackPage() {
         title="Organization Feedback Form"
         idLabel="Organization ID"
         idPlaceholder="Enter organization ID"
-        feedbackLabel="Feedback"
-        feedbackPlaceholder="Enter feedback for the organization"
+        questions={questions}
         submitButtonText={loading ? 'Submitting...' : 'Submit Feedback'}
         onSubmit={handleSubmit}
       />

@@ -5,13 +5,13 @@ import { db } from '../firebase';
 
 export const addOrganizationFeedback = async (
   organizationId: string,
-  feedback: string
+  responses: Record<string, string | number | string[]>
 ): Promise<void> => {
   const feedbackCollection = collection(db, 'organizationFeedback');
 
   await addDoc(feedbackCollection, {
     organizationId,
-    feedback,
+    responses,
     createdAt: serverTimestamp(),
   });
 };

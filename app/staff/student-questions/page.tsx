@@ -2,20 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import {
-  createOrganizationFeedbackQuestion,
-  getAllOrganizationFeedbackQuestions,
-  updateOrganizationFeedbackQuestion,
-  deleteOrganizationFeedbackQuestion,
-} from '../../../src/lib/firestore/organizationFeedbackQuestions';
+  createVolunteerQuestion, // Keep using these functions, as they operate on the correct collection
+  getAllVolunteerQuestions,
+  updateVolunteerQuestion,
+  deleteVolunteerQuestion,
+} from '../../../src/lib/firestore/volunteerQuestions';
 import {
-  OrganizationFeedbackQuestion,
+  VolunteerQuestion,
   QUESTION_TYPES,
   QuestionType,
 } from '../../../src/lib/types';
 import toast, { Toaster } from 'react-hot-toast';
 
-export default function OrganizationFeedbackQuestionManagement() {
-  const [questions, setQuestions] = useState<OrganizationFeedbackQuestion[]>([]);
+export default function StudentQuestionManagement() { // Renamed component
+  const [questions, setQuestions] = useState<VolunteerQuestion[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState<{
     text: string;
@@ -30,14 +30,14 @@ export default function OrganizationFeedbackQuestionManagement() {
   });
   const [loading, setLoading] = useState(false);
   const [editingQuestion, setEditingQuestion] =
-    useState<OrganizationFeedbackQuestion | null>(null);
+    useState<VolunteerQuestion | null>(null);
 
   useEffect(() => {
     fetchQuestions();
   }, []);
 
   const fetchQuestions = async () => {
-    const data = await getAllOrganizationFeedbackQuestions();
+    const data = await getAllVolunteerQuestions();
     setQuestions(data);
   };
 
@@ -53,13 +53,13 @@ export default function OrganizationFeedbackQuestionManagement() {
     setLoading(true);
     try {
       if (editingQuestion) {
-        await updateOrganizationFeedbackQuestion(editingQuestion.questionId, form);
+        await updateVolunteerQuestion(editingQuestion.questionId, form);
         toast.success('Question updated!');
         setEditingQuestion(null);
           } else {
-            console.log('Attempting to create question...'); // Debug log
-            await createOrganizationFeedbackQuestion(form);
-            console.log('createOrganizationFeedbackQuestion resolved.'); // Debug log
+            console.log('Attempting to create student question...'); // Updated log
+            await createVolunteerQuestion(form);
+            console.log('createVolunteerQuestion resolved.'); // Debug log
             toast.success('Question added!');
           }
           setForm({ text: '', type: 'text', minLabel: '', maxLabel: '' });
@@ -77,7 +77,7 @@ export default function OrganizationFeedbackQuestionManagement() {
           setLoading(false);    }
   };
 
-  const handleEdit = (question: OrganizationFeedbackQuestion) => {
+  const handleEdit = (question: VolunteerQuestion) => {
     setEditingQuestion(question);
     setForm({
       text: question.text,
@@ -91,16 +91,12 @@ export default function OrganizationFeedbackQuestionManagement() {
   const handleDelete = async (questionId: string) => {
     if (window.confirm('Are you sure you want to delete this question?')) {
       try {
-        await deleteOrganizationFeedbackQuestion(questionId);
+        await deleteVolunteerQuestion(questionId);
         toast.success('Question deleted!');
         fetchQuestions();
-      } catch (err: unknown) {
+      } catch (err) {
         console.error(err);
-        if (err instanceof Error) {
-          toast.error(`Failed to delete question: ${err.message}`);
-        } else {
-          toast.error('An unknown error occurred while deleting the question.');
-        }
+        toast.error('Failed to delete question');
       }
     }
   };
@@ -113,9 +109,9 @@ export default function OrganizationFeedbackQuestionManagement() {
       <div className="card-modern flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
             <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">
-            Org Feedback Questions
+            Student Questions
             </h1>
-            <p className="text-gray-500 text-sm mt-1">Manage the questions asked to organizations</p>
+            <p className="text-gray-500 text-sm mt-1">Manage the questions asked to students</p>
         </div>
         <button
           className={`${showAddForm ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg' : 'btn-primary'} font-semibold py-2 px-4 rounded-xl transition-all duration-200`}
@@ -147,7 +143,7 @@ export default function OrganizationFeedbackQuestionManagement() {
                 name="text"
                 value={form.text}
                 onChange={handleInputChange}
-                placeholder="e.g., How was your overall experience?"
+                placeholder="e.g., How helpful was the volunteer?"
                 className="input-modern"
                 required
             />
@@ -182,7 +178,7 @@ export default function OrganizationFeedbackQuestionManagement() {
                     name="minLabel"
                     value={form.minLabel}
                     onChange={handleInputChange}
-                    placeholder="e.g. Least Favorite"
+                    placeholder="e.g. Not Helpful"
                     className="input-modern"
                 />
               </div>
@@ -192,7 +188,7 @@ export default function OrganizationFeedbackQuestionManagement() {
                     name="maxLabel"
                     value={form.maxLabel}
                     onChange={handleInputChange}
-                    placeholder="e.g. Most Favorite"
+                    placeholder="e.g. Very Helpful"
                     className="input-modern"
                 />
               </div>
@@ -219,7 +215,7 @@ export default function OrganizationFeedbackQuestionManagement() {
       {/* Questions List */}
       <div className="card-modern">
         <h2 className="text-xl font-bold mb-6 text-gray-800 flex items-center gap-2">
-            <svg className="w-6 h-6 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <svg className="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
              Existing Questions
              <span className="text-sm font-normal text-gray-400 ml-2">({questions.length})</span>
         </h2>
@@ -232,7 +228,7 @@ export default function OrganizationFeedbackQuestionManagement() {
               <div>
                 <p className="font-bold text-gray-800 text-lg">{question.text}</p>
                 <div className="flex items-center gap-3 mt-1">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-violet-600 bg-violet-50 px-2 py-1 rounded-md">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">
                         {question.type}
                     </span>
                     {question.type === 'range' && (

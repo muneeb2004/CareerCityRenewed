@@ -24,13 +24,24 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
-// Log useful info during development to confirm env usage
+// Development-time logs & runtime checks to help debugging env issues
 if (process.env.NODE_ENV === 'development') {
-  // eslint-disable-next-line no-console
-  console.log('[firebase] config projectId=', firebaseConfig.projectId);
+  // Basic presence checks (don't log secrets in production)
+  const missing: string[] = [];
+  if (!firebaseConfig.apiKey) missing.push('NEXT_PUBLIC_FIREBASE_API_KEY');
+  if (!firebaseConfig.projectId) missing.push('NEXT_PUBLIC_FIREBASE_PROJECT_ID');
+  if (!firebaseConfig.authDomain) missing.push('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN');
+
+  if (missing.length > 0) {
+    // eslint-disable-next-line no-console
+    console.warn('[firebase] Missing env vars:', missing.join(', '), '\nEnsure .env.local is present and restart the dev server.');
+  } else {
+    // eslint-disable-next-line no-console
+    console.log('[firebase] Initializing Firebase for project:', firebaseConfig.projectId);
+  }
 }
 
-// Use default Firestore database
+// Initialize Firestore (do not force a specific database id)
 export const db = getFirestore(app);
 
 export const auth = getAuth(app);
