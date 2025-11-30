@@ -6,12 +6,12 @@ import {
   getAllOrganizationFeedbackQuestions,
   updateOrganizationFeedbackQuestion,
   deleteOrganizationFeedbackQuestion,
-} from '../../../src/lib/firestore/organizationFeedbackQuestions';
+} from '../../../src/firestore/organizationFeedbackQuestions';
 import {
   OrganizationFeedbackQuestion,
   QUESTION_TYPES,
   QuestionType,
-} from '../../../src/lib/types';
+} from '../../../src/types';
 import toast, { Toaster } from 'react-hot-toast';
 
 export default function OrganizationFeedbackQuestionManagement() {

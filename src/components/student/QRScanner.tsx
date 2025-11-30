@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { checkIfVisited } from '../../firestore/student';
-import { getStudentSession } from '../../storage';
+import { getStudentSession } from '../../lib/storage';
 import toast from 'react-hot-toast';
 
 interface QRScannerProps {

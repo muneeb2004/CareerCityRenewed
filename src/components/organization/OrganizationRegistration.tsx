@@ -4,7 +4,7 @@
 
 import { useState } from 'react';
 import { createOrganization } from '../../firestore/organizations';
-import { slugify } from '../../utils';
+import { slugify } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import { Organization } from '../../types';
 import { serverTimestamp } from 'firebase/firestore';

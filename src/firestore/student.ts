@@ -13,7 +13,7 @@ import {
   where,
   getDocs,
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../lib/firebase';
 import { Student, Program } from '../types';
 
 export const getStudent = async (studentId: string): Promise<Student | null> => {

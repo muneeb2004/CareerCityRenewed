@@ -1,6 +1,6 @@
 // Prompt for Copilot: "Create validation functions for student ID format (2 letters + 5 digits), email generation, and program validation"
 
-import { PROGRAMS, Program } from './types';
+import { PROGRAMS, Program } from '../types';
 
 export const validateStudentId = (id: string): { isValid: boolean; error: string | null } => {
   const regex = /^[a-zA-Z]{2}\d{5}$/;

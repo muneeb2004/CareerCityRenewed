@@ -15,7 +15,7 @@ import {
   documentId,
   deleteDoc,
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../lib/firebase';
 import { Organization } from '../types';
 
 export const getOrganization = async (organizationId: string): Promise<Organization | null> => {

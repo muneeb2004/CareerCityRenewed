@@ -1,6 +1,6 @@
 // Prompt for Copilot: "Create localStorage utilities for student session management with expiration (12 hours)"
 
-import { Program } from './types';
+import { Program } from '../types';
 
 const STORAGE_KEYS = {
   STUDENT_ID: 'hu_career_city_student',

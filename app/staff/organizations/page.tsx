@@ -7,9 +7,9 @@ import {
   createOrganization,
   updateOrganization,
   deleteOrganization,
-} from '../../../src/lib/firestore/organizations';
-import QRCodeGenerator from '../../../src/lib/components/organization/QRCodeGenerator';
-import { Organization } from '../../../src/lib/types';
+} from '../../../src/firestore/organizations';
+import QRCodeGenerator from '../../../src/components/organization/QRCodeGenerator';
+import { Organization } from '../../../src/types';
 import toast, { Toaster } from 'react-hot-toast';
 
 interface OrganizationForm {

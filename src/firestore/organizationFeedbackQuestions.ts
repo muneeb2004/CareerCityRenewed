@@ -7,7 +7,7 @@ import {
   deleteDoc,
   serverTimestamp,
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../lib/firebase';
 import { OrganizationFeedbackQuestion } from '../types';
 
 export const createOrganizationFeedbackQuestion = async (

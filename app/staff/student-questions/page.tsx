@@ -6,12 +6,12 @@ import {
   getAllVolunteerQuestions,
   updateVolunteerQuestion,
   deleteVolunteerQuestion,
-} from '../../../src/lib/firestore/volunteerQuestions';
+} from '../../../src/firestore/volunteerQuestions';
 import {
   VolunteerQuestion,
   QUESTION_TYPES,
   QuestionType,
-} from '../../../src/lib/types';
+} from '../../../src/types';
 import toast, { Toaster } from 'react-hot-toast';
 
 export default function StudentQuestionManagement() { // Renamed component

@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import FeedbackForm from '../../../src/lib/components/volunteer/FeedbackForm';
-import { addOrganizationFeedback } from '../../../src/lib/firestore/organizationFeedback';
-import { getAllOrganizationFeedbackQuestions } from '../../../src/lib/firestore/organizationFeedbackQuestions';
-import { OrganizationFeedbackQuestion } from '../../../src/lib/types';
+import FeedbackForm from '../../../src/components/volunteer/FeedbackForm';
+import { addOrganizationFeedback } from '../../../src/firestore/organizationFeedback';
+import { getAllOrganizationFeedbackQuestions } from '../../../src/firestore/organizationFeedbackQuestions';
+import { OrganizationFeedbackQuestion } from '../../../src/types';
 import toast, { Toaster } from 'react-hot-toast';
 
 export default function OrganizationFeedbackPage() {

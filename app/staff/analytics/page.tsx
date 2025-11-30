@@ -15,7 +15,7 @@ import {
   LineChart,
   Line,
 } from 'recharts';
-import { Scan } from '../../../src/lib/types';
+import { Scan } from '../../../src/types';
 import Papa from 'papaparse';
 
 interface AnalyticsData {

@@ -7,7 +7,7 @@ import {
   validateStudentId,
   generateEmail,
   validateProgram,
-} from '../../validation';
+} from '../../lib/validation';
 import {
   createStudent,
   getStudent,
@@ -15,7 +15,7 @@ import {
 } from '../../firestore/student';
 import { createScan } from '../../firestore/scans';
 import { updateOrganizationVisitors } from '../../firestore/organizations';
-import { saveStudentSession } from '../../storage';
+import { saveStudentSession } from '../../lib/storage';
 import { PROGRAMS, Program } from '../../types';
 import toast from 'react-hot-toast';
 

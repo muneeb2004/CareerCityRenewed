@@ -8,13 +8,13 @@ import {
   clearStudentSession,
   StudentSession,
 } from '../../src/lib/storage';
-import { getOrganization, updateOrganizationVisitors } from '../../src/lib/firestore/organizations';
-import { getStudent, updateStudentVisit } from '../../src/lib/firestore/student';
-import { getScansByStudent, createScan } from '../../src/lib/firestore/scans';
+import { getOrganization, updateOrganizationVisitors } from '../../src/firestore/organizations';
+import { getStudent, updateStudentVisit } from '../../src/firestore/student';
+import { getScansByStudent, createScan } from '../../src/firestore/scans';
 import { generateEmail } from '../../src/lib/validation';
-import StudentRegistration from '../../src/lib/components/student/StudentRegistration';
-import QRScanner from '../../src/lib/components/student/QRScanner';
-import { Student, Scan } from '../../src/lib/types';
+import StudentRegistration from '../../src/components/student/StudentRegistration';
+import QRScanner from '../../src/components/student/QRScanner';
+import { Student, Scan } from '../../src/types';
 import toast, { Toaster } from 'react-hot-toast';
 
 export default function StudentPortal() {

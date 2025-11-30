@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import FeedbackForm from '../../../src/lib/components/volunteer/FeedbackForm';
-import { addStudentFeedback } from '../../../src/lib/firestore/studentFeedback';
-import { getAllVolunteerQuestions } from '../../../src/lib/firestore/volunteerQuestions'; // Note: Using getAllVolunteerQuestions as per previous turn's context
-import { VolunteerQuestion } from '../../../src/lib/types';
+import FeedbackForm from '../../../src/components/volunteer/FeedbackForm';
+import { addStudentFeedback } from '../../../src/firestore/studentFeedback';
+import { getAllVolunteerQuestions } from '../../../src/firestore/volunteerQuestions'; // Note: Using getAllVolunteerQuestions as per previous turn's context
+import { VolunteerQuestion } from '../../../src/types';
 import toast, { Toaster } from 'react-hot-toast';
 
 export default function StudentFeedbackPage() {

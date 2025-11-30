@@ -9,7 +9,7 @@ import {
   getDocs,
   orderBy,
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../lib/firebase';
 import { Program, Scan } from '../types';
 
 export const createScan = async (
