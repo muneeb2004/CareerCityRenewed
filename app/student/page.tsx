@@ -176,7 +176,7 @@ export default function StudentPortal() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* QR Scanner */}
-            <div className="lg:col-span-1 order-2 lg:order-1">
+            <div className="lg:col-span-1 order-1">
                  <div className="card-modern h-full">
                     <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
                         <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4c1 1 0 0 1 1 1v3c0 1-1 1-1 1h-1v-1a2 2 0 1 0-2 0v1h-1a2 2 0 0 0-2 0v-1H9.05a1 1 0 0 0-.82-1.566a2 2 0 0 0-2.806 0A1 1 0 0 0 5 12v2a1 1 0 0 0 1 1h1v1c0 1 0 1 1 1h1v-1.82a1 1 0 0 0-.26-.726A2 2 0 0 0 7.17 11H7v-.17a1 1 0 0 0-1.147-.983A2 2 0 0 0 5 11h.02a1 1 0 0 0 .01-1.832A1 1 0 0 0 5.03 7h.05a2 2 0 0 0 3.84 0h.05A1 1 0 0 0 9 7h1.05a1 1 0 0 0 .82-1.566A2 2 0 0 0 10.05 5H9a1 1 0 0 0-1 .99V7m3 0h5" /></svg>
@@ -187,7 +187,7 @@ export default function StudentPortal() {
             </div>
 
             {/* Visit History */}
-            <div className="lg:col-span-2 order-1 lg:order-2">
+            <div className="lg:col-span-2 order-2">
                 {scans.length > 0 ? (
                     <div className="card-modern h-full">
                     <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
