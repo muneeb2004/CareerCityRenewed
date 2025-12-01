@@ -17,7 +17,7 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState('');
   const [cameras, setCameras] = useState<any[]>([]);
-  const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
+  const [activeCameraId, setActiveCameraId] = useState<string | null>(null);
 
   const onScanError = useCallback((errorMessage: string) => {
     // Ignore scan errors (happens when no QR in view)
@@ -101,14 +101,34 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
 
       setIsScanning(true);
       setError(''); // Clear previous errors on success
+      if (cameraId) setActiveCameraId(cameraId);
 
       // Fetch cameras if not already fetched
       if (cameras.length === 0) {
           Html5Qrcode.getCameras().then(devices => {
               if (devices && devices.length > 0) {
                   setCameras(devices);
-                  // Try to find the active camera index if possible, otherwise default to 0
-                  // Often 'environment' maps to the last camera or specific one, but hard to guess.
+                  
+                  // Auto-switch to back camera if we are in generic mode and find a back camera
+                  if (!cameraId) {
+                      const backCamera = devices.find(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('environment'));
+                      if (backCamera) {
+                          console.log("Auto-switching to back camera:", backCamera.label);
+                          // We need to restart the scanner with this specific ID
+                          // Use a small timeout to allow the current start to settle? 
+                          // Actually we can just call startScanner again, it handles stop.
+                          startScanner(backCamera.id); 
+                      } else {
+                          // If no back camera found specifically, default to the last one (often back) 
+                          // or just stick with what facingMode gave us.
+                          // If we stick with facingMode, we might be on front.
+                          // Let's try to default to the LAST camera if > 1, as back is usually last.
+                          if (devices.length > 1 && !devices[0].label.toLowerCase().includes('back')) {
+                              const lastCam = devices[devices.length - 1];
+                               startScanner(lastCam.id);
+                          }
+                      }
+                  }
               }
           }).catch(err => console.log("Error getting cameras", err));
       }
@@ -139,16 +159,18 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
   const handleSwitchCamera = useCallback(async () => {
       if (cameras.length < 2) return;
 
-      const nextIndex = (currentCameraIndex + 1) % cameras.length;
-      setCurrentCameraIndex(nextIndex);
-      const nextCameraId = cameras[nextIndex].id;
+      // Find current index
+      let currentIndex = 0;
+      if (activeCameraId) {
+          currentIndex = cameras.findIndex(c => c.id === activeCameraId);
+          if (currentIndex === -1) currentIndex = 0;
+      }
 
-      // Stop current scanner logic is handled inside startScanner's cleanup block usually, 
-      // but better to stop explicitly to update state if needed.
-      // startScanner handles stop/start.
+      const nextIndex = (currentIndex + 1) % cameras.length;
+      const nextCameraId = cameras[nextIndex].id;
       
       await startScanner(nextCameraId);
-  }, [cameras, currentCameraIndex, startScanner]);
+  }, [cameras, activeCameraId, startScanner]);
 
   const stopScanner = useCallback(async () => {
     if (scannerRef.current) {
