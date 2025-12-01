@@ -3,7 +3,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { checkIfVisited } from '../../firestore/student';
 import { getStudentSession } from '../../lib/storage';
 import toast from 'react-hot-toast';
@@ -53,15 +53,27 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
       const element = document.getElementById('qr-reader');
       if (!element) return;
 
-      const scanner = new Html5Qrcode('qr-reader');
+      const scanner = new Html5Qrcode('qr-reader', {
+        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+        verbose: false
+      });
       scannerRef.current = scanner;
 
       await scanner.start(
-        { facingMode: 'environment' },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
+        { 
+          facingMode: 'environment',
+          // iOS Optimization: Limit resolution to avoid processing 4K streams in JS
+          width: { min: 640, ideal: 720, max: 1280 },
+          height: { min: 480, ideal: 720, max: 1080 }
         },
+        {
+          fps: 10, // Increased for faster detection
+          qrbox: { width: 250, height: 250 },
+          disableFlip: true,
+          experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true, // Use native API if available (much faster)
+          },
+        } as any, // Cast to any to support experimentalFeatures
         handleScanSuccess,
         onScanError
       );
@@ -74,13 +86,16 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
   }, [handleScanSuccess, onScanError]);
 
   const stopScanner = useCallback(async () => {
-    if (scannerRef.current && isScanning) {
-      try {
-        await scannerRef.current.stop();
-        scannerRef.current.clear();
-      } catch (err) {
-        console.error('Error stopping scanner:', err);
-      }
+    if (scannerRef.current) {
+        try {
+            if (isScanning) {
+                await scannerRef.current.stop();
+            }
+            scannerRef.current.clear();
+            scannerRef.current = null; // Clear ref
+        } catch (err) {
+            console.error('Error stopping scanner:', err);
+        }
     }
   }, [isScanning]);
 
