@@ -75,16 +75,16 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
       scannerRef.current = scanner;
 
       await scanner.start(
-        { 
-          facingMode: 'environment',
-          // iOS Optimization: Limit resolution to avoid processing 4K streams in JS
-          width: { min: 640, ideal: 720, max: 1280 },
-          height: { min: 480, ideal: 720, max: 1080 }
-        },
+        { facingMode: 'environment' },
         {
           fps: 10, // Increased for faster detection
           qrbox: { width: 250, height: 250 },
           disableFlip: true,
+          videoConstraints: {
+            // iOS Optimization: Limit resolution to avoid processing 4K streams in JS
+            width: { min: 640, ideal: 720, max: 1280 },
+            height: { min: 480, ideal: 720, max: 1080 },
+          },
           experimentalFeatures: {
             useBarCodeDetectorIfSupported: true, // Use native API if available (much faster)
           },
