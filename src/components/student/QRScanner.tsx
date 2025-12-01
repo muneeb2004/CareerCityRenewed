@@ -86,11 +86,7 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
           fps: 10, // Increased for faster detection
           qrbox: { width: 250, height: 250 },
           disableFlip: true,
-          videoConstraints: {
-            // iOS Optimization: Limit resolution to avoid processing 4K streams in JS
-            width: { min: 640, ideal: 720, max: 1280 },
-            height: { min: 480, ideal: 720, max: 1080 },
-          },
+          // Removed videoConstraints to fix default camera selection issues
           experimentalFeatures: {
             useBarCodeDetectorIfSupported: true, // Use native API if available (much faster)
           },
@@ -108,27 +104,6 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
           Html5Qrcode.getCameras().then(devices => {
               if (devices && devices.length > 0) {
                   setCameras(devices);
-                  
-                  // Auto-switch to back camera if we are in generic mode and find a back camera
-                  if (!cameraId) {
-                      const backCamera = devices.find(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('environment'));
-                      if (backCamera) {
-                          console.log("Auto-switching to back camera:", backCamera.label);
-                          // We need to restart the scanner with this specific ID
-                          // Use a small timeout to allow the current start to settle? 
-                          // Actually we can just call startScanner again, it handles stop.
-                          startScanner(backCamera.id); 
-                      } else {
-                          // If no back camera found specifically, default to the last one (often back) 
-                          // or just stick with what facingMode gave us.
-                          // If we stick with facingMode, we might be on front.
-                          // Let's try to default to the LAST camera if > 1, as back is usually last.
-                          if (devices.length > 1 && !devices[0].label.toLowerCase().includes('back')) {
-                              const lastCam = devices[devices.length - 1];
-                               startScanner(lastCam.id);
-                          }
-                      }
-                  }
               }
           }).catch(err => console.log("Error getting cameras", err));
       }
