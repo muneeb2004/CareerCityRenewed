@@ -48,10 +48,25 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
   );
 
   const startScanner = useCallback(async () => {
+    // Check if browser supports media devices
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setError('Camera API is not supported in this browser. Please make sure you are using HTTPS.');
+      return;
+    }
+
     try {
       // Ensure element exists before starting
       const element = document.getElementById('qr-reader');
       if (!element) return;
+
+      // Clear any existing scanner instance
+      if (scannerRef.current) {
+        try {
+           await scannerRef.current.stop();
+        } catch (e) {
+           // ignore stop error
+        }
+      }
 
       const scanner = new Html5Qrcode('qr-reader', {
         formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
@@ -79,9 +94,27 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
       );
 
       setIsScanning(true);
-    } catch (err) {
-      console.error('Scanner error:', err);
-      setError('Camera access denied or unavailable');
+      setError(''); // Clear previous errors on success
+    } catch (err: any) {
+      console.error('Scanner error details:', err);
+      
+      let errorMessage = 'Camera access denied or unavailable.';
+      
+      if (typeof err === 'string') {
+          errorMessage = err;
+      } else if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          errorMessage = 'Camera permission was denied. Please allow camera access in your browser settings.';
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+          errorMessage = 'No camera found on this device.';
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+          errorMessage = 'Camera is being used by another application or is invalid.';
+      } else if (err.name === 'OverconstrainedError') {
+          errorMessage = 'Camera does not meet the required resolution constraints.';
+      } else if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+          errorMessage = 'Camera access requires a secure HTTPS connection.';
+      }
+
+      setError(errorMessage);
     }
   }, [handleScanSuccess, onScanError]);
 
