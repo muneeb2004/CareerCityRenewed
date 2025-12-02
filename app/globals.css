@@ -50,6 +50,21 @@
     @apply bg-white/50 border border-gray-200 text-gray-800 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full p-3 
     backdrop-blur-sm transition-all duration-200 hover:bg-white/80 placeholder-gray-400 shadow-sm;
   }
+
+  /* Style select dropdowns */
+  select.input-modern {
+    @apply cursor-pointer;
+  }
+
+  select.input-modern option {
+    @apply bg-white text-gray-800 py-2 px-3;
+  }
+
+  select.input-modern option:hover,
+  select.input-modern option:focus,
+  select.input-modern option:checked {
+    @apply bg-blue-500 text-white;
+  }
   
   .card-modern {
     @apply bg-white/60 backdrop-blur-lg border border-white/40 shadow-xl rounded-2xl p-6 md:p-8 animate-fade-in-up;

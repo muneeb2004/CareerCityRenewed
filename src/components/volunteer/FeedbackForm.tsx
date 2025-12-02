@@ -10,6 +10,9 @@ export interface Question {
   options?: string[];
   minLabel?: string;
   maxLabel?: string;
+  scaleMax?: number;
+  followUpLabel?: string;
+  placeholder?: string;
 }
 
 interface FeedbackFormProps {
@@ -18,7 +21,7 @@ interface FeedbackFormProps {
   idPlaceholder: string;
   questions: Question[];
   submitButtonText: string;
-  onSubmit: (id: string, responses: Record<string, string>) => void;
+  onSubmit: (id: string, responses: Record<string, string | string[]>) => void;
 }
 
 export default function FeedbackForm({
@@ -30,7 +33,7 @@ export default function FeedbackForm({
   onSubmit,
 }: FeedbackFormProps) {
   const [id, setId] = useState('');
-  const [responses, setResponses] = useState<Record<string, string>>({});
+  const [responses, setResponses] = useState<Record<string, string | string[]>>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,8 +42,205 @@ export default function FeedbackForm({
     setResponses({});
   };
 
-  const handleResponseChange = (questionId: string, value: string) => {
+  const handleResponseChange = (questionId: string, value: string | string[]) => {
     setResponses((prev) => ({ ...prev, [questionId]: value }));
+  };
+
+  const handleCheckboxChange = (questionId: string, option: string, checked: boolean) => {
+    const current = (responses[questionId] as string[]) || [];
+    if (checked) {
+      handleResponseChange(questionId, [...current, option]);
+    } else {
+      handleResponseChange(questionId, current.filter((o) => o !== option));
+    }
+  };
+
+  // Render scale/range selector
+  const renderScale = (question: Question, namePrefix = '') => {
+    const max = question.scaleMax || 5;
+    const values = Array.from({ length: max }, (_, i) => i + 1);
+    const fieldName = namePrefix ? `${question.questionId}_${namePrefix}` : question.questionId;
+    
+    return (
+      <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+        <div className="flex justify-between text-xs font-semibold text-gray-500 px-1 mb-3 uppercase tracking-wide">
+          <span>{question.minLabel || '1'}</span>
+          <span>{question.maxLabel || String(max)}</span>
+        </div>
+        <div className="flex justify-between items-center px-2">
+          {values.map((value) => (
+            <label
+              key={value}
+              className="flex flex-col items-center cursor-pointer group relative"
+            >
+              <input
+                type="radio"
+                name={fieldName}
+                value={value}
+                checked={responses[fieldName] === String(value)}
+                onChange={(e) => handleResponseChange(fieldName, e.target.value)}
+                className="sr-only peer"
+                required
+              />
+              <div className="w-10 h-10 flex items-center justify-center rounded-full bg-white border-2 border-gray-200 text-gray-500 font-bold transition-all duration-200 peer-checked:border-blue-500 peer-checked:bg-blue-500 peer-checked:text-white peer-checked:scale-110 group-hover:border-blue-300 shadow-sm">
+                {value}
+              </div>
+            </label>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Render multiple choice (radio - single selection)
+  const renderMultipleChoice = (question: Question, namePrefix = '') => {
+    const fieldName = namePrefix ? `${question.questionId}_${namePrefix}` : question.questionId;
+    
+    return (
+      <div className="space-y-2">
+        {(question.options || []).map((option) => (
+          <label
+            key={option}
+            className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50"
+          >
+            <input
+              type="radio"
+              name={fieldName}
+              value={option}
+              checked={responses[fieldName] === option}
+              onChange={(e) => handleResponseChange(fieldName, e.target.value)}
+              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+              required
+            />
+            <span className="ml-3 text-gray-700">{option}</span>
+          </label>
+        ))}
+      </div>
+    );
+  };
+
+  // Render checkbox (multiple selection)
+  const renderCheckbox = (question: Question) => {
+    const selected = (responses[question.questionId] as string[]) || [];
+    
+    return (
+      <div className="space-y-2">
+        {(question.options || []).map((option) => (
+          <label
+            key={option}
+            className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50"
+          >
+            <input
+              type="checkbox"
+              value={option}
+              checked={selected.includes(option)}
+              onChange={(e) => handleCheckboxChange(question.questionId, option, e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span className="ml-3 text-gray-700">{option}</span>
+          </label>
+        ))}
+      </div>
+    );
+  };
+
+  // Render number input
+  const renderNumber = (question: Question) => (
+    <input
+      type="number"
+      id={question.questionId}
+      value={(responses[question.questionId] as string) || ''}
+      onChange={(e) => handleResponseChange(question.questionId, e.target.value)}
+      placeholder={question.placeholder || 'Enter a number'}
+      className="input-modern"
+      min="0"
+      required
+    />
+  );
+
+  // Render text input
+  const renderText = (question: Question) => (
+    <input
+      type="text"
+      id={question.questionId}
+      value={(responses[question.questionId] as string) || ''}
+      onChange={(e) => handleResponseChange(question.questionId, e.target.value)}
+      placeholder={question.placeholder || ''}
+      className="input-modern"
+      required
+    />
+  );
+
+  // Render textarea
+  const renderTextarea = (question: Question) => (
+    <textarea
+      id={question.questionId}
+      value={(responses[question.questionId] as string) || ''}
+      onChange={(e) => handleResponseChange(question.questionId, e.target.value)}
+      placeholder={question.placeholder || ''}
+      className="input-modern min-h-[120px] resize-y"
+      required
+    />
+  );
+
+  // Render combined scale + text
+  const renderScaleText = (question: Question) => (
+    <div className="space-y-4">
+      {renderScale(question, 'scale')}
+      <div>
+        <label className="block text-sm font-medium text-gray-600 mb-2">
+          {question.followUpLabel || 'Additional comments (optional)'}
+        </label>
+        <textarea
+          value={(responses[`${question.questionId}_text`] as string) || ''}
+          onChange={(e) => handleResponseChange(`${question.questionId}_text`, e.target.value)}
+          placeholder={question.placeholder || 'Please elaborate...'}
+          className="input-modern min-h-[80px] resize-y"
+        />
+      </div>
+    </div>
+  );
+
+  // Render combined multiple choice + text
+  const renderMultipleChoiceText = (question: Question) => (
+    <div className="space-y-4">
+      {renderMultipleChoice(question, 'choice')}
+      <div>
+        <label className="block text-sm font-medium text-gray-600 mb-2">
+          {question.followUpLabel || 'Additional comments (optional)'}
+        </label>
+        <textarea
+          value={(responses[`${question.questionId}_text`] as string) || ''}
+          onChange={(e) => handleResponseChange(`${question.questionId}_text`, e.target.value)}
+          placeholder={question.placeholder || 'Please elaborate...'}
+          className="input-modern min-h-[80px] resize-y"
+        />
+      </div>
+    </div>
+  );
+
+  // Main question renderer
+  const renderQuestion = (question: Question) => {
+    switch (question.type) {
+      case 'range':
+        return renderScale(question);
+      case 'number':
+        return renderNumber(question);
+      case 'multiplechoice':
+        return renderMultipleChoice(question);
+      case 'checkbox':
+        return renderCheckbox(question);
+      case 'text':
+        return renderText(question);
+      case 'textarea':
+        return renderTextarea(question);
+      case 'scale_text':
+        return renderScaleText(question);
+      case 'multiplechoice_text':
+        return renderMultipleChoiceText(question);
+      default:
+        return renderText(question);
+    }
   };
 
   return (
@@ -80,58 +280,7 @@ export default function FeedbackForm({
                   >
                     {question.text}
                   </label>
-                  {question.type === 'textarea' ? (
-                    <textarea
-                      id={question.questionId}
-                      value={responses[question.questionId] || ''}
-                      onChange={(e) =>
-                        handleResponseChange(question.questionId, e.target.value)
-                      }
-                      className="input-modern min-h-[120px] resize-y"
-                      required
-                    />
-                  ) : question.type === 'range' ? (
-                    <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100">
-                      <div className="flex justify-between text-xs font-semibold text-gray-500 px-1 mb-3 uppercase tracking-wide">
-                        <span>{question.minLabel || '1'}</span>
-                        <span>{question.maxLabel || '5'}</span>
-                      </div>
-                      <div className="flex justify-between items-center px-2">
-                        {[1, 2, 3, 4, 5].map((value) => (
-                          <label
-                            key={value}
-                            className="flex flex-col items-center cursor-pointer group relative"
-                          >
-                            <input
-                              type="radio"
-                              name={question.questionId}
-                              value={value}
-                              checked={responses[question.questionId] === String(value)}
-                              onChange={(e) =>
-                                handleResponseChange(question.questionId, e.target.value)
-                              }
-                              className="sr-only peer"
-                              required
-                            />
-                            <div className="w-10 h-10 flex items-center justify-center rounded-full bg-white border-2 border-gray-200 text-gray-500 font-bold transition-all duration-200 peer-checked:border-blue-500 peer-checked:bg-blue-500 peer-checked:text-white peer-checked:scale-110 group-hover:border-blue-300 shadow-sm">
-                                {value}
-                            </div>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <input
-                      type="text"
-                      id={question.questionId}
-                      value={responses[question.questionId] || ''}
-                      onChange={(e) =>
-                        handleResponseChange(question.questionId, e.target.value)
-                      }
-                      className="input-modern"
-                      required
-                    />
-                  )}
+                  {renderQuestion(question)}
                 </div>
               ))
             )}

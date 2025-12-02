@@ -76,9 +76,26 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
       });
       scannerRef.current = scanner;
 
-      const cameraConfig = cameraId 
-        ? { deviceId: { exact: cameraId } }
-        : { facingMode: 'environment' };
+      let cameraConfig: any = { facingMode: 'environment' };
+
+      if (cameraId) {
+          cameraConfig = { deviceId: { exact: cameraId } };
+      } else {
+          // Initial load - try to find back camera explicitly
+           try {
+              const devices = await Html5Qrcode.getCameras();
+              if (devices && devices.length > 0) {
+                  setCameras(devices);
+                  const backCam = devices.find(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('environment'));
+                  const targetCam = backCam || devices[devices.length - 1]; 
+                  cameraConfig = { deviceId: { exact: targetCam.id } };
+                  setActiveCameraId(targetCam.id);
+              }
+           } catch (err) {
+               // Permissions likely not granted yet, fall back to facingMode which triggers prompt
+               console.log("Permission not granted yet, using generic constraint");
+           }
+      }
 
       await scanner.start(
         cameraConfig,

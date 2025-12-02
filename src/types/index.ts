@@ -63,25 +63,61 @@ export interface StudentFeedback {
   };
 }
 
-export const QUESTION_TYPES = ['range', 'text', 'textarea'] as const;
+// Question Types:
+// - range: Scale/rating (1-5, 1-10)
+// - number: Numeric input (e.g., count of CVs collected)
+// - multiplechoice: Radio buttons (single selection)
+// - checkbox: Checkboxes (multiple selection)
+// - text: Short text input
+// - textarea: Long text input
+// - scale_text: Combined scale + text follow-up
+// - multiplechoice_text: Combined multiple choice + text follow-up
+export const QUESTION_TYPES = [
+  'range',
+  'number', 
+  'multiplechoice',
+  'checkbox',
+  'text',
+  'textarea',
+  'scale_text',
+  'multiplechoice_text',
+] as const;
 export type QuestionType = typeof QUESTION_TYPES[number];
+
+// Human-readable labels for question types
+export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
+  range: 'Range/Scale (1-5)',
+  number: 'Number',
+  multiplechoice: 'Multiple Choice (Single)',
+  checkbox: 'Multiple Choice (Multi)',
+  text: 'Short Text',
+  textarea: 'Long Text',
+  scale_text: 'Scale + Text',
+  multiplechoice_text: 'Multiple Choice + Text',
+};
 
 export interface OrganizationFeedbackQuestion {
   questionId: string;
   text: string;
   type: QuestionType;
-  options?: string[]; // For multiple choice, etc.
-  minLabel?: string;
-  maxLabel?: string;
+  options?: string[]; // For multiplechoice, checkbox
+  minLabel?: string;  // For range/scale types
+  maxLabel?: string;  // For range/scale types
+  scaleMax?: number;  // Max value for scale (default 5)
+  followUpLabel?: string; // Label for combined type text input
+  placeholder?: string; // Placeholder for text inputs
 }
 
 export interface VolunteerQuestion {
   questionId: string;
   text: string;
   type: QuestionType;
-  options?: string[];
-  minLabel?: string;
-  maxLabel?: string;
+  options?: string[];   // For multiplechoice, checkbox
+  minLabel?: string;    // For range/scale types
+  maxLabel?: string;    // For range/scale types
+  scaleMax?: number;    // Max value for scale (default 5)
+  followUpLabel?: string; // Label for combined type text input
+  placeholder?: string; // Placeholder for text inputs
 }
 
 export interface OrganizationFeedback {

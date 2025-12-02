@@ -10,9 +10,11 @@ import {
 import {
   OrganizationFeedbackQuestion,
   QUESTION_TYPES,
+  QUESTION_TYPE_LABELS,
   QuestionType,
 } from '../../../src/types';
 import toast, { Toaster } from 'react-hot-toast';
+import CustomSelect from '../../../src/lib/components/ui/CustomSelect';
 
 export default function OrganizationFeedbackQuestionManagement() {
   const [questions, setQuestions] = useState<OrganizationFeedbackQuestion[]>([]);
@@ -22,12 +24,21 @@ export default function OrganizationFeedbackQuestionManagement() {
     type: QuestionType;
     minLabel?: string;
     maxLabel?: string;
+    scaleMax?: number;
+    options?: string[];
+    followUpLabel?: string;
+    placeholder?: string;
   }>({
     text: '',
     type: 'text',
     minLabel: '',
     maxLabel: '',
+    scaleMax: 5,
+    options: [],
+    followUpLabel: '',
+    placeholder: '',
   });
+  const [optionInput, setOptionInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [editingQuestion, setEditingQuestion] =
     useState<OrganizationFeedbackQuestion | null>(null);
@@ -44,7 +55,39 @@ export default function OrganizationFeedbackQuestionManagement() {
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'scaleMax') {
+      setForm({ ...form, [name]: parseInt(value) || 5 });
+    } else {
+      setForm({ ...form, [name]: value });
+    }
+  };
+
+  const addOption = () => {
+    if (optionInput.trim()) {
+      setForm({ ...form, options: [...(form.options || []), optionInput.trim()] });
+      setOptionInput('');
+    }
+  };
+
+  const removeOption = (index: number) => {
+    const newOptions = [...(form.options || [])];
+    newOptions.splice(index, 1);
+    setForm({ ...form, options: newOptions });
+  };
+
+  const resetForm = () => {
+    setForm({
+      text: '',
+      type: 'text',
+      minLabel: '',
+      maxLabel: '',
+      scaleMax: 5,
+      options: [],
+      followUpLabel: '',
+      placeholder: '',
+    });
+    setOptionInput('');
   };
 
   const handleAddQuestion = async (e: React.FormEvent) => {
@@ -62,7 +105,7 @@ export default function OrganizationFeedbackQuestionManagement() {
             console.log('createOrganizationFeedbackQuestion resolved.'); // Debug log
             toast.success('Question added!');
           }
-          setForm({ text: '', type: 'text', minLabel: '', maxLabel: '' });
+          resetForm();
           setShowAddForm(false);
           fetchQuestions();
         } catch (err: unknown) {
@@ -84,6 +127,10 @@ export default function OrganizationFeedbackQuestionManagement() {
       type: question.type,
       minLabel: question.minLabel || '',
       maxLabel: question.maxLabel || '',
+      scaleMax: question.scaleMax || 5,
+      options: question.options || [],
+      followUpLabel: question.followUpLabel || '',
+      placeholder: question.placeholder || '',
     });
     setShowAddForm(true);
   };
@@ -122,7 +169,7 @@ export default function OrganizationFeedbackQuestionManagement() {
           onClick={() => {
             setShowAddForm(!showAddForm);
             setEditingQuestion(null);
-            setForm({ text: '', type: 'text', minLabel: '', maxLabel: '' });
+            resetForm();
           }}
         >
           {showAddForm && !editingQuestion
@@ -135,7 +182,7 @@ export default function OrganizationFeedbackQuestionManagement() {
       {showAddForm && (
         <form
           onSubmit={handleAddQuestion}
-          className="card-modern grid grid-cols-1 gap-5 animate-fade-in-up"
+          className="card-modern grid grid-cols-1 gap-5 animate-fade-in-up relative z-10"
         >
           <h2 className="text-xl font-bold text-gray-800">
              {editingQuestion ? 'Edit Question' : 'Add New Question'}
@@ -155,27 +202,20 @@ export default function OrganizationFeedbackQuestionManagement() {
           
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Answer Type</label>
-            <div className="relative">
-                <select
-                    name="type"
-                    value={form.type}
-                    onChange={handleInputChange}
-                    className="input-modern appearance-none"
-                >
-                    {QUESTION_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </option>
-                    ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                </div>
-            </div>
+            <CustomSelect
+              options={QUESTION_TYPES.map((type) => ({
+                value: type,
+                label: QUESTION_TYPE_LABELS[type],
+              }))}
+              value={form.type}
+              onChange={(value) => setForm({ ...form, type: value as QuestionType })}
+              placeholder="Select answer type"
+            />
           </div>
 
-          {form.type === 'range' && (
-            <div className="grid grid-cols-2 gap-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+          {/* Range/Scale Options */}
+          {(form.type === 'range' || form.type === 'scale_text') && (
+            <div className="grid grid-cols-3 gap-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Min Label</label>
                 <input
@@ -196,6 +236,83 @@ export default function OrganizationFeedbackQuestionManagement() {
                     className="input-modern"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Scale Max</label>
+                <input
+                    type="number"
+                    name="scaleMax"
+                    value={form.scaleMax}
+                    onChange={handleInputChange}
+                    min="3"
+                    max="10"
+                    className="input-modern"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Multiple Choice / Checkbox Options */}
+          {(form.type === 'multiplechoice' || form.type === 'checkbox' || form.type === 'multiplechoice_text') && (
+            <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100 space-y-3">
+              <label className="block text-sm font-semibold text-gray-700">Options</label>
+              <div className="flex gap-2">
+                <input
+                  value={optionInput}
+                  onChange={(e) => setOptionInput(e.target.value)}
+                  placeholder="Add an option..."
+                  className="input-modern flex-1"
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addOption())}
+                />
+                <button
+                  type="button"
+                  onClick={addOption}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  Add
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {(form.options || []).map((option, index) => (
+                  <span key={index} className="inline-flex items-center gap-1 px-3 py-1 bg-white border border-gray-200 rounded-full text-sm">
+                    {option}
+                    <button
+                      type="button"
+                      onClick={() => removeOption(index)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Combined Type: Follow-up Label */}
+          {(form.type === 'scale_text' || form.type === 'multiplechoice_text') && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Follow-up Label</label>
+              <input
+                name="followUpLabel"
+                value={form.followUpLabel}
+                onChange={handleInputChange}
+                placeholder="e.g. Please explain your rating"
+                className="input-modern"
+              />
+            </div>
+          )}
+
+          {/* Placeholder for text inputs */}
+          {(form.type === 'text' || form.type === 'textarea' || form.type === 'number' || form.type === 'scale_text' || form.type === 'multiplechoice_text') && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Placeholder Text</label>
+              <input
+                name="placeholder"
+                value={form.placeholder}
+                onChange={handleInputChange}
+                placeholder="e.g. Enter your response here..."
+                className="input-modern"
+              />
             </div>
           )}
           
@@ -231,16 +348,39 @@ export default function OrganizationFeedbackQuestionManagement() {
             >
               <div>
                 <p className="font-bold text-gray-800 text-lg">{question.text}</p>
-                <div className="flex items-center gap-3 mt-1">
+                <div className="flex flex-wrap items-center gap-2 mt-2">
                     <span className="text-xs font-semibold uppercase tracking-wider text-violet-600 bg-violet-50 px-2 py-1 rounded-md">
-                        {question.type}
+                        {QUESTION_TYPE_LABELS[question.type]}
                     </span>
-                    {question.type === 'range' && (
-                    <span className="text-xs text-gray-500">
-                        Range: {question.minLabel || '1'} - {question.maxLabel || '5'}
+                    {(question.type === 'range' || question.type === 'scale_text') && (
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
+                        Scale: {question.minLabel || '1'} - {question.maxLabel || question.scaleMax || '5'}
+                    </span>
+                    )}
+                    {(question.type === 'multiplechoice' || question.type === 'checkbox' || question.type === 'multiplechoice_text') && question.options && (
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
+                        {question.options.length} options
+                    </span>
+                    )}
+                    {(question.type === 'scale_text' || question.type === 'multiplechoice_text') && question.followUpLabel && (
+                    <span className="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded-md">
+                        + follow-up
                     </span>
                     )}
                 </div>
+                {/* Show options preview for multiple choice types */}
+                {(question.type === 'multiplechoice' || question.type === 'checkbox' || question.type === 'multiplechoice_text') && question.options && question.options.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {question.options.slice(0, 5).map((opt, i) => (
+                      <span key={i} className="text-xs text-gray-600 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded">
+                        {opt}
+                      </span>
+                    ))}
+                    {question.options.length > 5 && (
+                      <span className="text-xs text-gray-400">+{question.options.length - 5} more</span>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <button
