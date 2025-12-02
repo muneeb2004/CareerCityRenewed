@@ -13,6 +13,7 @@ export interface Question {
   scaleMax?: number;
   followUpLabel?: string;
   placeholder?: string;
+  allowOther?: boolean;
 }
 
 interface FeedbackFormProps {
@@ -95,6 +96,8 @@ export default function FeedbackForm({
   // Render multiple choice (radio - single selection)
   const renderMultipleChoice = (question: Question, namePrefix = '') => {
     const fieldName = namePrefix ? `${question.questionId}_${namePrefix}` : question.questionId;
+    const otherFieldName = `${fieldName}_other`;
+    const isOtherSelected = responses[fieldName] === '__other__';
     
     return (
       <div className="space-y-2">
@@ -115,6 +118,34 @@ export default function FeedbackForm({
             <span className="ml-3 text-gray-700">{option}</span>
           </label>
         ))}
+        {question.allowOther && (
+          <>
+            <label
+              className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50"
+            >
+              <input
+                type="radio"
+                name={fieldName}
+                value="__other__"
+                checked={isOtherSelected}
+                onChange={(e) => handleResponseChange(fieldName, e.target.value)}
+                className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                required
+              />
+              <span className="ml-3 text-gray-700">Other</span>
+            </label>
+            {isOtherSelected && (
+              <input
+                type="text"
+                value={(responses[otherFieldName] as string) || ''}
+                onChange={(e) => handleResponseChange(otherFieldName, e.target.value)}
+                placeholder="Please specify..."
+                className="input-modern ml-7 mt-2"
+                required
+              />
+            )}
+          </>
+        )}
       </div>
     );
   };
@@ -122,6 +153,8 @@ export default function FeedbackForm({
   // Render checkbox (multiple selection)
   const renderCheckbox = (question: Question) => {
     const selected = (responses[question.questionId] as string[]) || [];
+    const otherFieldName = `${question.questionId}_other`;
+    const isOtherSelected = selected.includes('__other__');
     
     return (
       <div className="space-y-2">
@@ -140,6 +173,32 @@ export default function FeedbackForm({
             <span className="ml-3 text-gray-700">{option}</span>
           </label>
         ))}
+        {question.allowOther && (
+          <>
+            <label
+              className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50"
+            >
+              <input
+                type="checkbox"
+                value="__other__"
+                checked={isOtherSelected}
+                onChange={(e) => handleCheckboxChange(question.questionId, '__other__', e.target.checked)}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="ml-3 text-gray-700">Other</span>
+            </label>
+            {isOtherSelected && (
+              <input
+                type="text"
+                value={(responses[otherFieldName] as string) || ''}
+                onChange={(e) => handleResponseChange(otherFieldName, e.target.value)}
+                placeholder="Please specify..."
+                className="input-modern ml-7 mt-2"
+                required
+              />
+            )}
+          </>
+        )}
       </div>
     );
   };

@@ -28,6 +28,7 @@ export default function OrganizationFeedbackQuestionManagement() {
     options?: string[];
     followUpLabel?: string;
     placeholder?: string;
+    allowOther?: boolean;
   }>({
     text: '',
     type: 'text',
@@ -37,6 +38,7 @@ export default function OrganizationFeedbackQuestionManagement() {
     options: [],
     followUpLabel: '',
     placeholder: '',
+    allowOther: false,
   });
   const [optionInput, setOptionInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -65,9 +67,22 @@ export default function OrganizationFeedbackQuestionManagement() {
 
   const addOption = () => {
     if (optionInput.trim()) {
-      setForm({ ...form, options: [...(form.options || []), optionInput.trim()] });
+      // Check if input contains commas - bulk add
+      if (optionInput.includes(',')) {
+        const newOptions = optionInput
+          .split(',')
+          .map(opt => opt.trim())
+          .filter(opt => opt.length > 0);
+        setForm({ ...form, options: [...(form.options || []), ...newOptions] });
+      } else {
+        setForm({ ...form, options: [...(form.options || []), optionInput.trim()] });
+      }
       setOptionInput('');
     }
+  };
+
+  const clearAllOptions = () => {
+    setForm({ ...form, options: [] });
   };
 
   const removeOption = (index: number) => {
@@ -86,6 +101,7 @@ export default function OrganizationFeedbackQuestionManagement() {
       options: [],
       followUpLabel: '',
       placeholder: '',
+      allowOther: false,
     });
     setOptionInput('');
   };
@@ -131,6 +147,7 @@ export default function OrganizationFeedbackQuestionManagement() {
       options: question.options || [],
       followUpLabel: question.followUpLabel || '',
       placeholder: question.placeholder || '',
+      allowOther: question.allowOther || false,
     });
     setShowAddForm(true);
   };
@@ -254,12 +271,35 @@ export default function OrganizationFeedbackQuestionManagement() {
           {/* Multiple Choice / Checkbox Options */}
           {(form.type === 'multiplechoice' || form.type === 'checkbox' || form.type === 'multiplechoice_text') && (
             <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100 space-y-3">
-              <label className="block text-sm font-semibold text-gray-700">Options</label>
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-semibold text-gray-700">Options</label>
+                {(form.options || []).length > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearAllOptions}
+                    className="text-xs text-red-500 hover:text-red-700 transition-colors"
+                  >
+                    Clear all
+                  </button>
+                )}
+              </div>
+              
+              {/* Guidance message */}
+              <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-lg p-3">
+                <svg className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-xs text-blue-700">
+                  <strong>Tip:</strong> Add options one at a time, or paste multiple options separated by commas 
+                  (e.g., <code className="bg-blue-100 px-1 rounded">Option 1, Option 2, Option 3</code>)
+                </p>
+              </div>
+
               <div className="flex gap-2">
                 <input
                   value={optionInput}
                   onChange={(e) => setOptionInput(e.target.value)}
-                  placeholder="Add an option..."
+                  placeholder="Enter option(s) - use commas to add multiple at once"
                   className="input-modern flex-1"
                   onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addOption())}
                 />
@@ -271,19 +311,44 @@ export default function OrganizationFeedbackQuestionManagement() {
                   Add
                 </button>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {(form.options || []).map((option, index) => (
-                  <span key={index} className="inline-flex items-center gap-1 px-3 py-1 bg-white border border-gray-200 rounded-full text-sm">
-                    {option}
-                    <button
-                      type="button"
-                      onClick={() => removeOption(index)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
+              
+              {/* Options list */}
+              {(form.options || []).length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {(form.options || []).map((option, index) => (
+                    <span key={index} className="inline-flex items-center gap-1 px-3 py-1 bg-white border border-gray-200 rounded-full text-sm">
+                      <span className="text-gray-400 text-xs mr-1">{index + 1}.</span>
+                      {option}
+                      <button
+                        type="button"
+                        onClick={() => removeOption(index)}
+                        className="text-red-500 hover:text-red-700 ml-1"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400 text-center py-2">No options added yet</p>
+              )}
+
+              {/* Allow Other Option */}
+              <div className="flex items-center gap-3 pt-3 border-t border-gray-200">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="allowOther"
+                    checked={form.allowOther || false}
+                    onChange={(e) => setForm({ ...form, allowOther: e.target.checked })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+                </label>
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Allow "Other" option</span>
+                  <p className="text-xs text-gray-500">Adds an "Other" choice with a text input for custom answers</p>
+                </div>
               </div>
             </div>
           )}
@@ -360,6 +425,11 @@ export default function OrganizationFeedbackQuestionManagement() {
                     {(question.type === 'multiplechoice' || question.type === 'checkbox' || question.type === 'multiplechoice_text') && question.options && (
                     <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
                         {question.options.length} options
+                    </span>
+                    )}
+                    {question.allowOther && (
+                    <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-md">
+                        + Other
                     </span>
                     )}
                     {(question.type === 'scale_text' || question.type === 'multiplechoice_text') && question.followUpLabel && (

@@ -72,6 +72,7 @@ export interface StudentFeedback {
 // - textarea: Long text input
 // - scale_text: Combined scale + text follow-up
 // - multiplechoice_text: Combined multiple choice + text follow-up
+// - organization_select: Special type for selecting favorite organizations
 export const QUESTION_TYPES = [
   'range',
   'number', 
@@ -81,6 +82,7 @@ export const QUESTION_TYPES = [
   'textarea',
   'scale_text',
   'multiplechoice_text',
+  'organization_select',
 ] as const;
 export type QuestionType = typeof QUESTION_TYPES[number];
 
@@ -94,6 +96,7 @@ export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   textarea: 'Long Text',
   scale_text: 'Scale + Text',
   multiplechoice_text: 'Multiple Choice + Text',
+  organization_select: 'Organization Selection',
 };
 
 export interface OrganizationFeedbackQuestion {
@@ -106,6 +109,7 @@ export interface OrganizationFeedbackQuestion {
   scaleMax?: number;  // Max value for scale (default 5)
   followUpLabel?: string; // Label for combined type text input
   placeholder?: string; // Placeholder for text inputs
+  allowOther?: boolean; // Allow "Other" option with text input
 }
 
 export interface VolunteerQuestion {
@@ -118,6 +122,11 @@ export interface VolunteerQuestion {
   scaleMax?: number;    // Max value for scale (default 5)
   followUpLabel?: string; // Label for combined type text input
   placeholder?: string; // Placeholder for text inputs
+  allowOther?: boolean; // Allow "Other" option with text input
+  // Organization selection specific fields
+  selectionCount?: number; // Number of organizations to select (e.g., 5)
+  isPerOrganization?: boolean; // If true, this question repeats for each selected org
+  linkedToQuestionId?: string; // Links to the organization_select question
 }
 
 export interface OrganizationFeedback {
