@@ -121,8 +121,8 @@ export default function StudentQuestionManagement() {
     e.preventDefault();
     setLoading(true);
     try {
-      // Build the question data
-      const questionData: Partial<VolunteerQuestion> = {
+      // Build the question data with required fields
+      const questionData: Omit<VolunteerQuestion, 'questionId'> = {
         text: form.text,
         type: form.type,
       };
