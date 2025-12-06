@@ -17,6 +17,7 @@ const SCAN_COOLDOWN_MS = 3000;
 
 export default function QRScanner({ onScanSuccess }: QRScannerProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const streamRef = useRef<MediaStream | null>(null); // Store the actual MediaStream
   const isProcessingRef = useRef<boolean>(false); // Prevents concurrent scans
   const lastScannedRef = useRef<string | null>(null); // Last scanned org ID
   const lastScanTimeRef = useRef<number>(0); // Timestamp of last scan
@@ -232,6 +233,13 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
         onScanError
       );
 
+      // Capture the MediaStream for reliable cleanup later
+      const videoElement = document.querySelector('#qr-reader video') as HTMLVideoElement;
+      if (videoElement && videoElement.srcObject) {
+        streamRef.current = videoElement.srcObject as MediaStream;
+        console.log('[QRScanner] Captured stream with tracks:', streamRef.current.getTracks().map(t => t.label));
+      }
+
       setIsScanning(true);
       setError(''); // Clear previous errors on success
       setActiveCameraIndex(selectedCameraIndex);
@@ -353,39 +361,50 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
   }, []);
 
   // Aggressive cleanup function that stops all camera streams globally
-  // This is defined outside useCallback to ensure it always has fresh access
   const forceStopAllCameras = useCallback(() => {
     console.log('[QRScanner] forceStopAllCameras called');
     
-    // Stop scanner instance
+    // 1. Stop our stored MediaStream first (most reliable)
+    if (streamRef.current) {
+      console.log('[QRScanner] Stopping stored stream');
+      streamRef.current.getTracks().forEach(track => {
+        console.log('[QRScanner] Stopping stored track:', track.label, track.readyState);
+        track.stop();
+      });
+      streamRef.current = null;
+    }
+
+    // 2. Stop scanner instance
     if (scannerRef.current) {
       try {
         const state = scannerRef.current.getState();
+        console.log('[QRScanner] Scanner state:', state);
         if (state === 2) { // SCANNING
-          scannerRef.current.stop().catch(() => {});
+          scannerRef.current.stop().catch((e) => console.log('[QRScanner] Stop error:', e));
         }
         scannerRef.current.clear();
       } catch (e) {
-        // ignore
+        console.log('[QRScanner] Scanner cleanup error:', e);
       }
       scannerRef.current = null;
     }
 
-    // Stop ALL video elements in the entire document (not just qr-reader)
+    // 3. Stop ALL video elements in the entire document
     document.querySelectorAll('video').forEach(video => {
       try {
         const stream = video.srcObject as MediaStream;
         if (stream) {
           stream.getTracks().forEach(track => {
-            console.log('[QRScanner] Stopping track:', track.label);
-            try { track.stop(); } catch (e) {}
+            console.log('[QRScanner] Stopping video track:', track.label, track.readyState);
+            track.stop();
           });
         }
         video.srcObject = null;
+        video.remove(); // Also remove the video element
       } catch (e) {}
     });
 
-    // Clear the QR reader container
+    // 4. Clear the QR reader container
     const container = document.getElementById('qr-reader');
     if (container) {
       container.innerHTML = '';
@@ -403,22 +422,63 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
         startScanner();
     }, 100); // Small delay to ensure DOM is ready
 
-    // Use inline functions that call the ref to ensure we always have latest version
-    const handleBeforeUnload = () => {
-      cleanupRef.current();
-    };
-
-    const handlePageHide = () => {
-      cleanupRef.current();
+    // Direct cleanup function that doesn't rely on any refs or state
+    const directCleanup = () => {
+      console.log('[QRScanner] Direct cleanup triggered');
+      
+      // Stop stored stream
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => {
+          console.log('[QRScanner] Direct: stopping stored track', track.label);
+          track.stop();
+        });
+        streamRef.current = null;
+      }
+      
+      // Stop scanner
+      if (scannerRef.current) {
+        try {
+          scannerRef.current.stop().catch(() => {});
+          scannerRef.current.clear();
+        } catch (e) {}
+        scannerRef.current = null;
+      }
+      
+      // Stop all videos
+      document.querySelectorAll('video').forEach(video => {
+        const stream = video.srcObject as MediaStream;
+        if (stream) {
+          stream.getTracks().forEach(track => {
+            console.log('[QRScanner] Direct: stopping video track', track.label);
+            track.stop();
+          });
+        }
+        video.srcObject = null;
+        video.remove();
+      });
+      
+      const container = document.getElementById('qr-reader');
+      if (container) container.innerHTML = '';
     };
 
     const handleVisibilityChange = () => {
+      console.log('[QRScanner] Visibility changed to:', document.visibilityState);
       if (document.visibilityState === 'hidden') {
-        cleanupRef.current();
+        directCleanup();
       }
     };
 
-    // Add all event listeners for airtight cleanup
+    const handleBeforeUnload = () => {
+      console.log('[QRScanner] beforeunload fired');
+      directCleanup();
+    };
+
+    const handlePageHide = () => {
+      console.log('[QRScanner] pagehide fired');
+      directCleanup();
+    };
+
+    // Add all event listeners
     window.addEventListener('beforeunload', handleBeforeUnload);
     window.addEventListener('pagehide', handlePageHide);
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -426,12 +486,10 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
     return () => {
       console.log('[QRScanner] Component unmounting - cleanup triggered');
       clearTimeout(timer);
-      // Remove event listeners
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('pagehide', handlePageHide);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      // Final cleanup on unmount - call directly, not through ref
-      cleanupRef.current();
+      directCleanup();
     };
   }, [startScanner]);
 
