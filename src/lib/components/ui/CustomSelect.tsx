@@ -87,7 +87,7 @@ export default function CustomSelect({
                 }}
                 className={`w-full text-left px-4 py-3 text-sm transition-all duration-150 ${
                   option.value === value
-                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium'
+                    ? 'bg-linear-to-r from-blue-500 to-blue-600 text-white font-medium'
                     : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
                 }`}
               >

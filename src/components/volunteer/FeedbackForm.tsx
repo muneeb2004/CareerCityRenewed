@@ -104,7 +104,7 @@ export default function FeedbackForm({
         {(question.options || []).map((option) => (
           <label
             key={option}
-            className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50"
+            className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-checked:border-blue-500 has-checked:bg-blue-50"
           >
             <input
               type="radio"
@@ -121,7 +121,7 @@ export default function FeedbackForm({
         {question.allowOther && (
           <>
             <label
-              className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50"
+              className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-checked:border-blue-500 has-checked:bg-blue-50"
             >
               <input
                 type="radio"
@@ -161,7 +161,7 @@ export default function FeedbackForm({
         {(question.options || []).map((option) => (
           <label
             key={option}
-            className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50"
+            className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-checked:border-blue-500 has-checked:bg-blue-50"
           >
             <input
               type="checkbox"
@@ -176,7 +176,7 @@ export default function FeedbackForm({
         {question.allowOther && (
           <>
             <label
-              className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50"
+              className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-checked:border-blue-500 has-checked:bg-blue-50"
             >
               <input
                 type="checkbox"
@@ -254,7 +254,7 @@ export default function FeedbackForm({
           value={(responses[`${question.questionId}_text`] as string) || ''}
           onChange={(e) => handleResponseChange(`${question.questionId}_text`, e.target.value)}
           placeholder={question.placeholder || 'Please elaborate...'}
-          className="input-modern min-h-[80px] resize-y"
+          className="input-modern min-h-20 resize-y"
         />
       </div>
     </div>
@@ -272,7 +272,7 @@ export default function FeedbackForm({
           value={(responses[`${question.questionId}_text`] as string) || ''}
           onChange={(e) => handleResponseChange(`${question.questionId}_text`, e.target.value)}
           placeholder={question.placeholder || 'Please elaborate...'}
-          className="input-modern min-h-[80px] resize-y"
+          className="input-modern min-h-20 resize-y"
         />
       </div>
     </div>
@@ -306,7 +306,7 @@ export default function FeedbackForm({
     <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-2xl">
         <div className="card-modern">
-          <h1 className="text-3xl font-extrabold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">
+          <h1 className="text-3xl font-extrabold text-center mb-8 bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-violet-600">
             {title}
           </h1>
           <form onSubmit={handleSubmit} className="space-y-6">

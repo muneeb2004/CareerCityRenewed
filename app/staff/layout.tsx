@@ -80,7 +80,7 @@ export default function StaffLayout({
                 height={40}
                 className="rounded-lg"
               />
-              <h2 className="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-violet-400">
+              <h2 className="text-2xl font-extrabold bg-clip-text text-transparent bg-linear-to-r from-blue-400 to-violet-400">
                 Staff Portal
               </h2>
             </div>
@@ -90,42 +90,42 @@ export default function StaffLayout({
         <nav className="space-y-2 overflow-y-auto overflow-x-hidden max-h-[calc(100vh-150px)]">
             <Link 
                 href="/staff" 
-                className={`block px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 flex items-center gap-3 group ${pathname === '/staff' ? 'bg-white/10 text-blue-300' : ''}`}
+                className={`flex px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 items-center gap-3 group ${pathname === '/staff' ? 'bg-white/10 text-blue-300' : ''}`}
             >
                 <span className="group-hover:text-blue-300 transition-colors">Dashboard</span>
             </Link>
 
             <Link 
                 href="/staff/organizations" 
-                className={`block px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 flex items-center gap-3 group ${pathname === '/staff/organizations' ? 'bg-white/10 text-blue-300' : ''}`}
+                className={`flex px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 items-center gap-3 group ${pathname === '/staff/organizations' ? 'bg-white/10 text-blue-300' : ''}`}
             >
                 <span className="group-hover:text-blue-300 transition-colors">Organizations</span>
             </Link>
             
             <Link 
                 href="/staff/organization-feedback-questions" 
-                className={`block px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 flex items-center gap-3 group ${pathname === '/staff/organization-feedback-questions' ? 'bg-white/10 text-blue-300' : ''}`}
+                className={`flex px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 items-center gap-3 group ${pathname === '/staff/organization-feedback-questions' ? 'bg-white/10 text-blue-300' : ''}`}
             >
                 <span className="group-hover:text-blue-300 transition-colors">Org Feedback Questions</span>
             </Link>
             
             <Link 
                 href="/staff/student-questions" 
-                className={`block px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 flex items-center gap-3 group ${pathname === '/staff/student-questions' ? 'bg-white/10 text-blue-300' : ''}`}
+                className={`flex px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 items-center gap-3 group ${pathname === '/staff/student-questions' ? 'bg-white/10 text-blue-300' : ''}`}
             >
                 <span className="group-hover:text-blue-300 transition-colors">Student Questions</span>
             </Link>
 
             <Link 
                 href="/staff/student-records" 
-                className={`block px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 flex items-center gap-3 group ${pathname === '/staff/student-records' ? 'bg-white/10 text-blue-300' : ''}`}
+                className={`flex px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 items-center gap-3 group ${pathname === '/staff/student-records' ? 'bg-white/10 text-blue-300' : ''}`}
             >
                 <span className="group-hover:text-blue-300 transition-colors">Student Records</span>
             </Link>
             
             <Link 
                 href="/staff/analytics" 
-                className={`block px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 flex items-center gap-3 group ${pathname === '/staff/analytics' ? 'bg-white/10 text-blue-300' : ''}`}
+                className={`flex px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 items-center gap-3 group ${pathname === '/staff/analytics' ? 'bg-white/10 text-blue-300' : ''}`}
             >
                  <span className="group-hover:text-blue-300 transition-colors">Analytics</span>
             </Link>

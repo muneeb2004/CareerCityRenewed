@@ -148,13 +148,36 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
       if (cameraId && !isChromeIOS) {
           cameraConfig = { deviceId: { exact: cameraId } };
       } else if (!isChromeIOS) {
-          // Initial load - try to find back camera explicitly (skip on Chrome iOS)
+          // Initial load - try to find main back camera explicitly (skip on Chrome iOS)
            try {
               const devices = await Html5Qrcode.getCameras();
               if (devices && devices.length > 0) {
                   setCameras(devices);
-                  const backCam = devices.find(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('environment'));
-                  const targetCam = backCam || devices[devices.length - 1]; 
+                  
+                  // Find the main back camera - prioritize by label analysis
+                  // Main camera usually has: "back", "rear", "environment" without "wide", "ultra", "tele", "macro"
+                  const backCameras = devices.filter(d => {
+                      const label = d.label.toLowerCase();
+                      return (label.includes('back') || label.includes('rear') || label.includes('environment')) 
+                             && !label.includes('front');
+                  });
+                  
+                  let targetCam;
+                  if (backCameras.length > 0) {
+                      // Prefer main camera - exclude ultrawide/telephoto/macro
+                      const mainBackCam = backCameras.find(d => {
+                          const label = d.label.toLowerCase();
+                          return !label.includes('wide') && !label.includes('ultra') && 
+                                 !label.includes('tele') && !label.includes('macro') &&
+                                 !label.includes('depth');
+                      });
+                      // If found main, use it; otherwise use first back camera (usually main on most devices)
+                      targetCam = mainBackCam || backCameras[0];
+                  } else {
+                      // No back camera found by label, use first available camera
+                      targetCam = devices[0];
+                  }
+                  
                   cameraConfig = { deviceId: { exact: targetCam.id } };
                   setActiveCameraId(targetCam.id);
               }
@@ -229,19 +252,31 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
   }, [handleScanSuccess, onScanError, cameras.length]);
 
   const handleSwitchCamera = useCallback(async () => {
-      if (cameras.length < 2) return;
-
-      // Find current index
-      let currentIndex = 0;
-      if (activeCameraId) {
-          currentIndex = cameras.findIndex(c => c.id === activeCameraId);
-          if (currentIndex === -1) currentIndex = 0;
+      if (cameras.length < 2) {
+          toast.error('No other cameras available');
+          return;
       }
 
-      const nextIndex = (currentIndex + 1) % cameras.length;
-      const nextCameraId = cameras[nextIndex].id;
-      
-      await startScanner(nextCameraId);
+      try {
+          // Find current index
+          let currentIndex = 0;
+          if (activeCameraId) {
+              currentIndex = cameras.findIndex(c => c.id === activeCameraId);
+              if (currentIndex === -1) currentIndex = 0;
+          }
+
+          const nextIndex = (currentIndex + 1) % cameras.length;
+          const nextCamera = cameras[nextIndex];
+          
+          toast.loading(`Switching to ${nextCamera.label || 'Camera ' + (nextIndex + 1)}...`, { id: 'camera-switch' });
+          
+          await startScanner(nextCamera.id);
+          
+          toast.success(`Switched camera`, { id: 'camera-switch' });
+      } catch (err) {
+          console.error('Camera switch error:', err);
+          toast.error('Failed to switch camera. Try restarting the scanner.', { id: 'camera-switch' });
+      }
   }, [cameras, activeCameraId, startScanner]);
 
   const stopScanner = useCallback(async () => {

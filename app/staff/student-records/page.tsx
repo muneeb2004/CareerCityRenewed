@@ -150,7 +150,7 @@ export default function StudentRecordsPage() {
                     placeholder="Search..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="input-modern w-full !pl-10 text-sm md:text-base"
+                    className="input-modern w-full pl-10! text-sm md:text-base"
                 />
              </div>
              <button
@@ -359,7 +359,7 @@ export default function StudentRecordsPage() {
                 {/* Mobile Back Button */}
                 <button 
                   onClick={() => setSelectedStudent(null)}
-                  className="lg:hidden mb-4 flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors flex-shrink-0"
+                  className="lg:hidden mb-4 flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors shrink-0"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                   Back to List

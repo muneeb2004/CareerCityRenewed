@@ -17,7 +17,7 @@ export default function VolunteerPortal() {
               className="rounded-xl shadow-lg"
             />
           </div>
-          <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-accent-yellow)] mb-2">
+          <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-linear-to-r from-accent to-accent-yellow mb-2">
             Volunteer Portal
           </h1>
           <p className="text-lg text-gray-600">

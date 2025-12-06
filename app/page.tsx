@@ -15,7 +15,7 @@ export default function Home() {
               className="rounded-xl shadow-lg"
             />
           </div>
-          <h1 className="text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600 pb-2">
+          <h1 className="text-5xl font-extrabold bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-violet-600 pb-2">
             HU Career City
             <span className="block text-3xl font-bold text-gray-700 mt-2">2026</span>
           </h1>

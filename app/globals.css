@@ -94,17 +94,17 @@
   }
 
   .btn-primary {
-    @apply bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 px-6 rounded-xl 
+    @apply bg-linear-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 px-6 rounded-xl 
     shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all duration-300 active:scale-95;
   }
 
   .btn-secondary {
-    @apply bg-gradient-to-r from-violet-500 to-violet-600 text-white font-semibold py-3 px-6 rounded-xl 
+    @apply bg-linear-to-r from-violet-500 to-violet-600 text-white font-semibold py-3 px-6 rounded-xl 
     shadow-lg hover:shadow-violet-500/30 hover:-translate-y-0.5 transition-all duration-300 active:scale-95;
   }
 
   .btn-accent {
-    @apply bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-accent-yellow)] text-white font-semibold py-3 px-6 rounded-xl 
+    @apply bg-linear-to-r from-accent to-accent-yellow text-white font-semibold py-3 px-6 rounded-xl 
     shadow-lg hover:shadow-orange-500/30 hover:-translate-y-0.5 transition-all duration-300 active:scale-95;
   }
   

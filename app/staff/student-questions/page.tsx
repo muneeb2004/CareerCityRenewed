@@ -297,7 +297,7 @@ export default function StudentQuestionManagement() {
       {/* Header */}
       <div className="card-modern flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">
+          <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-violet-600">
             Student Questions
           </h1>
           <p className="text-gray-500 text-sm mt-1">Manage the questions asked to students</p>
@@ -317,7 +317,7 @@ export default function StudentQuestionManagement() {
       {/* Info Banner */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
         <div className="flex items-start gap-3">
-          <svg className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div className="text-sm text-blue-700">
@@ -364,7 +364,7 @@ export default function StudentQuestionManagement() {
           </div>
 
           {/* Question Category Selector */}
-          <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-4 rounded-xl border border-gray-200">
+          <div className="bg-linear-to-r from-slate-50 to-gray-50 p-4 rounded-xl border border-gray-200">
             <label className="block text-sm font-semibold text-gray-700 mb-3">Question Category</label>
             <div className="grid grid-cols-1 gap-3">
               {/* Organization Selection */}
@@ -466,7 +466,7 @@ export default function StudentQuestionManagement() {
 
           {/* Organization Selection Options */}
           {form.type === 'organization_select' && (
-            <div className="bg-gradient-to-r from-violet-50 to-blue-50 p-4 rounded-xl border border-violet-200">
+            <div className="bg-linear-to-r from-violet-50 to-blue-50 p-4 rounded-xl border border-violet-200">
               <div className="flex items-center gap-2 mb-3">
                 <svg className="w-5 h-5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -534,7 +534,7 @@ export default function StudentQuestionManagement() {
 
           {/* Per-Organization: Link to Selection Question */}
           {form.isPerOrganization && organizationSelectQuestions.length > 1 && (
-            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 p-4 rounded-xl border border-emerald-200">
+            <div className="bg-linear-to-r from-emerald-50 to-teal-50 p-4 rounded-xl border border-emerald-200">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Link to Organization Selection Question
               </label>
@@ -606,7 +606,7 @@ export default function StudentQuestionManagement() {
               
               {/* Guidance message */}
               <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-lg p-3">
-                <svg className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <p className="text-xs text-blue-700">
@@ -663,7 +663,7 @@ export default function StudentQuestionManagement() {
                     onChange={handleInputChange}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+                  <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
                 </label>
                 <div>
                   <span className="text-sm font-medium text-gray-700">Allow "Other" option</span>

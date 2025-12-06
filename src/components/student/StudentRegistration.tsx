@@ -106,7 +106,7 @@ export default function StudentRegistration({
 
   return (
     <div className="card-modern max-w-md mx-auto">
-      <h2 className="text-3xl font-extrabold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">
+      <h2 className="text-3xl font-extrabold mb-2 bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-violet-600">
         First Visit - Register
       </h2>
       <p className="text-gray-600 mb-8 leading-relaxed">

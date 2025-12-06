@@ -135,7 +135,7 @@ export default function StudentPortal() {
                   className="rounded-xl shadow-lg"
                 />
                 <div>
-                    <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">
+                    <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-violet-600">
                     HU Career City 2026
                     </h1>
                     {session && (

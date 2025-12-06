@@ -158,7 +158,7 @@ export default function OrganizationFeedbackPage() {
         {(question.options || []).map((option) => (
           <label
             key={option}
-            className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50"
+            className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-checked:border-blue-500 has-checked:bg-blue-50"
           >
             <input
               type="radio"
@@ -175,7 +175,7 @@ export default function OrganizationFeedbackPage() {
         {question.allowOther && (
           <>
             <label
-              className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50"
+              className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-checked:border-blue-500 has-checked:bg-blue-50"
             >
               <input
                 type="radio"
@@ -214,7 +214,7 @@ export default function OrganizationFeedbackPage() {
         {(question.options || []).map((option) => (
           <label
             key={option}
-            className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50"
+            className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-checked:border-blue-500 has-checked:bg-blue-50"
           >
             <input
               type="checkbox"
@@ -229,7 +229,7 @@ export default function OrganizationFeedbackPage() {
         {question.allowOther && (
           <>
             <label
-              className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50"
+              className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-checked:border-blue-500 has-checked:bg-blue-50"
             >
               <input
                 type="checkbox"
@@ -310,7 +310,7 @@ export default function OrganizationFeedbackPage() {
                 value={(responses[`${question.questionId}_text`] as string) || ''}
                 onChange={(e) => handleResponseChange(`${question.questionId}_text`, e.target.value)}
                 placeholder={question.placeholder || 'Please elaborate...'}
-                className="input-modern min-h-[80px] resize-y"
+                className="input-modern min-h-20 resize-y"
               />
             </div>
           </div>
@@ -327,7 +327,7 @@ export default function OrganizationFeedbackPage() {
                 value={(responses[`${question.questionId}_text`] as string) || ''}
                 onChange={(e) => handleResponseChange(`${question.questionId}_text`, e.target.value)}
                 placeholder={question.placeholder || 'Please elaborate...'}
-                className="input-modern min-h-[80px] resize-y"
+                className="input-modern min-h-20 resize-y"
               />
             </div>
           </div>
@@ -384,7 +384,7 @@ export default function OrganizationFeedbackPage() {
               className="rounded-xl shadow-lg"
             />
           </div>
-          <h1 className="text-3xl font-extrabold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">
+          <h1 className="text-3xl font-extrabold text-center mb-8 bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-violet-600">
             Organization Feedback Form
           </h1>
 
@@ -429,7 +429,7 @@ export default function OrganizationFeedbackPage() {
 
                 {/* Dropdown suggestions */}
                 {isDropdownOpen && (
-                  <div className="absolute z-[100] w-full mt-2 bg-white border border-gray-200 rounded-2xl shadow-2xl max-h-72 overflow-y-auto overflow-x-hidden" style={{ isolation: 'isolate' }}>
+                  <div className="absolute z-100 w-full mt-2 bg-white border border-gray-200 rounded-2xl shadow-2xl max-h-72 overflow-y-auto overflow-x-hidden" style={{ isolation: 'isolate' }}>
                     {filteredOrganizations.length === 0 ? (
                       <div className="p-6 text-center">
                         <svg className="w-12 h-12 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -447,7 +447,7 @@ export default function OrganizationFeedbackPage() {
                             onClick={() => handleSelectOrg(org)}
                             className={`w-full text-left p-3 rounded-xl transition-all duration-200 group ${
                               selectedOrgId === org.organizationId 
-                                ? 'bg-gradient-to-r from-violet-500 to-blue-500 text-white shadow-lg shadow-violet-500/30' 
+                                ? 'bg-linear-to-r from-violet-500 to-blue-500 text-white shadow-lg shadow-violet-500/30' 
                                 : 'hover:bg-violet-50/80'
                             }`}
                           >
@@ -472,7 +472,7 @@ export default function OrganizationFeedbackPage() {
                                 </div>
                               </div>
                               {selectedOrgId === org.organizationId && (
-                                <svg className="w-5 h-5 text-white flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-5 h-5 text-white shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                                 </svg>
                               )}
@@ -487,7 +487,7 @@ export default function OrganizationFeedbackPage() {
 
               {/* Selected organization details */}
               {selectedOrg && (
-                <div className="mt-4 p-4 bg-gradient-to-r from-violet-50 to-blue-50 rounded-xl border border-violet-200/50 shadow-sm">
+                <div className="mt-4 p-4 bg-linear-to-r from-violet-50 to-blue-50 rounded-xl border border-violet-200/50 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-bold text-violet-800 text-lg">{selectedOrg.name}</p>

@@ -251,7 +251,7 @@ export default function OrganizationFeedbackQuestionManagement() {
       {/* Header */}
       <div className="card-modern flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
-            <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">
+            <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-violet-600">
             Org Feedback Questions
             </h1>
             <p className="text-gray-500 text-sm mt-1">Manage the questions asked to organizations</p>
@@ -359,7 +359,7 @@ export default function OrganizationFeedbackQuestionManagement() {
               
               {/* Guidance message */}
               <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-lg p-3">
-                <svg className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <p className="text-xs text-blue-700">
@@ -416,7 +416,7 @@ export default function OrganizationFeedbackQuestionManagement() {
                     onChange={(e) => setForm({ ...form, allowOther: e.target.checked })}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+                  <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
                 </label>
                 <div>
                   <span className="text-sm font-medium text-gray-700">Allow "Other" option</span>

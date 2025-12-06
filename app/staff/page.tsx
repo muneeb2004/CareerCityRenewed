@@ -63,7 +63,7 @@ export default function StaffDashboard() {
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">
+          <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-violet-600">
             Command Center
           </h1>
           <p className="text-gray-500 mt-1">System Overview & Quick Actions</p>
@@ -149,7 +149,7 @@ export default function StaffDashboard() {
             ) : (
                 recentScans.map((scan) => (
                     <div key={scan.scanId} className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold shrink-0">
                             {scan.studentId.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
