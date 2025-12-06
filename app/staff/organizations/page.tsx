@@ -319,7 +319,7 @@ export default function OrganizationManagement() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 absolute top-2 right-2 bg-white/90 backdrop-blur-sm p-1 rounded-lg shadow-sm">
+              <div className="flex items-center gap-2 mt-4 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200 absolute top-2 right-2 bg-white/90 backdrop-blur-sm p-1 rounded-lg shadow-sm">
                 <button
                   onClick={() => handleEdit(organization)}
                   className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
