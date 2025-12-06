@@ -17,6 +17,7 @@ import {
 } from 'recharts';
 import { Scan } from '../../../src/types';
 import Papa from 'papaparse';
+import { Skeleton } from '../../../src/lib/components/ui/Skeleton';
 
 interface AnalyticsData {
   totalStudents: number;
@@ -34,6 +35,7 @@ export default function AnalyticsPage() {
     scansOverTime: [],
   });
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setMounted(true);
@@ -81,6 +83,7 @@ export default function AnalyticsPage() {
         scansPerOrg: scansPerOrgArray,
         scansOverTime: scansOverTimeArray,
       });
+      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -123,9 +126,13 @@ export default function AnalyticsPage() {
             <h3 className="text-gray-500 text-sm font-medium uppercase tracking-wider">
               Total Students
             </h3>
-            <p className="text-4xl font-bold text-blue-600 mt-2">
-              {data.totalStudents}
-            </p>
+            {loading ? (
+                <Skeleton className="h-10 w-24 mt-2" />
+            ) : (
+                <p className="text-4xl font-bold text-blue-600 mt-2">
+                {data.totalStudents}
+                </p>
+            )}
           </div>
           <div className="p-4 bg-blue-100 rounded-full text-blue-600">
              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
@@ -136,9 +143,13 @@ export default function AnalyticsPage() {
             <h3 className="text-gray-500 text-sm font-medium uppercase tracking-wider">
               Total Scans
             </h3>
-            <p className="text-4xl font-bold text-emerald-600 mt-2">
-              {data.totalScans}
-            </p>
+            {loading ? (
+                <Skeleton className="h-10 w-24 mt-2" />
+            ) : (
+                <p className="text-4xl font-bold text-emerald-600 mt-2">
+                {data.totalScans}
+                </p>
+            )}
           </div>
            <div className="p-4 bg-emerald-100 rounded-full text-emerald-600">
              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4c1 1 0 0 1 1 1v3c0 1-1 1-1 1h-1v-1a2 2 0 1 0-2 0v1h-1a2 2 0 0 0-2 0v-1H9.05a1 1 0 0 0-.82-1.566a2 2 0 0 0-2.806 0A1 1 0 0 0 5 12v2a1 1 0 0 0 1 1h1v1c0 1 0 1 1 1h1v-1.82a1 1 0 0 0-.26-.726A2 2 0 0 0 7.17 11H7v-.17a1 1 0 0 0-1.147-.983A2 2 0 0 0 5 11h.02a1 1 0 0 0 .01-1.832A1 1 0 0 0 5.03 7h.05a2 2 0 0 0 3.84 0h.05A1 1 0 0 0 9 7h1.05a1 1 0 0 0 .82-1.566A2 2 0 0 0 10.05 5H9a1 1 0 0 0-1 .99V7m3 0h5" /></svg>
@@ -147,7 +158,18 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Charts */}
-      {mounted && (
+      {loading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="card-modern">
+                <Skeleton className="h-8 w-48 mb-6" />
+                <Skeleton className="h-[300px] w-full rounded-xl" />
+            </div>
+            <div className="card-modern">
+                <Skeleton className="h-8 w-48 mb-6" />
+                <Skeleton className="h-[300px] w-full rounded-xl" />
+            </div>
+        </div>
+      ) : mounted && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card-modern">
             <h3 className="text-xl font-bold mb-6 text-gray-800">

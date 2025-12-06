@@ -15,9 +15,29 @@ import {
 } from '../../../src/types';
 import toast, { Toaster } from 'react-hot-toast';
 import CustomSelect from '../../../src/lib/components/ui/CustomSelect';
+import { ListRowSkeleton } from '../../../src/lib/components/ui/Skeleton';
+import { EmptyState } from '../../../src/lib/components/ui/EmptyState';
+import { Modal } from '../../../src/lib/components/ui/Modal';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { SortableItem } from '../../../src/lib/components/ui/SortableItem';
 
 export default function OrganizationFeedbackQuestionManagement() {
   const [questions, setQuestions] = useState<OrganizationFeedbackQuestion[]>([]);
+  const [fetching, setFetching] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState<{
     text: string;
@@ -45,13 +65,27 @@ export default function OrganizationFeedbackQuestionManagement() {
   const [editingQuestion, setEditingQuestion] =
     useState<OrganizationFeedbackQuestion | null>(null);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   useEffect(() => {
     fetchQuestions();
   }, []);
 
   const fetchQuestions = async () => {
-    const data = await getAllOrganizationFeedbackQuestions();
-    setQuestions(data);
+    try {
+      const data = await getAllOrganizationFeedbackQuestions();
+      setQuestions(data);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load questions");
+    } finally {
+      setFetching(false);
+    }
   };
 
   const handleInputChange = (
@@ -170,31 +204,30 @@ export default function OrganizationFeedbackQuestionManagement() {
   };
 
   // Reorder questions
-  const handleReorder = async (questionId: string, direction: 'up' | 'down') => {
-    const sortedQuestions = [...questions].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
-    const currentIndex = sortedQuestions.findIndex(q => q.questionId === questionId);
-    
-    if (currentIndex === -1) return;
-    if (direction === 'up' && currentIndex === 0) return;
-    if (direction === 'down' && currentIndex === sortedQuestions.length - 1) return;
-    
-    const swapIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-    const currentQuestion = sortedQuestions[currentIndex];
-    const swapQuestion = sortedQuestions[swapIndex];
-    
-    try {
-      // Swap order values
-      const currentOrder = currentQuestion.order ?? currentIndex;
-      const swapOrder = swapQuestion.order ?? swapIndex;
-      
-      await updateOrganizationFeedbackQuestion(currentQuestion.questionId, { order: swapOrder });
-      await updateOrganizationFeedbackQuestion(swapQuestion.questionId, { order: currentOrder });
-      
-      toast.success('Question reordered');
-      fetchQuestions();
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to reorder question');
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setQuestions((items) => {
+        const oldIndex = items.findIndex((item) => item.questionId === active.id);
+        const newIndex = items.findIndex((item) => item.questionId === over.id);
+        
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        
+        // Update order in backend for all affected items
+        // Optimistic update first
+        const updates = newItems.map((item, index) => 
+            updateOrganizationFeedbackQuestion(item.questionId, { order: index })
+        );
+        
+        Promise.all(updates).catch(err => {
+            console.error("Failed to update order", err);
+            toast.error("Failed to save new order");
+            fetchQuestions(); // Revert on error
+        });
+
+        return newItems;
+      });
     }
   };
 
@@ -214,29 +247,27 @@ export default function OrganizationFeedbackQuestionManagement() {
             <p className="text-gray-500 text-sm mt-1">Manage the questions asked to organizations</p>
         </div>
         <button
-          className={`${showAddForm ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg' : 'btn-primary'} font-semibold py-2 px-4 rounded-xl transition-all duration-200`}
+          className="btn-primary font-semibold py-2 px-4 rounded-xl transition-all duration-200"
           onClick={() => {
-            setShowAddForm(!showAddForm);
             setEditingQuestion(null);
             resetForm();
+            setShowAddForm(true);
           }}
         >
-          {showAddForm && !editingQuestion
-            ? 'Cancel'
-            : 'Add New Question'}
+          Add New Question
         </button>
       </div>
 
-      {/* Add/Edit Form */}
-      {showAddForm && (
+      {/* Drawer Form */}
+      <Modal
+        isOpen={showAddForm}
+        onClose={() => setShowAddForm(false)}
+        title={editingQuestion ? 'Edit Question' : 'Add New Question'}
+      >
         <form
           onSubmit={handleAddQuestion}
-          className="card-modern grid grid-cols-1 gap-5 animate-fade-in-up relative z-10"
+          className="space-y-5"
         >
-          <h2 className="text-xl font-bold text-gray-800">
-             {editingQuestion ? 'Edit Question' : 'Add New Question'}
-          </h2>
-          
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Question Text</label>
             <input
@@ -264,7 +295,7 @@ export default function OrganizationFeedbackQuestionManagement() {
 
           {/* Range/Scale Options */}
           {(form.type === 'range' || form.type === 'scale_text') && (
-            <div className="grid grid-cols-3 gap-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+            <div className="grid grid-cols-1 gap-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Min Label</label>
                 <input
@@ -331,7 +362,7 @@ export default function OrganizationFeedbackQuestionManagement() {
                 <input
                   value={optionInput}
                   onChange={(e) => setOptionInput(e.target.value)}
-                  placeholder="Enter option(s) - use commas to add multiple at once"
+                  placeholder="Enter option(s)"
                   className="input-modern flex-1"
                   onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addOption())}
                 />
@@ -415,9 +446,8 @@ export default function OrganizationFeedbackQuestionManagement() {
           
           <button
             type="submit"
-            className="btn-accent w-full mt-2"
+            className="btn-accent w-full mt-4"
             disabled={loading}
-            onClick={() => console.log('Add Question button clicked')}
           >
             {loading
               ? editingQuestion
@@ -428,99 +458,115 @@ export default function OrganizationFeedbackQuestionManagement() {
               : 'Add Question'}
           </button>
         </form>
-      )}
+      </Modal>
 
       {/* Questions List */}
       <div className="card-modern">
         <h2 className="text-xl font-bold mb-6 text-gray-800 flex items-center gap-2">
             <svg className="w-6 h-6 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
              Existing Questions
-             <span className="text-sm font-normal text-gray-400 ml-2">({sortedQuestions.length})</span>
+             {!fetching && <span className="text-sm font-normal text-gray-400 ml-2">({sortedQuestions.length})</span>}
         </h2>
-        <div className="space-y-4">
-          {sortedQuestions.map((question, index) => (
-            <div
-              key={question.questionId}
-              className="glass-hover p-5 rounded-xl border border-white/60 flex items-center justify-between group transition-all duration-300"
-            >
-              {/* Reorder buttons */}
-              <div className="flex flex-col gap-1 mr-3 opacity-50 group-hover:opacity-100">
-                <button 
-                  onClick={() => handleReorder(question.questionId, 'up')}
-                  disabled={index === 0}
-                  className="p-1 text-gray-400 hover:text-violet-600 hover:bg-violet-50 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                  title="Move up"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" /></svg>
-                </button>
-                <button 
-                  onClick={() => handleReorder(question.questionId, 'down')}
-                  disabled={index === sortedQuestions.length - 1}
-                  className="p-1 text-gray-400 hover:text-violet-600 hover:bg-violet-50 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                  title="Move down"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                </button>
-              </div>
-              <div className="flex-1">
-                <p className="font-bold text-gray-800 text-lg">{question.text}</p>
-                <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-violet-600 bg-violet-50 px-2 py-1 rounded-md">
-                        {QUESTION_TYPE_LABELS[question.type]}
-                    </span>
-                    {(question.type === 'range' || question.type === 'scale_text') && (
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
-                        Scale: {question.minLabel || '1'} - {question.maxLabel || question.scaleMax || '5'}
-                    </span>
-                    )}
-                    {(question.type === 'multiplechoice' || question.type === 'checkbox' || question.type === 'multiplechoice_text') && question.options && (
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
-                        {question.options.length} options
-                    </span>
-                    )}
-                    {question.allowOther && (
-                    <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-md">
-                        + Other
-                    </span>
-                    )}
-                    {(question.type === 'scale_text' || question.type === 'multiplechoice_text') && question.followUpLabel && (
-                    <span className="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded-md">
-                        + follow-up
-                    </span>
-                    )}
-                </div>
-                {/* Show options preview for multiple choice types */}
-                {(question.type === 'multiplechoice' || question.type === 'checkbox' || question.type === 'multiplechoice_text') && question.options && question.options.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {question.options.slice(0, 5).map((opt, i) => (
-                      <span key={i} className="text-xs text-gray-600 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded">
-                        {opt}
-                      </span>
-                    ))}
-                    {question.options.length > 5 && (
-                      <span className="text-xs text-gray-400">+{question.options.length - 5} more</span>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200">
-                <button
-                  onClick={() => handleEdit(question)}
-                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                  title="Edit"
-                >
-                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                </button>
-                <button
-                  onClick={() => handleDelete(question.questionId)}
-                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                  title="Delete"
-                >
-                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                </button>
-              </div>
-            </div>
-          ))}
+                <div className="space-y-4">
+                  {fetching ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <ListRowSkeleton key={i} />
+                    ))
+                  ) : sortedQuestions.length === 0 ? (
+                    <EmptyState
+                      title="No Questions Added"
+                      description="Create the first feedback question for organizations to answer."
+                      action={
+                        <button
+                          onClick={() => setShowAddForm(true)}
+                          className="btn-primary py-2 px-4 text-sm"
+                        >
+                          Add Question
+                        </button>
+                      }
+                    />
+                  ) : (
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <SortableContext
+                      items={sortedQuestions.map(q => q.questionId)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {sortedQuestions.map((question, index) => (
+                        <SortableItem key={question.questionId} id={question.questionId}>
+                          <div
+                            className="glass-hover p-5 rounded-xl border border-white/60 flex items-center justify-between group transition-all duration-300"
+                          >
+                            {/* Drag Handle */}
+                            <div className="mr-3 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8h16M4 16h16" /></svg>
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-bold text-gray-800 text-lg">{question.text}</p>
+                              <div className="flex flex-wrap items-center gap-2 mt-2">
+                                  <span className="text-xs font-semibold uppercase tracking-wider text-violet-600 bg-violet-50 px-2 py-1 rounded-md">
+                                      {QUESTION_TYPE_LABELS[question.type]}
+                                  </span>
+                                  {(question.type === 'range' || question.type === 'scale_text') && (
+                                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
+                                      Scale: {question.minLabel || '1'} - {question.maxLabel || question.scaleMax || '5'}
+                                  </span>
+                                  )}
+                                  {(question.type === 'multiplechoice' || question.type === 'checkbox' || question.type === 'multiplechoice_text') && question.options && (
+                                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
+                                      {question.options.length} options
+                                  </span>
+                                  )}
+                                  {question.allowOther && (
+                                  <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-md">
+                                      + Other
+                                  </span>
+                                  )}
+                                  {(question.type === 'scale_text' || question.type === 'multiplechoice_text') && question.followUpLabel && (
+                                  <span className="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded-md">
+                                      + follow-up
+                                  </span>
+                                  )}
+                              </div>
+                              {/* Show options preview for multiple choice types */}
+                              {(question.type === 'multiplechoice' || question.type === 'checkbox' || question.type === 'multiplechoice_text') && question.options && question.options.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {question.options.slice(0, 5).map((opt, i) => (
+                                    <span key={i} className="text-xs text-gray-600 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded">
+                                      {opt}
+                                    </span>
+                                  ))}
+                                  {question.options.length > 5 && (
+                                    <span className="text-xs text-gray-400">+{question.options.length - 5} more</span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200">
+                              <button
+                                onClick={() => handleEdit(question)}
+                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Edit"
+                              >
+                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                              </button>
+                              <button
+                                onClick={() => handleDelete(question.questionId)}
+                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Delete"
+                              >
+                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                              </button>
+                            </div>
+                          </div>
+                        </SortableItem>
+                      ))}
+                    </SortableContext>
+                  </DndContext>
+                  )}
         </div>
       </div>
     </div>

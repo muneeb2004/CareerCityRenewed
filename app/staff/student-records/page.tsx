@@ -8,6 +8,8 @@ import { getAllVolunteerQuestions } from '../../../src/firestore/volunteerQuesti
 import { Student, Organization, VolunteerQuestion } from '../../../src/types';
 import toast, { Toaster } from 'react-hot-toast';
 import Image from 'next/image';
+import { Skeleton } from '../../../src/lib/components/ui/Skeleton';
+import { EmptyState } from '../../../src/lib/components/ui/EmptyState';
 
 export default function StudentRecordsPage() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -18,6 +20,11 @@ export default function StudentRecordsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [activeTab, setActiveTab] = useState<'visits' | 'feedback'>('visits');
+  
+  // Advanced Filtering State
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterHasFeedback, setFilterHasFeedback] = useState<'all' | 'yes' | 'no'>('all');
+  const [filterVisitedOrg, setFilterVisitedOrg] = useState<string>('');
 
   useEffect(() => {
     fetchData();
@@ -61,14 +68,27 @@ export default function StudentRecordsPage() {
     return feedbackRecords.find(f => f.studentId === studentId);
   };
 
-  // Filter students by search term
+  // Filter students by search term and advanced filters
   const filteredStudents = students.filter(student => {
     const searchLower = searchTerm.toLowerCase();
-    return (
+    const matchesSearch = 
       student.studentId.toLowerCase().includes(searchLower) ||
       student.email.toLowerCase().includes(searchLower) ||
-      (student.fullName && student.fullName.toLowerCase().includes(searchLower))
-    );
+      (student.fullName && student.fullName.toLowerCase().includes(searchLower));
+    
+    if (!matchesSearch) return false;
+
+    const hasFeedback = !!getStudentFeedback(student.studentId);
+    
+    if (filterHasFeedback === 'yes' && !hasFeedback) return false;
+    if (filterHasFeedback === 'no' && hasFeedback) return false;
+
+    if (filterVisitedOrg) {
+        const visited = student.visitedStalls || [];
+        if (!visited.includes(filterVisitedOrg)) return false;
+    }
+
+    return true;
   });
 
   // Format date
@@ -117,14 +137,87 @@ export default function StudentRecordsPage() {
 
       {/* Search and Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="md:col-span-2">
-          <input
-            type="text"
-            placeholder="Search by Student ID, Email, or Name..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="input-modern w-full"
-          />
+        <div className="md:col-span-2 relative z-20">
+          <div className="flex gap-2">
+             <div className="relative flex-1">
+                <input
+                    type="text"
+                    placeholder="Search by Student ID, Email, or Name..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="input-modern w-full pl-10"
+                />
+                <svg className="w-5 h-5 text-gray-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+             </div>
+             <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`px-4 rounded-xl border transition-colors flex items-center gap-2 ${showFilters || filterHasFeedback !== 'all' || filterVisitedOrg ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+             >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+                Filters
+                {(filterHasFeedback !== 'all' || filterVisitedOrg) && (
+                    <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+                )}
+             </button>
+          </div>
+
+          {/* Filter Popover */}
+          {showFilters && (
+            <div className="absolute top-full left-0 mt-2 w-full bg-white rounded-xl shadow-xl border border-gray-100 p-4 animate-fade-in-up">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Feedback Submitted?</label>
+                        <div className="flex p-1 bg-gray-100 rounded-lg">
+                            <button
+                                onClick={() => setFilterHasFeedback('all')}
+                                className={`flex-1 py-1.5 text-sm rounded-md transition-all ${filterHasFeedback === 'all' ? 'bg-white shadow-sm text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                All
+                            </button>
+                            <button
+                                onClick={() => setFilterHasFeedback('yes')}
+                                className={`flex-1 py-1.5 text-sm rounded-md transition-all ${filterHasFeedback === 'yes' ? 'bg-white shadow-sm text-green-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                Yes
+                            </button>
+                            <button
+                                onClick={() => setFilterHasFeedback('no')}
+                                className={`flex-1 py-1.5 text-sm rounded-md transition-all ${filterHasFeedback === 'no' ? 'bg-white shadow-sm text-red-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                No
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Visited Organization</label>
+                        <select
+                            value={filterVisitedOrg}
+                            onChange={(e) => setFilterVisitedOrg(e.target.value)}
+                            className="input-modern py-1.5"
+                        >
+                            <option value="">All Organizations</option>
+                            {organizations.map(org => (
+                                <option key={org.organizationId} value={org.organizationId}>
+                                    {org.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+                <div className="mt-4 flex justify-end border-t border-gray-100 pt-3">
+                    <button
+                        onClick={() => {
+                            setFilterHasFeedback('all');
+                            setFilterVisitedOrg('');
+                            setSearchTerm('');
+                        }}
+                        className="text-xs text-red-500 hover:text-red-700 font-medium"
+                    >
+                        Reset All Filters
+                    </button>
+                </div>
+            </div>
+          )}
         </div>
         <div className="glass-card p-4 text-center">
           <div className="text-3xl font-bold text-blue-600">{students.length}</div>
@@ -137,8 +230,51 @@ export default function StudentRecordsPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Student List Skeleton */}
+          <div className="glass-card p-6">
+             <Skeleton className="h-8 w-48 mb-4" />
+             <div className="space-y-2">
+                {Array.from({length: 6}).map((_, i) => (
+                   <div key={i} className="p-4 rounded-xl border border-gray-200 bg-white/50">
+                      <div className="flex justify-between items-start">
+                         <div className="space-y-2 w-2/3">
+                            <Skeleton className="h-5 w-3/4" />
+                            <Skeleton className="h-4 w-1/2" />
+                            <Skeleton className="h-4 w-2/3" />
+                         </div>
+                         <div className="space-y-2 w-1/4 flex flex-col items-end">
+                            <Skeleton className="h-4 w-12" />
+                            <Skeleton className="h-5 w-16 rounded-full" />
+                         </div>
+                      </div>
+                   </div>
+                ))}
+             </div>
+          </div>
+          {/* Detail Panel Skeleton */}
+          <div className="glass-card p-6 hidden lg:block">
+             <div className="space-y-6">
+                <div className="border-b border-gray-200 pb-4 space-y-3">
+                   <Skeleton className="h-8 w-3/4" />
+                   <div className="grid grid-cols-2 gap-4">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-full" />
+                   </div>
+                </div>
+                <div className="flex gap-2">
+                   <Skeleton className="h-10 w-32 rounded-lg" />
+                   <Skeleton className="h-10 w-32 rounded-lg" />
+                </div>
+                <div className="space-y-3">
+                   <Skeleton className="h-16 w-full rounded-lg" />
+                   <Skeleton className="h-16 w-full rounded-lg" />
+                   <Skeleton className="h-16 w-full rounded-lg" />
+                </div>
+             </div>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -149,7 +285,10 @@ export default function StudentRecordsPage() {
             </h2>
             <div className="space-y-2 max-h-[600px] overflow-y-auto">
               {filteredStudents.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No students found</p>
+                <EmptyState
+                  title="No Students Found"
+                  description={searchTerm ? `No students match "${searchTerm}"` : "No students have registered yet."}
+                />
               ) : (
                 filteredStudents.map((student) => {
                   const hasFeedback = !!getStudentFeedback(student.studentId);
@@ -284,9 +423,11 @@ export default function StudentRecordsPage() {
                           </div>
                         ))
                       ) : (
-                        <p className="text-gray-500 text-center py-8">
-                          No stall visits recorded
-                        </p>
+                        <EmptyState
+                          title="No Visits Recorded"
+                          description="This student hasn't visited any stalls yet."
+                          className="py-8"
+                        />
                       )}
                     </div>
                   ) : (
@@ -295,9 +436,11 @@ export default function StudentRecordsPage() {
                         const feedback = getStudentFeedback(selectedStudent.studentId);
                         if (!feedback) {
                           return (
-                            <p className="text-gray-500 text-center py-8">
-                              No feedback submitted yet
-                            </p>
+                            <EmptyState
+                              title="No Feedback Submitted"
+                              description="This student hasn't submitted the feedback questionnaire yet."
+                              className="py-8"
+                            />
                           );
                         }
                         return (
@@ -326,22 +469,26 @@ export default function StudentRecordsPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                <svg
-                  className="w-16 h-16 mb-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-                <p className="text-lg">Select a student to view details</p>
-              </div>
+              <EmptyState
+                title="No Student Selected"
+                description="Select a student from the list to view their full details and activity."
+                className="h-full flex flex-col justify-center"
+                icon={
+                  <svg
+                    className="w-12 h-12"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                }
+              />
             )}
           </div>
         </div>

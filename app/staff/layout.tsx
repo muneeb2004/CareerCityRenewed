@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import PageTransition from '../../src/lib/components/ui/PageTransition';
 
 export default function StaffLayout({
   children,
@@ -122,7 +123,9 @@ export default function StaffLayout({
 
       {/* Main Content */}
       <main className="flex-1 p-4 sm:p-8 md:ml-64 transition-all duration-300 pt-20 md:pt-8">
-        {children}
+        <PageTransition>
+            {children}
+        </PageTransition>
       </main>
     </div>
   );

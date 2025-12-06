@@ -15,9 +15,13 @@ import {
 } from '../../../src/types';
 import toast, { Toaster } from 'react-hot-toast';
 import CustomSelect from '../../../src/lib/components/ui/CustomSelect';
+import { ListRowSkeleton } from '../../../src/lib/components/ui/Skeleton';
+import { EmptyState } from '../../../src/lib/components/ui/EmptyState';
+import { Modal } from '../../../src/lib/components/ui/Modal';
 
 export default function StudentQuestionManagement() {
   const [questions, setQuestions] = useState<VolunteerQuestion[]>([]);
+  const [fetching, setFetching] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState<{
     text: string;
@@ -57,8 +61,15 @@ export default function StudentQuestionManagement() {
   }, []);
 
   const fetchQuestions = async () => {
-    const data = await getAllVolunteerQuestions();
-    setQuestions(data);
+    try {
+      const data = await getAllVolunteerQuestions();
+      setQuestions(data);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load questions");
+    } finally {
+      setFetching(false);
+    }
   };
 
   // Get organization_select questions for linking
@@ -282,14 +293,14 @@ export default function StudentQuestionManagement() {
           <p className="text-gray-500 text-sm mt-1">Manage the questions asked to students</p>
         </div>
         <button
-          className={`${showAddForm ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg' : 'btn-primary'} font-semibold py-2 px-4 rounded-xl transition-all duration-200`}
+          className="btn-primary font-semibold py-2 px-4 rounded-xl transition-all duration-200"
           onClick={() => {
-            setShowAddForm(!showAddForm);
             setEditingQuestion(null);
             resetForm();
+            setShowAddForm(true);
           }}
         >
-          {showAddForm && !editingQuestion ? 'Cancel' : 'Add New Question'}
+          Add New Question
         </button>
       </div>
 
@@ -310,16 +321,16 @@ export default function StudentQuestionManagement() {
         </div>
       </div>
 
-      {/* Add/Edit Form */}
-      {showAddForm && (
+      {/* Drawer Form */}
+      <Modal
+        isOpen={showAddForm}
+        onClose={() => setShowAddForm(false)}
+        title={editingQuestion ? 'Edit Question' : 'Add New Question'}
+      >
         <form
           onSubmit={handleAddQuestion}
-          className="card-modern grid grid-cols-1 gap-5 animate-fade-in-up relative z-10"
+          className="space-y-5"
         >
-          <h2 className="text-xl font-bold text-gray-800">
-            {editingQuestion ? 'Edit Question' : 'Add New Question'}
-          </h2>
-          
           {/* Question Text */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Question Text</label>
@@ -345,7 +356,7 @@ export default function StudentQuestionManagement() {
           {/* Question Category Selector */}
           <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-4 rounded-xl border border-gray-200">
             <label className="block text-sm font-semibold text-gray-700 mb-3">Question Category</label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               {/* Organization Selection */}
               <button
                 type="button"
@@ -690,10 +701,36 @@ export default function StudentQuestionManagement() {
               : editingQuestion ? 'Update Question' : 'Add Question'}
           </button>
         </form>
-      )}
+      </Modal>
 
       {/* Questions List - Organized by Type */}
       <div className="space-y-6">
+        {fetching ? (
+          <div className="card-modern">
+            <h2 className="text-xl font-bold mb-6 text-gray-800 flex items-center gap-2">
+              Loading Questions...
+            </h2>
+             <div className="space-y-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <ListRowSkeleton key={i} />
+                ))}
+             </div>
+          </div>
+        ) : questions.length === 0 ? (
+             <EmptyState
+                title="No Questions Added"
+                description="Create questions for students to answer about their experience."
+                action={
+                  <button
+                    onClick={() => setShowAddForm(true)}
+                    className="btn-primary py-2 px-4 text-sm"
+                  >
+                    Add Question
+                  </button>
+                }
+             />
+        ) : (
+        <>
         {/* Organization Selection Questions */}
         {orgSelectQuestions.length > 0 && (
           <div className="card-modern border-l-4 border-violet-500">
@@ -928,6 +965,8 @@ export default function StudentQuestionManagement() {
             )}
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

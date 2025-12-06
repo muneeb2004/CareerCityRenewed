@@ -11,6 +11,9 @@ import {
 import QRCodeGenerator from '../../../src/components/organization/QRCodeGenerator';
 import { Organization } from '../../../src/types';
 import toast, { Toaster } from 'react-hot-toast';
+import { CardSkeleton } from '../../../src/lib/components/ui/Skeleton';
+import { EmptyState } from '../../../src/lib/components/ui/EmptyState';
+import { Modal } from '../../../src/lib/components/ui/Modal';
 
 interface OrganizationForm {
   organizationId: string;
@@ -24,6 +27,7 @@ interface OrganizationForm {
 
 export default function OrganizationManagement() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [fetching, setFetching] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState<OrganizationForm>({
     organizationId: '',
@@ -44,8 +48,15 @@ export default function OrganizationManagement() {
   }, []);
 
   const fetchOrganizations = async () => {
-    const data = await getAllOrganizations();
-    setOrganizations(data);
+    try {
+      const data = await getAllOrganizations();
+      setOrganizations(data);
+    } catch (error) {
+      console.error("Failed to fetch organizations", error);
+      toast.error("Failed to load organizations");
+    } finally {
+      setFetching(false);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -162,10 +173,8 @@ export default function OrganizationManagement() {
             {bulkQR ? 'Hide Bulk QR' : 'Generate Bulk QR'}
             </button>
             <button
-            className={`${showAddForm ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg' : 'btn-primary'} font-semibold py-2 px-4 rounded-xl transition-all duration-200`}
+            className="btn-primary font-semibold py-2 px-4 rounded-xl transition-all duration-200"
             onClick={() => {
-                setShowAddForm(!showAddForm);
-                if (showAddForm) {
                 setEditingOrganization(null);
                 setForm({
                     organizationId: '',
@@ -176,86 +185,117 @@ export default function OrganizationManagement() {
                     email: '',
                     category: '',
                 });
-                }
+                setShowAddForm(true);
             }}
             >
-            {showAddForm ? 'Cancel' : 'Add Organization'}
+            Add Organization
             </button>
         </div>
       </div>
 
-      {/* Add Form */}
-      {showAddForm && (
+      {/* Drawer Form */}
+      <Modal
+        isOpen={showAddForm}
+        onClose={() => setShowAddForm(false)}
+        title={editingOrganization ? 'Edit Organization' : 'Add New Organization'}
+      >
         <form
           onSubmit={handleAddOrganization}
-          className="card-modern grid grid-cols-1 md:grid-cols-2 gap-5 animate-fade-in-up"
+          className="flex flex-col h-full"
         >
-          <div className="col-span-1 md:col-span-2 mb-2">
-            <h2 className="text-xl font-bold text-gray-800">
-                {editingOrganization ? 'Edit Organization' : 'Add New Organization'}
-            </h2>
-          </div>
+          <div className="flex-1 overflow-y-auto space-y-4 pb-4"> {/* Scrollable content */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Organization ID</label>
+              <input
+                name="organizationId"
+                value={form.organizationId}
+                onChange={handleInputChange}
+                placeholder="e.g. google-pakistan"
+                className="input-modern"
+                disabled={!!editingOrganization}
+              />
+              <p className="text-xs text-gray-500 mt-1">Unique identifier for the system.</p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+              <input
+                name="name"
+                value={form.name}
+                onChange={handleInputChange}
+                placeholder="e.g. Google"
+                className="input-modern"
+                required
+              />
+            </div>
 
-          <input
-            name="organizationId"
-            value={form.organizationId}
-            onChange={handleInputChange}
-            placeholder="Organization ID (e.g. google-pakistan)"
-            className="input-modern"
-            disabled={!!editingOrganization}
-          />
-          <input
-            name="name"
-            value={form.name}
-            onChange={handleInputChange}
-            placeholder="Name"
-            className="input-modern"
-            required
-          />
-          <input
-            name="industry"
-            value={form.industry}
-            onChange={handleInputChange}
-            placeholder="Industry"
-            className="input-modern"
-          />
-          <input
-            name="boothNumber"
-            value={form.boothNumber}
-            onChange={handleInputChange}
-            placeholder="Booth Number"
-            className="input-modern"
-          />
-          <input
-            name="contactPerson"
-            value={form.contactPerson}
-            onChange={handleInputChange}
-            placeholder="Contact Person"
-            className="input-modern"
-          />
-          <input
-            name="email"
-            value={form.email}
-            onChange={handleInputChange}
-            placeholder="Email"
-            className="input-modern"
-          />
-          <input
-            name="category"
-            value={form.category}
-            onChange={handleInputChange}
-            placeholder="Category"
-            className="input-modern"
-          />
-          <button
-            type="submit"
-            className="col-span-1 md:col-span-2 btn-accent mt-2"
-            disabled={loading}
-          >
-            {loading ? (editingOrganization ? 'Updating...' : 'Adding...') : (editingOrganization ? 'Update Organization' : 'Add Organization')}
-          </button>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Industry</label>
+              <input
+                name="industry"
+                value={form.industry}
+                onChange={handleInputChange}
+                placeholder="e.g. Technology"
+                className="input-modern"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Booth Number</label>
+              <input
+                name="boothNumber"
+                value={form.boothNumber}
+                onChange={handleInputChange}
+                placeholder="e.g. A-12"
+                className="input-modern"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
+              <input
+                name="contactPerson"
+                value={form.contactPerson}
+                onChange={handleInputChange}
+                placeholder="Full Name"
+                className="input-modern"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input
+                name="email"
+                value={form.email}
+                onChange={handleInputChange}
+                placeholder="contact@company.com"
+                className="input-modern"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <input
+                name="category"
+                value={form.category}
+                onChange={handleInputChange}
+                placeholder="e.g. Gold Sponsor"
+                className="input-modern"
+              />
+            </div>
+          </div> {/* End scrollable content */}
+
+          <div className="pt-4 border-t border-gray-100 mt-auto"> {/* Fixed footer for button */}
+            <button
+              type="submit"
+              className="btn-accent w-full"
+              disabled={loading}
+            >
+              {loading ? (editingOrganization ? 'Updating...' : 'Adding...') : (editingOrganization ? 'Update Organization' : 'Add Organization')}
+            </button>
+          </div>
         </form>
-      )}
+      </Modal>
 
       {/* Bulk QR Section */}
       {bulkQR && (
@@ -299,10 +339,30 @@ export default function OrganizationManagement() {
         <h2 className="text-xl font-bold mb-6 text-gray-800 flex items-center gap-2">
             <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
             Participating Organizations
-            <span className="text-sm font-normal text-gray-400 ml-2">({organizations.length})</span>
+            {!fetching && <span className="text-sm font-normal text-gray-400 ml-2">({organizations.length})</span>}
         </h2>
+        {fetching ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <CardSkeleton key={i} />
+            ))}
+          </div>
+        ) : organizations.length === 0 ? (
+          <EmptyState
+            title="No Organizations Found"
+            description="Get started by adding the first organization to the event."
+            action={
+              <button
+                onClick={() => setShowAddForm(true)}
+                className="btn-primary py-2 px-4 text-sm"
+              >
+                Add Organization
+              </button>
+            }
+          />
+        ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {organizations.map((organization) => (
+            {organizations.map((organization) => (
             <div
               key={organization.organizationId}
               className="glass-hover p-5 rounded-xl border border-white/60 flex flex-col items-center relative group transition-all duration-300"
@@ -345,6 +405,7 @@ export default function OrganizationManagement() {
             </div>
           ))}
         </div>
+        )}
       </div>
     </div>
   );
