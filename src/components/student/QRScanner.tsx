@@ -24,6 +24,14 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
   const [error, setError] = useState('');
   const [cameras, setCameras] = useState<any[]>([]);
   const [activeCameraId, setActiveCameraId] = useState<string | null>(null);
+  const [isChromeIOS, setIsChromeIOS] = useState(false);
+
+  // Detect Chrome on iOS on mount
+  useEffect(() => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const chromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
+    setIsChromeIOS(chromeIOS);
+  }, []);
 
   const onScanError = useCallback((errorMessage: string) => {
     // Ignore scan errors (happens when no QR in view)
@@ -130,12 +138,17 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
       });
       scannerRef.current = scanner;
 
+      // Detect Chrome on iOS (uses WebKit, not Chromium)
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
+      
       let cameraConfig: any = { facingMode: 'environment' };
 
-      if (cameraId) {
+      // Chrome iOS has issues with deviceId constraints - always use facingMode
+      if (cameraId && !isChromeIOS) {
           cameraConfig = { deviceId: { exact: cameraId } };
-      } else {
-          // Initial load - try to find back camera explicitly
+      } else if (!isChromeIOS) {
+          // Initial load - try to find back camera explicitly (skip on Chrome iOS)
            try {
               const devices = await Html5Qrcode.getCameras();
               if (devices && devices.length > 0) {
@@ -150,6 +163,7 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
                console.log("Permission not granted yet, using generic constraint");
            }
       }
+      // On Chrome iOS, we just use { facingMode: 'environment' } which works
 
       await scanner.start(
         cameraConfig,
@@ -182,6 +196,10 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
     } catch (err: any) {
       console.error('Scanner error details:', err);
       
+      // Detect Chrome on iOS
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
+      
       let errorMessage = 'Camera access denied or unavailable.';
       
       if (typeof err === 'string') {
@@ -189,18 +207,26 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
       } else if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
           errorMessage = 'Camera permission was denied. Please allow camera access in your browser settings.';
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-          errorMessage = 'No camera found on this device.';
+          if (isChromeIOS) {
+              errorMessage = 'Camera not available in Chrome on iOS. Please use Safari for the best experience.';
+          } else {
+              errorMessage = 'No camera found on this device.';
+          }
       } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
           errorMessage = 'Camera is being used by another application or is invalid.';
       } else if (err.name === 'OverconstrainedError') {
-          errorMessage = 'Camera does not meet the required resolution constraints.';
+          if (isChromeIOS) {
+              errorMessage = 'Camera constraints not supported. Please use Safari for the best experience.';
+          } else {
+              errorMessage = 'Camera does not meet the required resolution constraints.';
+          }
       } else if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
           errorMessage = 'Camera access requires a secure HTTPS connection.';
       }
 
       setError(errorMessage);
     }
-  }, [handleScanSuccess, onScanError]);
+  }, [handleScanSuccess, onScanError, cameras.length]);
 
   const handleSwitchCamera = useCallback(async () => {
       if (cameras.length < 2) return;
@@ -325,7 +351,8 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
               display: none !important;
             }
           `}</style>
-          {cameras.length > 1 && (
+          {/* Hide camera switch on Chrome iOS since deviceId constraints don't work */}
+          {cameras.length > 1 && !isChromeIOS && (
               <button 
                   onClick={handleSwitchCamera}
                   className="absolute top-4 right-4 bg-white/80 backdrop-blur-md p-2 rounded-full shadow-lg border border-white/50 text-gray-700 hover:bg-white transition-all active:scale-95 z-10"
