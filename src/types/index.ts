@@ -56,12 +56,7 @@ export interface StudentFeedback {
   feedbackId: string;
   studentId: string;
   timestamp: Timestamp;
-  responses: {
-    overallExperience: number; // 1-5
-    stallsVisited: number;
-    mostHelpfulStall: string;
-    suggestions: string;
-  };
+  responses: Record<string, string | number | string[]>; // Flexible for dynamic questions
 }
 
 // Question Types:

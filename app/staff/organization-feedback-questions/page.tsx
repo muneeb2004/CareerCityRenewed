@@ -6,18 +6,20 @@ import {
   getAllOrganizationFeedbackQuestions,
   updateOrganizationFeedbackQuestion,
   deleteOrganizationFeedbackQuestion,
-} from '../../../src/firestore/organizationFeedbackQuestions';
+} from '@/firestore/organizationFeedbackQuestions';
 import {
   OrganizationFeedbackQuestion,
   QUESTION_TYPES,
   QUESTION_TYPE_LABELS,
   QuestionType,
-} from '../../../src/types';
-import toast, { Toaster } from 'react-hot-toast';
-import CustomSelect from '../../../src/lib/components/ui/CustomSelect';
-import { ListRowSkeleton } from '../../../src/lib/components/ui/Skeleton';
-import { EmptyState } from '../../../src/lib/components/ui/EmptyState';
-import { Modal } from '../../../src/lib/components/ui/Modal';
+} from '@/types';
+import { Toaster } from 'react-hot-toast';
+import { showSuccess, showError } from '@/lib/utils/toast';
+import CustomSelect from '@/lib/components/ui/CustomSelect';
+import { ListRowSkeleton } from '@/lib/components/ui/Skeleton';
+import { EmptyState } from '@/lib/components/ui/EmptyState';
+import { Modal } from '@/lib/components/ui/Modal';
+import { ConfirmationModal } from '@/lib/components/ui/ConfirmationModal';
 import {
   DndContext,
   closestCenter,
@@ -33,7 +35,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { SortableItem } from '../../../src/lib/components/ui/SortableItem';
+import { SortableItem } from '@/lib/components/ui/SortableItem';
 
 export default function OrganizationFeedbackQuestionManagement() {
   const [questions, setQuestions] = useState<OrganizationFeedbackQuestion[]>([]);
@@ -64,6 +66,10 @@ export default function OrganizationFeedbackQuestionManagement() {
   const [loading, setLoading] = useState(false);
   const [editingQuestion, setEditingQuestion] =
     useState<OrganizationFeedbackQuestion | null>(null);
+  
+  // Delete Confirmation State
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -82,7 +88,7 @@ export default function OrganizationFeedbackQuestionManagement() {
       setQuestions(data);
     } catch (error) {
       console.error(error);
-      toast.error("Failed to load questions");
+      showError("Failed to load questions");
     } finally {
       setFetching(false);
     }
@@ -147,13 +153,13 @@ export default function OrganizationFeedbackQuestionManagement() {
     try {
       if (editingQuestion) {
         await updateOrganizationFeedbackQuestion(editingQuestion.questionId, form);
-        toast.success('Question updated!');
+        showSuccess('Question updated!');
         setEditingQuestion(null);
           } else {
             console.log('Attempting to create question...'); // Debug log
             await createOrganizationFeedbackQuestion(form);
             console.log('createOrganizationFeedbackQuestion resolved.'); // Debug log
-            toast.success('Question added!');
+            showSuccess('Question added!');
           }
           resetForm();
           setShowAddForm(false);
@@ -161,9 +167,9 @@ export default function OrganizationFeedbackQuestionManagement() {
         } catch (err: unknown) {
           console.error('Error caught in handleAddQuestion:', err); // Debug log
           if (err instanceof Error) {
-            toast.error(`Failed to save question: ${err.message}`);
+            showError(`Failed to save question: ${err.message}`);
           } else {
-            toast.error('An unknown error occurred.');
+            showError('An unknown error occurred.');
           }
         } finally {
           console.log('setLoading(false) in finally'); // Debug log
@@ -186,19 +192,23 @@ export default function OrganizationFeedbackQuestionManagement() {
     setShowAddForm(true);
   };
 
-  const handleDelete = async (questionId: string) => {
-    if (window.confirm('Are you sure you want to delete this question?')) {
-      try {
-        await deleteOrganizationFeedbackQuestion(questionId);
-        toast.success('Question deleted!');
-        fetchQuestions();
-      } catch (err: unknown) {
-        console.error(err);
-        if (err instanceof Error) {
-          toast.error(`Failed to delete question: ${err.message}`);
-        } else {
-          toast.error('An unknown error occurred while deleting the question.');
-        }
+  const handleDelete = (questionId: string) => {
+    setDeleteId(questionId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await deleteOrganizationFeedbackQuestion(deleteId);
+      showSuccess('Question deleted!');
+      fetchQuestions();
+    } catch (err: unknown) {
+      console.error(err);
+      if (err instanceof Error) {
+        showError(`Failed to delete question: ${err.message}`);
+      } else {
+        showError('An unknown error occurred while deleting the question.');
       }
     }
   };
@@ -222,7 +232,7 @@ export default function OrganizationFeedbackQuestionManagement() {
         
         Promise.all(updates).catch(err => {
             console.error("Failed to update order", err);
-            toast.error("Failed to save new order");
+            showError("Failed to save new order");
             fetchQuestions(); // Revert on error
         });
 
@@ -569,6 +579,15 @@ export default function OrganizationFeedbackQuestionManagement() {
                   )}
         </div>
       </div>
+
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDelete}
+        title="Delete Question"
+        message="Are you sure you want to delete this question? This will also delete all feedback answers associated with it."
+        confirmText="Delete Question"
+      />
     </div>
   );
 }

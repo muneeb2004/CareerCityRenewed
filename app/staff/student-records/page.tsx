@@ -1,15 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getAllStudents } from '../../../src/firestore/student';
-import { getAllStudentFeedback, StudentFeedbackRecord } from '../../../src/firestore/studentFeedback';
-import { getAllOrganizations } from '../../../src/firestore/organizations';
-import { getAllVolunteerQuestions } from '../../../src/firestore/volunteerQuestions';
-import { Student, Organization, VolunteerQuestion } from '../../../src/types';
+import { getAllStudents } from '@/firestore/student';
+import { getAllStudentFeedback, StudentFeedbackRecord } from '@/firestore/studentFeedback';
+import { getAllOrganizations } from '@/firestore/organizations';
+import { getAllVolunteerQuestions } from '@/firestore/volunteerQuestions';
+import { Student, Organization, VolunteerQuestion } from '@/types';
 import toast, { Toaster } from 'react-hot-toast';
+import { showError } from '@/lib/utils/toast';
 import Image from 'next/image';
-import { Skeleton } from '../../../src/lib/components/ui/Skeleton';
-import { EmptyState } from '../../../src/lib/components/ui/EmptyState';
+import { Skeleton } from '@/lib/components/ui/Skeleton';
+import { EmptyState } from '@/lib/components/ui/EmptyState';
+import { useDebounce } from '@/lib/hooks/useDebounce';
 
 export default function StudentRecordsPage() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -25,6 +27,8 @@ export default function StudentRecordsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [filterHasFeedback, setFilterHasFeedback] = useState<'all' | 'yes' | 'no'>('all');
   const [filterVisitedOrg, setFilterVisitedOrg] = useState<string>('');
+
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   useEffect(() => {
     fetchData();
@@ -45,7 +49,7 @@ export default function StudentRecordsPage() {
       setQuestions(questionsData);
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast.error('Failed to load student records');
+      showError('Failed to load student records');
     } finally {
       setLoading(false);
     }
@@ -70,7 +74,7 @@ export default function StudentRecordsPage() {
 
   // Filter students by search term and advanced filters
   const filteredStudents = students.filter(student => {
-    const searchLower = searchTerm.toLowerCase();
+    const searchLower = debouncedSearchTerm.toLowerCase();
     const matchesSearch = 
       student.studentId.toLowerCase().includes(searchLower) ||
       student.email.toLowerCase().includes(searchLower) ||
@@ -113,11 +117,11 @@ export default function StudentRecordsPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
       <Toaster position="top-center" />
 
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-4 flex-shrink-0">
         <div className="flex items-center gap-4 mb-2">
           <Image
             src="/favicon-optimized.png"
@@ -130,24 +134,24 @@ export default function StudentRecordsPage() {
             Student Records
           </h1>
         </div>
-        <p className="text-gray-600 mt-2">
+        <p className="text-gray-600 mt-1">
           View student stall visits and questionnaire responses
         </p>
       </div>
 
       {/* Search and Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 flex-shrink-0">
         <div className="md:col-span-2 relative z-20">
           <div className="flex gap-2">
              <div className="relative flex-1">
+                <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 <input
                     type="text"
                     placeholder="Search by Student ID, Email, or Name..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="input-modern w-full pl-10"
+                    className="input-modern w-full !pl-10"
                 />
-                <svg className="w-5 h-5 text-gray-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
              </div>
              <button
                 onClick={() => setShowFilters(!showFilters)}
@@ -277,79 +281,92 @@ export default function StudentRecordsPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-0 overflow-hidden">
           {/* Student List */}
-          <div className={`glass-card p-6 ${selectedStudent ? 'hidden lg:block' : 'block'}`}>
-            <h2 className="text-xl font-bold text-gray-800 mb-4">
-              Students ({filteredStudents.length})
-            </h2>
-            <div className="space-y-2 max-h-[600px] overflow-y-auto">
+          <div className={`glass-card p-6 flex flex-col min-h-0 overflow-hidden ${selectedStudent ? 'hidden lg:flex' : 'flex'}`}>
+            <div className="flex items-center justify-between mb-4 flex-shrink-0">
+              <h2 className="text-xl font-bold text-gray-800">
+                Students ({filteredStudents.length})
+              </h2>
+              <button
+                onClick={() => fetchData()}
+                className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition-colors"
+                title="Refresh"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto min-h-0">
               {filteredStudents.length === 0 ? (
                 <EmptyState
                   title="No Students Found"
                   description={searchTerm ? `No students match "${searchTerm}"` : "No students have registered yet."}
                 />
               ) : (
-                filteredStudents.map((student) => {
-                  const hasFeedback = !!getStudentFeedback(student.studentId);
-                  return (
-                    <div
-                      key={student.studentId}
-                      onClick={() => setSelectedStudent(student)}
-                      className={`p-4 rounded-xl border cursor-pointer transition-all duration-200 ${
-                        selectedStudent?.studentId === student.studentId
-                          ? 'border-blue-500 bg-blue-50 shadow-md'
-                          : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="font-bold text-gray-800">
-                            {student.fullName || 'No Name'}
+                <div className="space-y-2 pr-2">
+                  {filteredStudents.map((student) => {
+                    const hasFeedback = !!getStudentFeedback(student.studentId);
+                    return (
+                      <div
+                        key={student.studentId}
+                        onClick={() => setSelectedStudent(student)}
+                        className={`p-4 rounded-xl border cursor-pointer transition-all duration-200 ${
+                          selectedStudent?.studentId === student.studentId
+                            ? 'border-blue-500 bg-blue-50 shadow-md'
+                            : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="font-bold text-gray-800">
+                              {student.fullName || 'No Name'}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              ID: {student.studentId}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {student.email}
+                            </div>
                           </div>
-                          <div className="text-sm text-gray-500">
-                            ID: {student.studentId}
+                          <div className="text-right">
+                            <div className="text-sm">
+                              <span className="font-semibold text-blue-600">
+                                {student.visitedStalls?.length || 0}
+                              </span>{' '}
+                              <span className="text-gray-500">visits</span>
+                            </div>
+                            {hasFeedback && (
+                              <span className="inline-block px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded-full mt-1">
+                                Feedback ✓
+                              </span>
+                            )}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {student.email}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm">
-                            <span className="font-semibold text-blue-600">
-                              {student.visitedStalls?.length || 0}
-                            </span>{' '}
-                            <span className="text-gray-500">visits</span>
-                          </div>
-                          {hasFeedback && (
-                            <span className="inline-block px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded-full mt-1">
-                              Feedback ✓
-                            </span>
-                          )}
                         </div>
                       </div>
-                    </div>
-                  );
-                })
+                    );
+                  })}
+                </div>
               )}
             </div>
           </div>
 
           {/* Student Detail Panel */}
-          <div className={`glass-card p-6 ${selectedStudent ? 'block' : 'hidden lg:block'}`}>
+          <div className={`glass-card p-6 flex flex-col min-h-0 overflow-hidden ${selectedStudent ? 'flex' : 'hidden lg:flex'}`}>
             {selectedStudent ? (
-              <div>
+              <div className="flex flex-col h-full overflow-hidden">
                 {/* Mobile Back Button */}
                 <button 
                   onClick={() => setSelectedStudent(null)}
-                  className="lg:hidden mb-4 flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors"
+                  className="lg:hidden mb-4 flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors flex-shrink-0"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                   Back to List
                 </button>
 
                 {/* Student Info Header */}
-                <div className="mb-6 pb-4 border-b border-gray-200">
+                <div className="mb-6 pb-4 border-b border-gray-200 flex-shrink-0">
                   <h2 className="text-2xl font-bold text-gray-800">
                     {selectedStudent.fullName || 'No Name'}
                   </h2>
@@ -374,7 +391,7 @@ export default function StudentRecordsPage() {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-2 mb-4">
+                <div className="flex gap-2 mb-4 flex-shrink-0">
                   <button
                     onClick={() => setActiveTab('visits')}
                     className={`px-4 py-2 rounded-lg font-semibold transition-all ${
@@ -398,7 +415,7 @@ export default function StudentRecordsPage() {
                 </div>
 
                 {/* Tab Content */}
-                <div className="max-h-[400px] overflow-y-auto">
+                <div className="flex-1 overflow-y-auto min-h-0">
                   {activeTab === 'visits' ? (
                     <div className="space-y-2">
                       {selectedStudent.visitedStalls?.length > 0 ? (

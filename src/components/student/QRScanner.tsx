@@ -95,14 +95,34 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
       const element = document.getElementById('qr-reader');
       if (!element) return;
 
-      // Clear any existing scanner instance
+      // IMPORTANT: Fully stop and clear any existing scanner instance first
       if (scannerRef.current) {
         try {
-           await scannerRef.current.stop();
+          const state = scannerRef.current.getState();
+          if (state === 2) { // Html5QrcodeScannerState.SCANNING = 2
+            await scannerRef.current.stop();
+          }
         } catch (e) {
-           // ignore stop error
+          // ignore stop error
         }
+        try {
+          scannerRef.current.clear();
+        } catch (e) {
+          // ignore clear error
+        }
+        scannerRef.current = null;
       }
+
+      // Also manually clear any leftover video elements to prevent duplicates
+      const existingVideos = element.querySelectorAll('video');
+      existingVideos.forEach(video => {
+        const stream = video.srcObject as MediaStream;
+        stream?.getTracks().forEach(track => track.stop());
+        video.remove();
+      });
+      
+      // Clear inner HTML to remove any leftover elements
+      element.innerHTML = '';
 
       const scanner = new Html5Qrcode('qr-reader', {
         formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
@@ -199,39 +219,62 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
   }, [cameras, activeCameraId, startScanner]);
 
   const stopScanner = useCallback(async () => {
-    // Capture video element and stream tracks before attempting to stop
-    // This ensures we have a reference to the actual media stream even if the library
-    // removes the element from the DOM or fails to stop it.
-    const videoElement = document.querySelector('#qr-reader video') as HTMLVideoElement;
-    const stream = videoElement?.srcObject as MediaStream;
-    const tracks = stream?.getTracks() || [];
+    // Capture video elements and stream tracks before attempting to stop
+    const container = document.getElementById('qr-reader');
+    const videoElements = container?.querySelectorAll('video') || [];
+    
+    // Collect all tracks from all video elements
+    const allTracks: MediaStreamTrack[] = [];
+    videoElements.forEach(video => {
+      const stream = video.srcObject as MediaStream;
+      if (stream) {
+        stream.getTracks().forEach(track => allTracks.push(track));
+      }
+    });
 
     if (scannerRef.current) {
         try {
-            await scannerRef.current.stop();
+            const state = scannerRef.current.getState();
+            if (state === 2) { // Html5QrcodeScannerState.SCANNING = 2
+              await scannerRef.current.stop();
+            }
         } catch (err) {
             // Ignore error if scanner wasn't running or already stopped
         }
         
         try {
-             // ensure UI is cleared
             scannerRef.current.clear();
         } catch (e) {
             // ignore clear error
         }
 
-        scannerRef.current = null; // Clear ref
+        scannerRef.current = null;
     }
 
     // Emergency manual cleanup: Ensure all tracks are definitely stopped
-    // This fixes the issue where the camera light stays on after unmount
-    tracks.forEach(track => {
+    allTracks.forEach(track => {
         try {
             track.stop();
         } catch (e) {
             console.warn('Error manually stopping track:', e);
         }
     });
+
+    // Remove any leftover video elements
+    videoElements.forEach(video => {
+      try {
+        video.remove();
+      } catch (e) {
+        // ignore
+      }
+    });
+
+    // Clear container content
+    if (container) {
+      container.innerHTML = '';
+    }
+
+    setIsScanning(false);
   }, []);
 
   useEffect(() => {
@@ -248,7 +291,40 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
   return (
     <div className="w-full flex flex-col items-center">
       <div className="relative w-full">
-          <div id="qr-reader" className="w-full rounded-2xl overflow-hidden shadow-inner bg-black/5 relative min-h-[300px]"></div>
+          <div 
+            id="qr-reader" 
+            className="w-full rounded-2xl overflow-hidden shadow-inner bg-black/5 relative"
+            style={{ minHeight: '250px' }}
+          ></div>
+          {/* Style the video element dynamically for proper aspect ratio */}
+          <style jsx global>{`
+            #qr-reader {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            #qr-reader video {
+              width: 100% !important;
+              height: auto !important;
+              max-height: 70vh;
+              object-fit: cover;
+              border-radius: 1rem;
+            }
+            #qr-reader img {
+              display: none !important;
+            }
+            /* Hide the library's default scan region border */
+            #qr-reader__scan_region {
+              min-height: unset !important;
+            }
+            #qr-reader__dashboard {
+              display: none !important;
+            }
+            /* Ensure only one video element is visible */
+            #qr-reader video:not(:first-of-type) {
+              display: none !important;
+            }
+          `}</style>
           {cameras.length > 1 && (
               <button 
                   onClick={handleSwitchCamera}

@@ -4,7 +4,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import PageTransition from '../../src/lib/components/ui/PageTransition';
+import PageTransition from '@/lib/components/ui/PageTransition';
+import Breadcrumbs from '@/lib/components/ui/Breadcrumbs';
+import { ErrorBoundary } from 'react-error-boundary';
+import { ErrorFallback } from '@/lib/components/ui/ErrorFallback';
 
 export default function StaffLayout({
   children,
@@ -66,6 +69,7 @@ export default function StaffLayout({
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
           md:translate-x-0
         `}
+        aria-label="Sidebar Navigation"
       >
         <div className="mb-10">
             <div className="flex items-center gap-3 mb-2">
@@ -83,7 +87,7 @@ export default function StaffLayout({
             <p className="text-gray-400 text-xs mt-1 uppercase tracking-wider">Administration</p>
         </div>
        
-        <nav className="space-y-2 overflow-y-auto max-h-[calc(100vh-150px)]">
+        <nav className="space-y-2 overflow-y-auto overflow-x-hidden max-h-[calc(100vh-150px)]">
             <Link 
                 href="/staff" 
                 className={`block px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 flex items-center gap-3 group ${pathname === '/staff' ? 'bg-white/10 text-blue-300' : ''}`}
@@ -129,10 +133,15 @@ export default function StaffLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 sm:p-8 md:ml-64 transition-all duration-300 pt-20 md:pt-8">
-        <PageTransition>
-            {children}
-        </PageTransition>
+      <main className="md:ml-64 transition-all duration-300 h-screen flex flex-col pt-20 md:pt-0">
+        <div className="flex-1 flex flex-col overflow-hidden p-4 sm:p-8">
+          <ErrorBoundary FallbackComponent={ErrorFallback}>
+              <Breadcrumbs />
+              <PageTransition>
+                  {children}
+              </PageTransition>
+          </ErrorBoundary>
+        </div>
       </main>
     </div>
   );

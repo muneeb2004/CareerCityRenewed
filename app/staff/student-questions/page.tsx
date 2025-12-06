@@ -6,18 +6,20 @@ import {
   getAllVolunteerQuestions,
   updateVolunteerQuestion,
   deleteVolunteerQuestion,
-} from '../../../src/firestore/volunteerQuestions';
+} from '@/firestore/volunteerQuestions';
 import {
   VolunteerQuestion,
   QUESTION_TYPES,
   QUESTION_TYPE_LABELS,
   QuestionType,
-} from '../../../src/types';
-import toast, { Toaster } from 'react-hot-toast';
-import CustomSelect from '../../../src/lib/components/ui/CustomSelect';
-import { ListRowSkeleton } from '../../../src/lib/components/ui/Skeleton';
-import { EmptyState } from '../../../src/lib/components/ui/EmptyState';
-import { Modal } from '../../../src/lib/components/ui/Modal';
+} from '@/types';
+import { Toaster } from 'react-hot-toast';
+import { showSuccess, showError } from '@/lib/utils/toast';
+import CustomSelect from '@/lib/components/ui/CustomSelect';
+import { ListRowSkeleton } from '@/lib/components/ui/Skeleton';
+import { EmptyState } from '@/lib/components/ui/EmptyState';
+import { Modal } from '@/lib/components/ui/Modal';
+import { ConfirmationModal } from '@/lib/components/ui/ConfirmationModal';
 
 export default function StudentQuestionManagement() {
   const [questions, setQuestions] = useState<VolunteerQuestion[]>([]);
@@ -55,6 +57,10 @@ export default function StudentQuestionManagement() {
   const [optionInput, setOptionInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<VolunteerQuestion | null>(null);
+  
+  // Delete Confirmation State
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchQuestions();
@@ -66,7 +72,7 @@ export default function StudentQuestionManagement() {
       setQuestions(data);
     } catch (error) {
       console.error(error);
-      toast.error("Failed to load questions");
+      showError("Failed to load questions");
     } finally {
       setFetching(false);
     }
@@ -176,11 +182,11 @@ export default function StudentQuestionManagement() {
 
       if (editingQuestion) {
         await updateVolunteerQuestion(editingQuestion.questionId, questionData);
-        toast.success('Question updated!');
+        showSuccess('Question updated!');
         setEditingQuestion(null);
       } else {
         await createVolunteerQuestion(questionData);
-        toast.success('Question added!');
+        showSuccess('Question added!');
       }
       resetForm();
       setShowAddForm(false);
@@ -188,9 +194,9 @@ export default function StudentQuestionManagement() {
     } catch (err: unknown) {
       console.error('Error:', err);
       if (err instanceof Error) {
-        toast.error(`Failed to save question: ${err.message}`);
+        showError(`Failed to save question: ${err.message}`);
       } else {
-        toast.error('An unknown error occurred.');
+        showError('An unknown error occurred.');
       }
     } finally {
       setLoading(false);
@@ -217,16 +223,20 @@ export default function StudentQuestionManagement() {
     setShowAddForm(true);
   };
 
-  const handleDelete = async (questionId: string) => {
-    if (window.confirm('Are you sure you want to delete this question?')) {
-      try {
-        await deleteVolunteerQuestion(questionId);
-        toast.success('Question deleted!');
-        fetchQuestions();
-      } catch (err) {
-        console.error(err);
-        toast.error('Failed to delete question');
-      }
+  const handleDelete = (questionId: string) => {
+    setDeleteId(questionId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await deleteVolunteerQuestion(deleteId);
+      showSuccess('Question deleted!');
+      fetchQuestions();
+    } catch (err) {
+      console.error(err);
+      showError('Failed to delete question');
     }
   };
 
@@ -251,11 +261,11 @@ export default function StudentQuestionManagement() {
       await updateVolunteerQuestion(currentQuestion.questionId, { order: swapOrder });
       await updateVolunteerQuestion(swapQuestion.questionId, { order: currentOrder });
       
-      toast.success('Question reordered');
+      showSuccess('Question reordered');
       fetchQuestions();
     } catch (err) {
       console.error(err);
-      toast.error('Failed to reorder question');
+      showError('Failed to reorder question');
     }
   };
 
@@ -968,6 +978,15 @@ export default function StudentQuestionManagement() {
         </>
         )}
       </div>
+
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDelete}
+        title="Delete Question"
+        message="Are you sure you want to delete this question? This will also delete all student answers associated with it."
+        confirmText="Delete Question"
+      />
     </div>
   );
 }

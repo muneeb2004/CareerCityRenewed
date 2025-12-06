@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
-import { db } from '../../src/lib/firebase';
-import { Scan, Student } from '../../src/types';
-import { Skeleton } from '../../src/lib/components/ui/Skeleton';
-import { getAllStudents } from '../../src/firestore/student';
+import { db } from '@/lib/firebase';
+import { Scan, Student } from '@/types';
+import { Skeleton } from '@/lib/components/ui/Skeleton';
+import { getAllStudents } from '@/firestore/student';
 
 export default function StaffDashboard() {
   const [recentScans, setRecentScans] = useState<Scan[]>([]);

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from '../../../src/lib/firebase';
+import { db } from '@/lib/firebase';
 import {
   BarChart,
   Bar,
@@ -15,9 +15,9 @@ import {
   LineChart,
   Line,
 } from 'recharts';
-import { Scan } from '../../../src/types';
+import { Scan } from '@/types';
 import Papa from 'papaparse';
-import { Skeleton } from '../../../src/lib/components/ui/Skeleton';
+import { Skeleton } from '@/lib/components/ui/Skeleton';
 
 interface AnalyticsData {
   totalStudents: number;
