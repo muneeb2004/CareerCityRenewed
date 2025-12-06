@@ -117,48 +117,48 @@ export default function StudentRecordsPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+    <div className="pb-8">
       <Toaster position="top-center" />
 
-      {/* Header */}
-      <div className="mb-4 flex-shrink-0">
-        <div className="flex items-center gap-4 mb-2">
+      {/* Header - Compact on mobile */}
+      <div className="mb-4">
+        <div className="flex items-center gap-3 mb-1">
           <Image
             src="/favicon-optimized.png"
             alt="Career City Logo"
-            width={48}
-            height={48}
-            className="rounded-lg"
+            width={40}
+            height={40}
+            className="rounded-lg hidden md:block"
           />
-          <h1 className="text-4xl font-extrabold text-gray-900">
+          <h1 className="text-2xl md:text-4xl font-extrabold text-gray-900">
             Student Records
           </h1>
         </div>
-        <p className="text-gray-600 mt-1">
+        <p className="text-gray-600 text-sm md:text-base">
           View student stall visits and questionnaire responses
         </p>
       </div>
 
-      {/* Search and Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 flex-shrink-0">
-        <div className="md:col-span-2 relative z-20">
+      {/* Search and Stats - Stack on mobile */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4">
+        <div className="col-span-2 relative z-20">
           <div className="flex gap-2">
              <div className="relative flex-1">
                 <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 <input
                     type="text"
-                    placeholder="Search by Student ID, Email, or Name..."
+                    placeholder="Search..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="input-modern w-full !pl-10"
+                    className="input-modern w-full !pl-10 text-sm md:text-base"
                 />
              </div>
              <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`px-4 rounded-xl border transition-colors flex items-center gap-2 ${showFilters || filterHasFeedback !== 'all' || filterVisitedOrg ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                className={`px-3 md:px-4 rounded-xl border transition-colors flex items-center gap-1 md:gap-2 ${showFilters || filterHasFeedback !== 'all' || filterVisitedOrg ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
-                Filters
+                <span className="hidden md:inline">Filters</span>
                 {(filterHasFeedback !== 'all' || filterVisitedOrg) && (
                     <span className="w-2 h-2 rounded-full bg-blue-600"></span>
                 )}
@@ -223,24 +223,24 @@ export default function StudentRecordsPage() {
             </div>
           )}
         </div>
-        <div className="glass-card p-4 text-center">
-          <div className="text-3xl font-bold text-blue-600">{students.length}</div>
-          <div className="text-sm text-gray-500">Total Students</div>
+        <div className="glass-card p-3 md:p-4 text-center">
+          <div className="text-2xl md:text-3xl font-bold text-blue-600">{students.length}</div>
+          <div className="text-xs md:text-sm text-gray-500">Students</div>
         </div>
-        <div className="glass-card p-4 text-center">
-          <div className="text-3xl font-bold text-violet-600">{feedbackRecords.length}</div>
-          <div className="text-sm text-gray-500">Feedback Submissions</div>
+        <div className="glass-card p-3 md:p-4 text-center">
+          <div className="text-2xl md:text-3xl font-bold text-violet-600">{feedbackRecords.length}</div>
+          <div className="text-xs md:text-sm text-gray-500">Feedback</div>
         </div>
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Student List Skeleton */}
-          <div className="glass-card p-6">
+          <div className="glass-card p-4 md:p-6">
              <Skeleton className="h-8 w-48 mb-4" />
              <div className="space-y-2">
-                {Array.from({length: 6}).map((_, i) => (
-                   <div key={i} className="p-4 rounded-xl border border-gray-200 bg-white/50">
+                {Array.from({length: 4}).map((_, i) => (
+                   <div key={i} className="p-3 md:p-4 rounded-xl border border-gray-200 bg-white/50">
                       <div className="flex justify-between items-start">
                          <div className="space-y-2 w-2/3">
                             <Skeleton className="h-5 w-3/4" />
@@ -257,7 +257,7 @@ export default function StudentRecordsPage() {
              </div>
           </div>
           {/* Detail Panel Skeleton */}
-          <div className="glass-card p-6 hidden lg:block">
+          <div className="glass-card p-4 md:p-6 hidden lg:block">
              <div className="space-y-6">
                 <div className="border-b border-gray-200 pb-4 space-y-3">
                    <Skeleton className="h-8 w-3/4" />
@@ -281,11 +281,11 @@ export default function StudentRecordsPage() {
           </div>
         </div>
       ) : (
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-0 overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Student List */}
-          <div className={`glass-card p-6 flex flex-col min-h-0 overflow-hidden ${selectedStudent ? 'hidden lg:flex' : 'flex'}`}>
-            <div className="flex items-center justify-between mb-4 flex-shrink-0">
-              <h2 className="text-xl font-bold text-gray-800">
+          <div className={`glass-card p-4 sm:p-6 ${selectedStudent ? 'hidden lg:block' : 'block'}`}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800">
                 Students ({filteredStudents.length})
               </h2>
               <button
@@ -298,14 +298,14 @@ export default function StudentRecordsPage() {
                 </svg>
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="space-y-2 lg:max-h-[60vh] lg:overflow-y-auto lg:pr-2">
               {filteredStudents.length === 0 ? (
                 <EmptyState
                   title="No Students Found"
                   description={searchTerm ? `No students match "${searchTerm}"` : "No students have registered yet."}
                 />
               ) : (
-                <div className="space-y-2 pr-2">
+                <div className="space-y-2">
                   {filteredStudents.map((student) => {
                     const hasFeedback = !!getStudentFeedback(student.studentId);
                     return (
@@ -353,9 +353,9 @@ export default function StudentRecordsPage() {
           </div>
 
           {/* Student Detail Panel */}
-          <div className={`glass-card p-6 flex flex-col min-h-0 overflow-hidden ${selectedStudent ? 'flex' : 'hidden lg:flex'}`}>
+          <div className={`glass-card p-4 sm:p-6 ${selectedStudent ? 'block' : 'hidden lg:block'}`}>
             {selectedStudent ? (
-              <div className="flex flex-col h-full overflow-hidden">
+              <div>
                 {/* Mobile Back Button */}
                 <button 
                   onClick={() => setSelectedStudent(null)}
@@ -366,11 +366,11 @@ export default function StudentRecordsPage() {
                 </button>
 
                 {/* Student Info Header */}
-                <div className="mb-6 pb-4 border-b border-gray-200 flex-shrink-0">
-                  <h2 className="text-2xl font-bold text-gray-800">
+                <div className="mb-4 sm:mb-6 pb-4 border-b border-gray-200">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
                     {selectedStudent.fullName || 'No Name'}
                   </h2>
-                  <div className="grid grid-cols-2 gap-2 mt-2 text-sm text-gray-600">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 text-sm text-gray-600">
                     <div>
                       <span className="font-semibold">Student ID:</span>{' '}
                       {selectedStudent.studentId}
@@ -391,31 +391,31 @@ export default function StudentRecordsPage() {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-2 mb-4 flex-shrink-0">
+                <div className="flex gap-2 mb-4 overflow-x-auto">
                   <button
                     onClick={() => setActiveTab('visits')}
-                    className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                    className={`px-3 sm:px-4 py-2 rounded-lg font-semibold transition-all whitespace-nowrap text-sm sm:text-base ${
                       activeTab === 'visits'
                         ? 'bg-blue-600 text-white'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
-                    Stall Visits ({selectedStudent.visitedStalls?.length || 0})
+                    Visits ({selectedStudent.visitedStalls?.length || 0})
                   </button>
                   <button
                     onClick={() => setActiveTab('feedback')}
-                    className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                    className={`px-3 sm:px-4 py-2 rounded-lg font-semibold transition-all whitespace-nowrap text-sm sm:text-base ${
                       activeTab === 'feedback'
                         ? 'bg-violet-600 text-white'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
-                    Feedback Responses
+                    Feedback
                   </button>
                 </div>
 
                 {/* Tab Content */}
-                <div className="flex-1 overflow-y-auto min-h-0">
+                <div className="lg:max-h-[40vh] lg:overflow-y-auto">
                   {activeTab === 'visits' ? (
                     <div className="space-y-2">
                       {selectedStudent.visitedStalls?.length > 0 ? (
@@ -489,7 +489,7 @@ export default function StudentRecordsPage() {
               <EmptyState
                 title="No Student Selected"
                 description="Select a student from the list to view their full details and activity."
-                className="h-full flex flex-col justify-center"
+                className="py-12"
                 icon={
                   <svg
                     className="w-12 h-12"

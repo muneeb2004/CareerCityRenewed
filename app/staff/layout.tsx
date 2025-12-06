@@ -133,8 +133,8 @@ export default function StaffLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="md:ml-64 transition-all duration-300 h-screen flex flex-col pt-20 md:pt-0">
-        <div className="flex-1 flex flex-col overflow-hidden p-4 sm:p-8">
+      <main className="md:ml-64 transition-all duration-300 min-h-screen flex flex-col pt-20 md:pt-8">
+        <div className="flex-1 p-4 sm:p-8">
           <ErrorBoundary FallbackComponent={ErrorFallback}>
               <Breadcrumbs />
               <PageTransition>

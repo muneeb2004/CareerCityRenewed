@@ -9,6 +9,9 @@ export default function PageTransition({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  
+  // Only student-records needs the special flex layout for fixed scrolling
+  const isStudentRecords = pathname === '/staff/student-records';
 
   return (
     <motion.div
@@ -17,7 +20,7 @@ export default function PageTransition({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
-      className="flex-1 flex flex-col min-h-0"
+      className={isStudentRecords ? "flex-1 flex flex-col min-h-0" : ""}
     >
       {children}
     </motion.div>
