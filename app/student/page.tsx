@@ -30,9 +30,39 @@ export default function StudentPortal() {
   } | null>(null);
   const [mounted, setMounted] = useState(false);
 
+  // Global camera cleanup function - ensures camera is released
+  const cleanupAllCameras = () => {
+    document.querySelectorAll('video').forEach(video => {
+      try {
+        const stream = video.srcObject as MediaStream;
+        if (stream) {
+          stream.getTracks().forEach(track => {
+            try { track.stop(); } catch (e) {}
+          });
+        }
+        video.srcObject = null;
+      } catch (e) {}
+    });
+    const container = document.getElementById('qr-reader');
+    if (container) container.innerHTML = '';
+  };
+
   useEffect(() => {
     setSession(getStudentSession());
     setMounted(true);
+
+    // Page-level cleanup handlers for navigation/close
+    const handleBeforeUnload = () => cleanupAllCameras();
+    const handlePageHide = () => cleanupAllCameras();
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handlePageHide);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handlePageHide);
+      cleanupAllCameras();
+    };
   }, []);
 
   useEffect(() => {
@@ -81,6 +111,8 @@ export default function StudentPortal() {
         toast.error('Failed to record visit.');
       }
     } else {
+      // Clean up camera before showing registration
+      cleanupAllCameras();
       setScannedOrganization({
         id: organizationId,
         name: organizationData.name,
@@ -98,6 +130,8 @@ export default function StudentPortal() {
   };
 
   const handleLogout = () => {
+    // Clean up camera on logout
+    cleanupAllCameras();
     clearStudentSession();
     setSession(null);
     setStudent(null);

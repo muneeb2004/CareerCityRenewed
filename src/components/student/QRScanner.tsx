@@ -352,16 +352,78 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
     setIsScanning(false);
   }, []);
 
+  // Aggressive cleanup function that stops all camera streams globally
+  const forceStopAllCameras = useCallback(() => {
+    // Stop scanner instance
+    if (scannerRef.current) {
+      try {
+        scannerRef.current.stop().catch(() => {});
+        scannerRef.current.clear();
+      } catch (e) {
+        // ignore
+      }
+      scannerRef.current = null;
+    }
+
+    // Stop ALL video elements in the entire document (not just qr-reader)
+    document.querySelectorAll('video').forEach(video => {
+      try {
+        const stream = video.srcObject as MediaStream;
+        if (stream) {
+          stream.getTracks().forEach(track => {
+            try { track.stop(); } catch (e) {}
+          });
+        }
+        video.srcObject = null;
+      } catch (e) {}
+    });
+
+    // Clear the QR reader container
+    const container = document.getElementById('qr-reader');
+    if (container) {
+      container.innerHTML = '';
+    }
+
+    setIsScanning(false);
+  }, []);
+
   useEffect(() => {
     const timer = setTimeout(() => {
         startScanner();
     }, 100); // Small delay to ensure DOM is ready
 
+    // Handle browser/tab close
+    const handleBeforeUnload = () => {
+      forceStopAllCameras();
+    };
+
+    // Handle page hide (mobile browser switching, tab switching)
+    const handlePageHide = () => {
+      forceStopAllCameras();
+    };
+
+    // Handle visibility change (tab switch, minimize)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        forceStopAllCameras();
+      }
+    };
+
+    // Add all event listeners for airtight cleanup
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handlePageHide);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       clearTimeout(timer);
-      stopScanner();
+      // Remove event listeners
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handlePageHide);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      // Final cleanup on unmount
+      forceStopAllCameras();
     };
-  }, [startScanner, stopScanner]);
+  }, [startScanner, forceStopAllCameras]);
 
   return (
     <div className="w-full flex flex-col items-center">
