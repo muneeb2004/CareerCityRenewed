@@ -353,11 +353,17 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
   }, []);
 
   // Aggressive cleanup function that stops all camera streams globally
+  // This is defined outside useCallback to ensure it always has fresh access
   const forceStopAllCameras = useCallback(() => {
+    console.log('[QRScanner] forceStopAllCameras called');
+    
     // Stop scanner instance
     if (scannerRef.current) {
       try {
-        scannerRef.current.stop().catch(() => {});
+        const state = scannerRef.current.getState();
+        if (state === 2) { // SCANNING
+          scannerRef.current.stop().catch(() => {});
+        }
         scannerRef.current.clear();
       } catch (e) {
         // ignore
@@ -371,6 +377,7 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
         const stream = video.srcObject as MediaStream;
         if (stream) {
           stream.getTracks().forEach(track => {
+            console.log('[QRScanner] Stopping track:', track.label);
             try { track.stop(); } catch (e) {}
           });
         }
@@ -387,25 +394,27 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
     setIsScanning(false);
   }, []);
 
+  // Store ref to cleanup function so it's always accessible
+  const cleanupRef = useRef(forceStopAllCameras);
+  cleanupRef.current = forceStopAllCameras;
+
   useEffect(() => {
     const timer = setTimeout(() => {
         startScanner();
     }, 100); // Small delay to ensure DOM is ready
 
-    // Handle browser/tab close
+    // Use inline functions that call the ref to ensure we always have latest version
     const handleBeforeUnload = () => {
-      forceStopAllCameras();
+      cleanupRef.current();
     };
 
-    // Handle page hide (mobile browser switching, tab switching)
     const handlePageHide = () => {
-      forceStopAllCameras();
+      cleanupRef.current();
     };
 
-    // Handle visibility change (tab switch, minimize)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
-        forceStopAllCameras();
+        cleanupRef.current();
       }
     };
 
@@ -415,15 +424,16 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
+      console.log('[QRScanner] Component unmounting - cleanup triggered');
       clearTimeout(timer);
       // Remove event listeners
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('pagehide', handlePageHide);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      // Final cleanup on unmount
-      forceStopAllCameras();
+      // Final cleanup on unmount - call directly, not through ref
+      cleanupRef.current();
     };
-  }, [startScanner, forceStopAllCameras]);
+  }, [startScanner]);
 
   return (
     <div className="w-full flex flex-col items-center">
