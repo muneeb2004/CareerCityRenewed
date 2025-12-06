@@ -150,11 +150,11 @@ export default function StaffDashboard() {
                 recentScans.map((scan) => (
                     <div key={scan.scanId} className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
                         <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold flex-shrink-0">
-                            {scan.studentName ? scan.studentName.charAt(0).toUpperCase() : 'S'}
+                            {scan.studentId.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-gray-800 truncate">
-                                {scan.studentName || 'Unknown Student'}
+                                Student {scan.studentId}
                             </p>
                             <p className="text-xs text-gray-500 truncate">
                                 Checked in at <span className="text-blue-600 font-medium">{scan.organizationName}</span>
