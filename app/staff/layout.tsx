@@ -85,6 +85,13 @@ export default function StaffLayout({
        
         <nav className="space-y-2 overflow-y-auto max-h-[calc(100vh-150px)]">
             <Link 
+                href="/staff" 
+                className={`block px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 flex items-center gap-3 group ${pathname === '/staff' ? 'bg-white/10 text-blue-300' : ''}`}
+            >
+                <span className="group-hover:text-blue-300 transition-colors">Dashboard</span>
+            </Link>
+
+            <Link 
                 href="/staff/organizations" 
                 className={`block px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 flex items-center gap-3 group ${pathname === '/staff/organizations' ? 'bg-white/10 text-blue-300' : ''}`}
             >
