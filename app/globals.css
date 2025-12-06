@@ -1,9 +1,70 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #3B82F6; /* blue-500 */
-  --color-secondary: #8B5CF6; /* violet-500 */
-  --color-accent: #10B981; /* emerald-500 */
+  /* Habib University Color Palette Override */
+  
+  /* Primary - Deep Purple Mapping (replaces blue) */
+  --color-blue-50: #F2EBF5;
+  --color-blue-100: #E1CDEA;
+  --color-blue-200: #CBA5D9;
+  --color-blue-300: #B57CC8;
+  --color-blue-400: #9E54B7;
+  --color-blue-500: #5B2C6F; /* Deep Purple */
+  --color-blue-600: #4A245A;
+  --color-blue-700: #391B45;
+  --color-blue-800: #281230;
+  --color-blue-900: #170A1B;
+  --color-blue-950: #0E0411;
+
+  /* Secondary - Royal Purple Mapping (replaces violet) */
+  --color-violet-50: #F4EEF6;
+  --color-violet-100: #E5D3EB;
+  --color-violet-200: #CEA5DB;
+  --color-violet-300: #B778CB;
+  --color-violet-400: #A04BAF;
+  --color-violet-500: #6B3E7E; /* Royal Purple */
+  --color-violet-600: #563265;
+  --color-violet-700: #41264C;
+  --color-violet-800: #2C1933;
+  --color-violet-900: #170D1A;
+  --color-violet-950: #0B060D;
+
+  /* Utility - Success Green Mapping (replaces emerald) */
+  --color-emerald-50: #E9F6EC;
+  --color-emerald-100: #C8EAD0;
+  --color-emerald-200: #A7DEB4;
+  --color-emerald-300: #86D298;
+  --color-emerald-400: #65C67C;
+  --color-emerald-500: #28A745; /* Success Green */
+  --color-emerald-600: #208637;
+  --color-emerald-700: #186429;
+  --color-emerald-800: #10431C;
+  --color-emerald-900: #08210E;
+  --color-emerald-950: #041107;
+
+  /* Neutrals - Gray Mapping */
+  --color-gray-50: #F5F5F5; /* Light Gray */
+  --color-gray-100: #EBEBEB;
+  --color-gray-200: #DDDDDD;
+  --color-gray-300: #CCCCCC;
+  --color-gray-400: #999999;
+  --color-gray-500: #666666;
+  --color-gray-600: #4A4A4A; /* Dark Gray */
+  --color-gray-700: #333333;
+  --color-gray-800: #1A1A1A;
+  --color-gray-900: #000000; /* Black */
+  --color-gray-950: #000000;
+
+  /* Map Slate to Gray for consistency if used */
+  --color-slate-50: #F5F5F5;
+  --color-slate-100: #EBEBEB;
+  --color-slate-900: #000000;
+
+  /* Semantic Variables */
+  --color-primary: var(--color-blue-500);
+  --color-secondary: var(--color-violet-500);
+  --color-accent: #FF9933; /* Bright Orange */
+  --color-accent-yellow: #F5B041; /* Golden Yellow */
   
   --animate-fade-in-up: fadeInUp 0.5s ease-out forwards;
   --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -11,12 +72,13 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-gray-800 antialiased;
+    @apply bg-gray-50 text-gray-600 antialiased;
+    /* Simplified corporate background with subtle gradient */
     background-image: 
-      radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.15) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, rgba(244, 114, 182, 0.15) 0px, transparent 50%);
+      radial-gradient(at 0% 0%, rgba(91, 44, 111, 0.08) 0px, transparent 50%), /* Deep Purple */
+      radial-gradient(at 100% 0%, rgba(107, 62, 126, 0.08) 0px, transparent 50%), /* Royal Purple */
+      radial-gradient(at 100% 100%, rgba(255, 153, 51, 0.05) 0px, transparent 50%), /* Bright Orange */
+      radial-gradient(at 0% 100%, rgba(245, 176, 65, 0.05) 0px, transparent 50%); /* Golden Yellow */
     background-attachment: fixed;
     min-height: 100vh;
   }
@@ -24,11 +86,11 @@
 
 @layer utilities {
   .glass {
-    @apply bg-white/60 backdrop-blur-lg border border-white/40 shadow-xl;
+    @apply bg-white/70 backdrop-blur-lg border border-white/60 shadow-xl;
   }
   
   .glass-hover {
-    @apply hover:bg-white/70 transition-all duration-300 hover:shadow-2xl hover:-translate-y-0.5 hover:border-white/60;
+    @apply hover:bg-white/80 transition-all duration-300 hover:shadow-2xl hover:-translate-y-0.5 hover:border-blue-100;
   }
 
   .btn-primary {
@@ -42,13 +104,13 @@
   }
 
   .btn-accent {
-    @apply bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold py-3 px-6 rounded-xl 
-    shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 transition-all duration-300 active:scale-95;
+    @apply bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-accent-yellow)] text-white font-semibold py-3 px-6 rounded-xl 
+    shadow-lg hover:shadow-orange-500/30 hover:-translate-y-0.5 transition-all duration-300 active:scale-95;
   }
   
   .input-modern {
-    @apply bg-white/50 border border-gray-200 text-gray-800 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full p-3 
-    backdrop-blur-sm transition-all duration-200 hover:bg-white/80 placeholder-gray-400 shadow-sm;
+    @apply bg-white/60 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full p-3 
+    backdrop-blur-sm transition-all duration-200 hover:bg-white placeholder-gray-400 shadow-sm;
   }
 
   /* Style select dropdowns */
@@ -57,7 +119,7 @@
   }
 
   select.input-modern option {
-    @apply bg-white text-gray-800 py-2 px-3;
+    @apply bg-white text-gray-900 py-2 px-3;
   }
 
   select.input-modern option:hover,
@@ -67,7 +129,7 @@
   }
   
   .card-modern {
-    @apply bg-white/60 backdrop-blur-lg border border-white/40 shadow-xl rounded-2xl p-6 md:p-8 animate-fade-in-up;
+    @apply bg-white/70 backdrop-blur-lg border border-white/60 shadow-xl rounded-2xl p-6 md:p-8 animate-fade-in-up;
   }
 }
 

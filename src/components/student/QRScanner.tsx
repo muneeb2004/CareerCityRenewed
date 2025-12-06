@@ -180,7 +180,7 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
 
       setError(errorMessage);
     }
-  }, [handleScanSuccess, onScanError, cameras.length]);
+  }, [handleScanSuccess, onScanError]);
 
   const handleSwitchCamera = useCallback(async () => {
       if (cameras.length < 2) return;
@@ -199,18 +199,40 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
   }, [cameras, activeCameraId, startScanner]);
 
   const stopScanner = useCallback(async () => {
+    // Capture video element and stream tracks before attempting to stop
+    // This ensures we have a reference to the actual media stream even if the library
+    // removes the element from the DOM or fails to stop it.
+    const videoElement = document.querySelector('#qr-reader video') as HTMLVideoElement;
+    const stream = videoElement?.srcObject as MediaStream;
+    const tracks = stream?.getTracks() || [];
+
     if (scannerRef.current) {
         try {
-            if (isScanning) {
-                await scannerRef.current.stop();
-            }
-            scannerRef.current.clear();
-            scannerRef.current = null; // Clear ref
+            await scannerRef.current.stop();
         } catch (err) {
-            console.error('Error stopping scanner:', err);
+            // Ignore error if scanner wasn't running or already stopped
         }
+        
+        try {
+             // ensure UI is cleared
+            scannerRef.current.clear();
+        } catch (e) {
+            // ignore clear error
+        }
+
+        scannerRef.current = null; // Clear ref
     }
-  }, [isScanning]);
+
+    // Emergency manual cleanup: Ensure all tracks are definitely stopped
+    // This fixes the issue where the camera light stays on after unmount
+    tracks.forEach(track => {
+        try {
+            track.stop();
+        } catch (e) {
+            console.warn('Error manually stopping track:', e);
+        }
+    });
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
