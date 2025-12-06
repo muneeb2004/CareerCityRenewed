@@ -82,13 +82,13 @@ export default function StudentFeedbackPage() {
   const proceedToNextStep = () => {
     if (currentStep === 'student-id') {
       if (!studentId.trim()) {
-        toast.error('Please enter your student ID');
+        toast.error('Please enter the student ID');
         return;
       }
-      // Validate 5-digit ID
-      const idRegex = /^\d{5}$/;
+      // Validate format: 2 letters + 5 digits (e.g., ab12345)
+      const idRegex = /^[a-zA-Z]{2}\d{5}$/;
       if (!idRegex.test(studentId.trim())) {
-        toast.error('Student ID must be exactly 5 digits');
+        toast.error('Student ID must be 2 letters followed by 5 digits (e.g., ab12345)');
         return;
       }
       // If there's an org selection question, go to that first
@@ -144,7 +144,8 @@ export default function StudentFeedbackPage() {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      await addStudentFeedback(studentId, responses);
+      // Store studentId in lowercase to match the student records format
+      await addStudentFeedback(studentId.toLowerCase(), responses);
       toast.success('Feedback submitted successfully!');
       setCurrentStep('complete');
     } catch (error) {
