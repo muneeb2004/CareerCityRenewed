@@ -459,12 +459,20 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
       
       const container = document.getElementById('qr-reader');
       if (container) container.innerHTML = '';
+      
+      setIsScanning(false);
     };
 
     const handleVisibilityChange = () => {
       console.log('[QRScanner] Visibility changed to:', document.visibilityState);
       if (document.visibilityState === 'hidden') {
         directCleanup();
+      } else if (document.visibilityState === 'visible') {
+        // User returned to the page - restart the scanner
+        console.log('[QRScanner] User returned - restarting scanner');
+        setTimeout(() => {
+          startScanner();
+        }, 200); // Small delay to ensure everything is ready
       }
     };
 
