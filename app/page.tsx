@@ -1,10 +1,20 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
       <div className="card-modern max-w-xl w-full text-center space-y-8">
         <div className="space-y-4">
+          <div className="flex justify-center mb-4">
+            <Image
+              src="/favicon-optimized.png"
+              alt="Career City Logo"
+              width={80}
+              height={80}
+              className="rounded-xl shadow-lg"
+            />
+          </div>
           <h1 className="text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600 pb-2">
             HU Career City
             <span className="block text-3xl font-bold text-gray-700 mt-2">2026</span>

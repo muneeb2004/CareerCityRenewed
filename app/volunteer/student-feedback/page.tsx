@@ -6,6 +6,7 @@ import { getAllVolunteerQuestions } from '../../../src/firestore/volunteerQuesti
 import { getAllOrganizations } from '../../../src/firestore/organizations';
 import { VolunteerQuestion, Organization, QuestionType } from '../../../src/types';
 import toast, { Toaster } from 'react-hot-toast';
+import Image from 'next/image';
 
 // Form step types
 type FormStep = 'student-id' | 'org-selection' | 'per-org-questions' | 'general-questions' | 'complete';
@@ -82,6 +83,12 @@ export default function StudentFeedbackPage() {
     if (currentStep === 'student-id') {
       if (!studentId.trim()) {
         toast.error('Please enter your student ID');
+        return;
+      }
+      // Validate 5-digit ID
+      const idRegex = /^\d{5}$/;
+      if (!idRegex.test(studentId.trim())) {
+        toast.error('Student ID must be exactly 5 digits');
         return;
       }
       // If there's an org selection question, go to that first
@@ -452,6 +459,15 @@ export default function StudentFeedbackPage() {
       <Toaster position="top-center" />
       <div className="w-full max-w-2xl">
         <div className="card-modern">
+          <div className="flex justify-center mb-4">
+            <Image
+              src="/favicon-optimized.png"
+              alt="Career City Logo"
+              width={56}
+              height={56}
+              className="rounded-xl shadow-lg"
+            />
+          </div>
           <h1 className="text-3xl font-extrabold text-center mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">
             Student Feedback Form
           </h1>
@@ -483,15 +499,24 @@ export default function StudentFeedbackPage() {
                   type="text"
                   id="studentId"
                   value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
-                  placeholder="Enter your student ID"
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 5);
+                    setStudentId(value);
+                  }}
+                  placeholder="Enter your 5-digit student ID"
                   className="input-modern"
+                  maxLength={5}
+                  pattern="\d{5}"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  {studentId.length}/5 digits
+                </p>
               </div>
               <button
                 onClick={proceedToNextStep}
-                className="btn-primary w-full text-lg shadow-xl hover:shadow-blue-500/40"
+                disabled={studentId.length !== 5}
+                className="btn-primary w-full text-lg shadow-xl hover:shadow-blue-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Continue
               </button>

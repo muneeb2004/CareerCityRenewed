@@ -16,7 +16,8 @@ export type Program = typeof PROGRAMS[number];
 export interface Student {
   studentId: string;
   email: string;
-  program: Program;
+  fullName: string;
+  program?: Program; // Optional now, kept for backward compatibility
   visitedStalls: string[];
   scanCount: number;
   registeredAt: Timestamp;

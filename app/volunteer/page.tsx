@@ -1,12 +1,22 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function VolunteerPortal() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-4xl space-y-8">
         <div className="card-modern text-center">
+          <div className="flex justify-center mb-4">
+            <Image
+              src="/favicon-optimized.png"
+              alt="Career City Logo"
+              width={64}
+              height={64}
+              className="rounded-xl shadow-lg"
+            />
+          </div>
           <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-accent-yellow)] mb-2">
             Volunteer Portal
           </h1>

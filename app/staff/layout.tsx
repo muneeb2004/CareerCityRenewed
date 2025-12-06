@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function StaffLayout({
   children,
@@ -9,9 +10,18 @@ export default function StaffLayout({
     <div className="flex min-h-screen">
       <aside className="w-64 bg-gray-900/95 backdrop-blur-xl border-r border-white/10 text-white p-6 fixed h-full z-10 shadow-2xl">
         <div className="mb-10">
-             <h2 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-violet-400">
+            <div className="flex items-center gap-3 mb-2">
+              <Image
+                src="/favicon-optimized.png"
+                alt="Career City Logo"
+                width={40}
+                height={40}
+                className="rounded-lg"
+              />
+              <h2 className="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-violet-400">
                 Staff Portal
-            </h2>
+              </h2>
+            </div>
             <p className="text-gray-400 text-xs mt-1 uppercase tracking-wider">Administration</p>
         </div>
        
@@ -35,6 +45,13 @@ export default function StaffLayout({
                 className="block px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 flex items-center gap-3 group"
             >
                 <span className="group-hover:text-blue-300 transition-colors">Student Questions</span>
+            </Link>
+
+            <Link 
+                href="/staff/student-records" 
+                className="block px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 flex items-center gap-3 group"
+            >
+                <span className="group-hover:text-blue-300 transition-colors">Student Records</span>
             </Link>
             
             <Link 

@@ -1,4 +1,4 @@
-// Prompt for Copilot: "Create React component for student registration with Student ID input (validates xx#####), auto-filled email, program dropdown, using validation utils, and Firestore student creation"
+// Prompt for Copilot: "Create React component for student registration with Student ID input (validates xx#####), auto-filled email, full name input, using validation utils, and Firestore student creation"
 
 'use client';
 
@@ -6,7 +6,6 @@ import { useState } from 'react';
 import {
   validateStudentId,
   generateEmail,
-  validateProgram,
 } from '../../lib/validation';
 import {
   createStudent,
@@ -16,7 +15,6 @@ import {
 import { createScan } from '../../firestore/scans';
 import { updateOrganizationVisitors } from '../../firestore/organizations';
 import { saveStudentSession } from '../../lib/storage';
-import { PROGRAMS, Program } from '../../types';
 import toast from 'react-hot-toast';
 
 interface StudentRegistrationProps {
@@ -34,7 +32,7 @@ export default function StudentRegistration({
 }: StudentRegistrationProps) {
   const [studentId, setStudentId] = useState('');
   const [email, setEmail] = useState('');
-  const [program, setProgram] = useState<Program | ''>('');
+  const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -59,8 +57,8 @@ export default function StudentRegistration({
       return;
     }
 
-    if (!program) {
-      setError('Please select your program');
+    if (!fullName.trim()) {
+      setError('Please enter your full name');
       return;
     }
 
@@ -73,7 +71,7 @@ export default function StudentRegistration({
 
       if (!existingStudent) {
         // Create new student
-        await createStudent(studentId, email, program, organizationId);
+        await createStudent(studentId, email, fullName.trim(), organizationId);
       } else {
         // Update existing student
         await updateStudentVisit(studentId, organizationId);
@@ -82,18 +80,18 @@ export default function StudentRegistration({
       // Update organization visitors
       await updateOrganizationVisitors(organizationId, studentId);
 
-      // Create scan record
+      // Create scan record (using fullName in place of program for now)
       await createScan(
         studentId,
         email,
-        program,
+        'Computer Science', // Default program for scan records
         organizationId,
         organizationName,
         boothNumber
       );
 
-      // Save session
-      saveStudentSession(studentId, program);
+      // Save session (using a default program)
+      saveStudentSession(studentId, 'Computer Science');
 
       toast.success('Visit recorded successfully!');
       onComplete();
@@ -145,28 +143,19 @@ export default function StudentRegistration({
         <p className="mt-1 text-xs text-gray-500">Your HU student email</p>
       </div>
 
-      {/* Program Dropdown */}
+      {/* Full Name Input */}
       <div className="mb-8">
         <label className="block text-sm font-semibold text-gray-700 mb-2">
-          Program <span className="text-red-500">*</span>
+          Full Name <span className="text-red-500">*</span>
         </label>
-        <div className="relative">
-            <select
-            value={program}
-            onChange={(e) => setProgram(e.target.value as Program)}
-            className="input-modern appearance-none"
-            >
-            <option value="">-- Select your program --</option>
-            {PROGRAMS.map((prog: Program) => (
-                <option key={prog} value={prog}>
-                {prog}
-                </option>
-            ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-            </div>
-        </div>
+        <input
+          type="text"
+          placeholder="e.g., John Doe"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          className="input-modern"
+        />
+        <p className="mt-1 text-xs text-gray-500">Enter your full name as registered</p>
       </div>
 
       {/* Error Message */}
@@ -182,7 +171,7 @@ export default function StudentRegistration({
       {/* Submit Button */}
       <button
         onClick={handleSubmit}
-        disabled={!validateStudentId(studentId).isValid || !program || loading}
+        disabled={!validateStudentId(studentId).isValid || !fullName.trim() || loading}
         className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none disabled:shadow-none"
       >
         {loading ? (

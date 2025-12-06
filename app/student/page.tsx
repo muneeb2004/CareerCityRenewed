@@ -16,6 +16,7 @@ import StudentRegistration from '../../src/components/student/StudentRegistratio
 import QRScanner from '../../src/components/student/QRScanner';
 import { Student, Scan } from '../../src/types';
 import toast, { Toaster } from 'react-hot-toast';
+import Image from 'next/image';
 
 export default function StudentPortal() {
   const [session, setSession] = useState<StudentSession | null>(null);
@@ -125,16 +126,25 @@ export default function StudentPortal() {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="card-modern flex flex-col md:flex-row justify-between items-center gap-4">
-            <div>
-                <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">
-                🎓 HU Career City 2026
-                </h1>
-                {session && (
-                <div className="mt-2">
-                    <p className="text-gray-700 font-medium">Welcome back, <span className="text-blue-600">{session.studentId}</span>!</p>
-                    <p className="text-sm text-gray-500 font-medium tracking-wide uppercase">{session.program}</p>
+            <div className="flex items-center gap-4">
+                <Image
+                  src="/favicon-optimized.png"
+                  alt="Career City Logo"
+                  width={56}
+                  height={56}
+                  className="rounded-xl shadow-lg"
+                />
+                <div>
+                    <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">
+                    HU Career City 2026
+                    </h1>
+                    {session && (
+                    <div className="mt-2">
+                        <p className="text-gray-700 font-medium">Welcome back, <span className="text-blue-600">{session.studentId}</span>!</p>
+                        <p className="text-sm text-gray-500 font-medium tracking-wide uppercase">{session.program}</p>
+                    </div>
+                    )}
                 </div>
-                )}
             </div>
              {session && (
                 <button

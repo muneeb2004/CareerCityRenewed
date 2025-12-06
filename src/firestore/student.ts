@@ -14,7 +14,7 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Student, Program } from '../types';
+import { Student } from '../types';
 
 export const getStudent = async (studentId: string): Promise<Student | null> => {
   const studentRef = doc(db, 'students', studentId);
@@ -28,7 +28,7 @@ export const getStudent = async (studentId: string): Promise<Student | null> => 
 export const createStudent = async (
   studentId: string,
   email: string,
-  program: Program,
+  fullName: string,
   firstOrganizationId: string
 ): Promise<void> => {
   const studentRef = doc(db, 'students', studentId);
@@ -36,7 +36,7 @@ export const createStudent = async (
   await setDoc(studentRef, {
     studentId,
     email,
-    program,
+    fullName,
     visitedStalls: [firstOrganizationId],
     scanCount: 1,
     registeredAt: serverTimestamp(),
@@ -66,4 +66,16 @@ export const checkIfVisited = async (
   if (!student) return false;
 
   return student.visitedStalls.includes(organizationId);
+};
+
+export const getAllStudents = async (): Promise<Student[]> => {
+  const studentsRef = collection(db, 'students');
+  const snapshot = await getDocs(studentsRef);
+  return snapshot.docs.map(
+    (doc) =>
+      ({
+        ...doc.data(),
+        studentId: doc.id,
+      } as Student)
+  );
 };

@@ -6,6 +6,7 @@ import { getAllOrganizationFeedbackQuestions } from '../../../src/firestore/orga
 import { getAllOrganizations } from '../../../src/firestore/organizations';
 import { OrganizationFeedbackQuestion, Organization } from '../../../src/types';
 import toast, { Toaster } from 'react-hot-toast';
+import Image from 'next/image';
 
 export default function OrganizationFeedbackPage() {
   const [loading, setLoading] = useState(false);
@@ -374,6 +375,15 @@ export default function OrganizationFeedbackPage() {
       <Toaster position="top-center" />
       <div className="w-full max-w-2xl">
         <div className="card-modern">
+          <div className="flex justify-center mb-4">
+            <Image
+              src="/favicon-optimized.png"
+              alt="Career City Logo"
+              width={56}
+              height={56}
+              className="rounded-xl shadow-lg"
+            />
+          </div>
           <h1 className="text-3xl font-extrabold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">
             Organization Feedback Form
           </h1>
