@@ -142,51 +142,34 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
       const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
       
-      let cameraConfig: any = { facingMode: 'environment' };
+      let cameraConfig: any;
 
-      // Chrome iOS has issues with deviceId constraints - always use facingMode
+      // If a specific camera ID was requested (from camera switch), use it
       if (cameraId && !isChromeIOS) {
           cameraConfig = { deviceId: { exact: cameraId } };
-      } else if (!isChromeIOS) {
-          // Initial load - try to find main back camera explicitly (skip on Chrome iOS)
-           try {
-              const devices = await Html5Qrcode.getCameras();
-              if (devices && devices.length > 0) {
-                  setCameras(devices);
-                  
-                  // Find the main back camera - prioritize by label analysis
-                  // Main camera usually has: "back", "rear", "environment" without "wide", "ultra", "tele", "macro"
-                  const backCameras = devices.filter(d => {
-                      const label = d.label.toLowerCase();
-                      return (label.includes('back') || label.includes('rear') || label.includes('environment')) 
-                             && !label.includes('front');
-                  });
-                  
-                  let targetCam;
-                  if (backCameras.length > 0) {
-                      // Prefer main camera - exclude ultrawide/telephoto/macro
-                      const mainBackCam = backCameras.find(d => {
-                          const label = d.label.toLowerCase();
-                          return !label.includes('wide') && !label.includes('ultra') && 
-                                 !label.includes('tele') && !label.includes('macro') &&
-                                 !label.includes('depth');
-                      });
-                      // If found main, use it; otherwise use first back camera (usually main on most devices)
-                      targetCam = mainBackCam || backCameras[0];
-                  } else {
-                      // No back camera found by label, use first available camera
-                      targetCam = devices[0];
-                  }
-                  
-                  cameraConfig = { deviceId: { exact: targetCam.id } };
-                  setActiveCameraId(targetCam.id);
-              }
-           } catch (err) {
-               // Permissions likely not granted yet, fall back to facingMode which triggers prompt
-               console.log("Permission not granted yet, using generic constraint");
-           }
+      } else {
+          // For initial load, ALWAYS use facingMode constraint
+          // This lets the browser/OS pick the default back camera (usually the main one, not ultrawide)
+          // Using deviceId on initial load often picks the wrong camera on Android
+          cameraConfig = { facingMode: 'environment' };
       }
-      // On Chrome iOS, we just use { facingMode: 'environment' } which works
+
+      // Fetch camera list in background for the switch button (don't use it for initial selection)
+      Html5Qrcode.getCameras().then(devices => {
+          if (devices && devices.length > 0) {
+              setCameras(devices);
+              // Try to identify which camera we're currently using
+              // This is approximate since facingMode doesn't give us the exact deviceId
+              if (!cameraId) {
+                  const backCam = devices.find(d => {
+                      const label = d.label.toLowerCase();
+                      return label.includes('back') || label.includes('rear') || label.includes('0');
+                  });
+                  if (backCam) setActiveCameraId(backCam.id);
+                  else if (devices.length > 0) setActiveCameraId(devices[0].id);
+              }
+          }
+      }).catch(err => console.log("Error getting cameras:", err));
 
       await scanner.start(
         cameraConfig,
@@ -194,7 +177,6 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
           fps: 5, // Reduced to prevent rapid multiple scans
           qrbox: { width: 250, height: 250 },
           disableFlip: true,
-          // Removed videoConstraints to fix default camera selection issues
           experimentalFeatures: {
             useBarCodeDetectorIfSupported: true, // Use native API if available (much faster)
           },
@@ -206,15 +188,6 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
       setIsScanning(true);
       setError(''); // Clear previous errors on success
       if (cameraId) setActiveCameraId(cameraId);
-
-      // Fetch cameras if not already fetched
-      if (cameras.length === 0) {
-          Html5Qrcode.getCameras().then(devices => {
-              if (devices && devices.length > 0) {
-                  setCameras(devices);
-              }
-          }).catch(err => console.log("Error getting cameras", err));
-      }
 
     } catch (err: any) {
       console.error('Scanner error details:', err);
