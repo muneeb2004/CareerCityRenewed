@@ -22,8 +22,8 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
   const lastScanTimeRef = useRef<number>(0); // Timestamp of last scan
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState('');
-  const [cameras, setCameras] = useState<any[]>([]);
-  const [activeCameraId, setActiveCameraId] = useState<string | null>(null);
+  const [workingCameras, setWorkingCameras] = useState<any[]>([]); // Only front + main back
+  const [activeCameraIndex, setActiveCameraIndex] = useState(0);
   const [isChromeIOS, setIsChromeIOS] = useState(false);
 
   // Detect Chrome on iOS on mount
@@ -91,7 +91,7 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
     [onScanSuccess]
   );
 
-  const startScanner = useCallback(async (cameraId?: string) => {
+  const startScanner = useCallback(async (cameraId?: number | string) => {
     // Check if browser supports media devices
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setError('Camera API is not supported in this browser. Please make sure you are using HTTPS.');
@@ -143,33 +143,80 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
       const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
       
       let cameraConfig: any;
+      let selectedCameraIndex = 0;
 
-      // If a specific camera ID was requested (from camera switch), use it
-      if (cameraId && !isChromeIOS) {
-          cameraConfig = { deviceId: { exact: cameraId } };
-      } else {
-          // For initial load, ALWAYS use facingMode constraint
-          // This lets the browser/OS pick the default back camera (usually the main one, not ultrawide)
-          // Using deviceId on initial load often picks the wrong camera on Android
-          cameraConfig = { facingMode: 'environment' };
-      }
-
-      // Fetch camera list in background for the switch button (don't use it for initial selection)
-      Html5Qrcode.getCameras().then(devices => {
-          if (devices && devices.length > 0) {
-              setCameras(devices);
-              // Try to identify which camera we're currently using
-              // This is approximate since facingMode doesn't give us the exact deviceId
-              if (!cameraId) {
-                  const backCam = devices.find(d => {
-                      const label = d.label.toLowerCase();
-                      return label.includes('back') || label.includes('rear') || label.includes('0');
-                  });
-                  if (backCam) setActiveCameraId(backCam.id);
-                  else if (devices.length > 0) setActiveCameraId(devices[0].id);
-              }
+      // If a specific camera index was requested (from camera switch), use it
+      if (typeof cameraId === 'number' && workingCameras.length > 0) {
+          const cam = workingCameras[cameraId];
+          if (cam) {
+              cameraConfig = { deviceId: { exact: cam.id } };
+              selectedCameraIndex = cameraId;
+          } else {
+              cameraConfig = { facingMode: 'environment' };
           }
-      }).catch(err => console.log("Error getting cameras:", err));
+      } else if (workingCameras.length > 0 && !isChromeIOS) {
+          // We already have a filtered camera list, use the back camera (index 0)
+          cameraConfig = { deviceId: { exact: workingCameras[0].id } };
+          selectedCameraIndex = 0;
+      } else {
+          // First load or Chrome iOS - enumerate cameras and filter to just front + main back
+          try {
+              const devices = await Html5Qrcode.getCameras();
+              if (devices && devices.length > 0) {
+                  // Filter to keep only: main back camera + front camera
+                  // Skip ultrawide, telephoto, macro, depth cameras
+                  const filtered: any[] = [];
+                  
+                  // Find the main back camera (usually camera 0, or has "back" without "wide/ultra/tele")
+                  const backCameras = devices.filter(d => {
+                      const label = d.label.toLowerCase();
+                      return !label.includes('front');
+                  });
+                  
+                  // Pick the FIRST back camera as main (camera 0 is usually main on Android)
+                  // Or find one that doesn't have wide/ultra/tele in name
+                  let mainBack = backCameras.find(d => {
+                      const label = d.label.toLowerCase();
+                      return !label.includes('wide') && !label.includes('ultra') && 
+                             !label.includes('tele') && !label.includes('macro') &&
+                             !label.includes('depth') && (label.includes('0') || label.includes('back'));
+                  });
+                  if (!mainBack && backCameras.length > 0) {
+                      // Just use the first back-facing camera
+                      mainBack = backCameras[0];
+                  }
+                  
+                  // Find front camera
+                  const frontCam = devices.find(d => d.label.toLowerCase().includes('front'));
+                  
+                  // Build working cameras list: [back, front] - only these 2
+                  if (mainBack) filtered.push({ ...mainBack, displayName: 'Back Camera' });
+                  if (frontCam) filtered.push({ ...frontCam, displayName: 'Front Camera' });
+                  
+                  // If we couldn't identify properly, just use first 2 cameras
+                  if (filtered.length === 0 && devices.length > 0) {
+                      filtered.push({ ...devices[0], displayName: 'Camera 1' });
+                      if (devices.length > 1) {
+                          filtered.push({ ...devices[1], displayName: 'Camera 2' });
+                      }
+                  }
+                  
+                  setWorkingCameras(filtered);
+                  
+                  if (filtered.length > 0 && !isChromeIOS) {
+                      cameraConfig = { deviceId: { exact: filtered[0].id } };
+                      selectedCameraIndex = 0;
+                  } else {
+                      cameraConfig = { facingMode: 'environment' };
+                  }
+              } else {
+                  cameraConfig = { facingMode: 'environment' };
+              }
+          } catch (err) {
+              console.log("Permission not granted yet, using generic constraint");
+              cameraConfig = { facingMode: 'environment' };
+          }
+      }
 
       await scanner.start(
         cameraConfig,
@@ -187,7 +234,7 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
 
       setIsScanning(true);
       setError(''); // Clear previous errors on success
-      if (cameraId) setActiveCameraId(cameraId);
+      setActiveCameraIndex(selectedCameraIndex);
 
     } catch (err: any) {
       console.error('Scanner error details:', err);
@@ -222,35 +269,29 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
 
       setError(errorMessage);
     }
-  }, [handleScanSuccess, onScanError, cameras.length]);
+  }, [handleScanSuccess, onScanError, workingCameras]);
 
   const handleSwitchCamera = useCallback(async () => {
-      if (cameras.length < 2) {
+      if (workingCameras.length < 2) {
           toast.error('No other cameras available');
           return;
       }
 
       try {
-          // Find current index
-          let currentIndex = 0;
-          if (activeCameraId) {
-              currentIndex = cameras.findIndex(c => c.id === activeCameraId);
-              if (currentIndex === -1) currentIndex = 0;
-          }
-
-          const nextIndex = (currentIndex + 1) % cameras.length;
-          const nextCamera = cameras[nextIndex];
+          // Simply cycle to next camera in our filtered list
+          const nextIndex = (activeCameraIndex + 1) % workingCameras.length;
+          const nextCamera = workingCameras[nextIndex];
           
-          toast.loading(`Switching to ${nextCamera.label || 'Camera ' + (nextIndex + 1)}...`, { id: 'camera-switch' });
+          toast.loading(`Switching to ${nextCamera.displayName || 'Camera ' + (nextIndex + 1)}...`, { id: 'camera-switch' });
           
-          await startScanner(nextCamera.id);
+          await startScanner(nextIndex);
           
-          toast.success(`Switched camera`, { id: 'camera-switch' });
+          toast.success(`Switched to ${nextCamera.displayName || 'camera'}`, { id: 'camera-switch' });
       } catch (err) {
           console.error('Camera switch error:', err);
           toast.error('Failed to switch camera. Try restarting the scanner.', { id: 'camera-switch' });
       }
-  }, [cameras, activeCameraId, startScanner]);
+  }, [workingCameras, activeCameraIndex, startScanner]);
 
   const stopScanner = useCallback(async () => {
     // Capture video elements and stream tracks before attempting to stop
@@ -360,7 +401,7 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
             }
           `}</style>
           {/* Hide camera switch on Chrome iOS since deviceId constraints don't work */}
-          {cameras.length > 1 && !isChromeIOS && (
+          {workingCameras.length > 1 && !isChromeIOS && (
               <button 
                   onClick={handleSwitchCamera}
                   className="absolute top-4 right-4 bg-white/80 backdrop-blur-md p-2 rounded-full shadow-lg border border-white/50 text-gray-700 hover:bg-white transition-all active:scale-95 z-10"
