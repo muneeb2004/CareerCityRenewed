@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { addOrganizationFeedback } from '../../../src/firestore/organizationFeedback';
+import { addOrganizationFeedback, hasOrganizationSubmittedFeedback } from '../../../src/firestore/organizationFeedback';
 import { getAllOrganizationFeedbackQuestions } from '../../../src/firestore/organizationFeedbackQuestions';
 import { getAllOrganizations } from '../../../src/firestore/organizations';
 import { OrganizationFeedbackQuestion, Organization } from '../../../src/types';
@@ -80,6 +80,14 @@ export default function OrganizationFeedbackPage() {
     }
     setLoading(true);
     try {
+      // Check if organization has already submitted feedback
+      const alreadySubmitted = await hasOrganizationSubmittedFeedback(selectedOrgId);
+      if (alreadySubmitted) {
+        toast.error('This organization has already submitted feedback');
+        setLoading(false);
+        return;
+      }
+      
       await addOrganizationFeedback(selectedOrgId, responses);
       toast.success('Feedback submitted successfully!');
       setSubmitted(true);

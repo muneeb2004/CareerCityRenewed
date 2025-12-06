@@ -1,6 +1,6 @@
 // Prompt for Copilot: "Create a Firestore function to add feedback for a student."
 
-import { collection, addDoc, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
+import { collection, doc, setDoc, serverTimestamp, getDocs, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
 export interface StudentFeedbackRecord {
@@ -14,9 +14,10 @@ export const addStudentFeedback = async (
   studentId: string,
   responses: Record<string, string | number | string[]>
 ): Promise<void> => {
-  const feedbackCollection = collection(db, 'studentFeedback');
+  // Use studentId as document ID for easy lookup and to prevent duplicates
+  const feedbackRef = doc(db, 'studentFeedback', studentId);
 
-  await addDoc(feedbackCollection, {
+  await setDoc(feedbackRef, {
     studentId,
     responses,
     createdAt: serverTimestamp(),
@@ -26,28 +27,34 @@ export const addStudentFeedback = async (
 export const getAllStudentFeedback = async (): Promise<StudentFeedbackRecord[]> => {
   const feedbackCollection = collection(db, 'studentFeedback');
   const snapshot = await getDocs(feedbackCollection);
-  return snapshot.docs.map((doc) => ({
-    feedbackId: doc.id,
-    studentId: doc.data().studentId,
-    responses: doc.data().responses,
-    createdAt: doc.data().createdAt?.toDate() || new Date(),
+  return snapshot.docs.map((docSnap) => ({
+    feedbackId: docSnap.id,
+    studentId: docSnap.data().studentId,
+    responses: docSnap.data().responses,
+    createdAt: docSnap.data().createdAt?.toDate() || new Date(),
   }));
 };
 
 export const getStudentFeedbackByStudentId = async (
   studentId: string
 ): Promise<StudentFeedbackRecord | null> => {
-  const feedbackCollection = collection(db, 'studentFeedback');
-  const q = query(feedbackCollection, where('studentId', '==', studentId));
-  const snapshot = await getDocs(q);
+  // Direct document lookup by studentId (since it's the document ID)
+  const feedbackRef = doc(db, 'studentFeedback', studentId);
+  const docSnap = await getDoc(feedbackRef);
   
-  if (snapshot.empty) return null;
+  if (!docSnap.exists()) return null;
   
-  const doc = snapshot.docs[0];
   return {
-    feedbackId: doc.id,
-    studentId: doc.data().studentId,
-    responses: doc.data().responses,
-    createdAt: doc.data().createdAt?.toDate() || new Date(),
+    feedbackId: docSnap.id,
+    studentId: docSnap.data().studentId,
+    responses: docSnap.data().responses,
+    createdAt: docSnap.data().createdAt?.toDate() || new Date(),
   };
+};
+
+// Check if student has already submitted feedback
+export const hasStudentSubmittedFeedback = async (studentId: string): Promise<boolean> => {
+  const feedbackRef = doc(db, 'studentFeedback', studentId);
+  const docSnap = await getDoc(feedbackRef);
+  return docSnap.exists();
 };

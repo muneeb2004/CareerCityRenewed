@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { addStudentFeedback } from '../../../src/firestore/studentFeedback';
+import { addStudentFeedback, hasStudentSubmittedFeedback } from '../../../src/firestore/studentFeedback';
 import { getAllVolunteerQuestions } from '../../../src/firestore/volunteerQuestions';
 import { getAllOrganizations } from '../../../src/firestore/organizations';
 import { VolunteerQuestion, Organization, QuestionType } from '../../../src/types';
@@ -79,7 +79,7 @@ export default function StudentFeedbackPage() {
     }
   };
 
-  const proceedToNextStep = () => {
+  const proceedToNextStep = async () => {
     if (currentStep === 'student-id') {
       if (!studentId.trim()) {
         toast.error('Please enter the student ID');
@@ -91,6 +91,24 @@ export default function StudentFeedbackPage() {
         toast.error('Student ID must be 2 letters followed by 5 digits (e.g., ab12345)');
         return;
       }
+      
+      // Check if student has already submitted feedback
+      setLoading(true);
+      try {
+        const alreadySubmitted = await hasStudentSubmittedFeedback(studentId.toLowerCase());
+        if (alreadySubmitted) {
+          toast.error('This student has already submitted feedback');
+          setLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking feedback status:', error);
+        toast.error('Failed to verify feedback status. Please try again.');
+        setLoading(false);
+        return;
+      }
+      setLoading(false);
+      
       // If there's an org selection question, go to that first
       if (orgSelectQuestion) {
         setCurrentStep('org-selection');
