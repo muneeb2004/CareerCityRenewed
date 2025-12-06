@@ -143,7 +143,7 @@ export default function StudentRecordsPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Student List */}
-          <div className="glass-card p-6">
+          <div className={`glass-card p-6 ${selectedStudent ? 'hidden lg:block' : 'block'}`}>
             <h2 className="text-xl font-bold text-gray-800 mb-4">
               Students ({filteredStudents.length})
             </h2>
@@ -197,9 +197,18 @@ export default function StudentRecordsPage() {
           </div>
 
           {/* Student Detail Panel */}
-          <div className="glass-card p-6">
+          <div className={`glass-card p-6 ${selectedStudent ? 'block' : 'hidden lg:block'}`}>
             {selectedStudent ? (
               <div>
+                {/* Mobile Back Button */}
+                <button 
+                  onClick={() => setSelectedStudent(null)}
+                  className="lg:hidden mb-4 flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                  Back to List
+                </button>
+
                 {/* Student Info Header */}
                 <div className="mb-6 pb-4 border-b border-gray-200">
                   <h2 className="text-2xl font-bold text-gray-800">

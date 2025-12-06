@@ -267,15 +267,22 @@ export default function OrganizationManagement() {
             {organizations.map((organization) => (
               <div
                 key={organization.organizationId}
-                className="glass p-4 rounded-xl flex flex-col items-center border border-white/40"
+                onClick={() => handleSelectOrganization(organization.organizationId)}
+                className={`glass p-4 rounded-xl flex flex-col items-center border transition-all duration-200 cursor-pointer ${
+                  selectedOrganizations.includes(organization.organizationId)
+                    ? 'border-blue-500 bg-blue-50/50 ring-2 ring-blue-200' 
+                    : 'border-white/40 hover:border-blue-300 hover:bg-white/80'
+                }`}
               >
-                <input
-                  type="checkbox"
-                  checked={selectedOrganizations.includes(organization.organizationId)}
-                  onChange={() => handleSelectOrganization(organization.organizationId)}
-                  className="mb-3 w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-                />
-                <div className="transform scale-90">
+                <div className="w-full flex justify-end">
+                    <input
+                    type="checkbox"
+                    checked={selectedOrganizations.includes(organization.organizationId)}
+                    onChange={() => {}} // Handled by parent div
+                    className="mb-1 w-5 h-5 text-blue-600 rounded focus:ring-blue-500 pointer-events-none"
+                    />
+                </div>
+                <div className="transform scale-90 pointer-events-none">
                     <QRCodeGenerator organization={organization} />
                 </div>
                 <span className="mt-3 text-sm font-bold text-gray-700 text-center">
