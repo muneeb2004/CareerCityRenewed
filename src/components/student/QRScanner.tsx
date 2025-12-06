@@ -12,8 +12,14 @@ interface QRScannerProps {
   onScanSuccess: (organizationId: string) => void;
 }
 
+// Cooldown period after successful scan (in milliseconds)
+const SCAN_COOLDOWN_MS = 3000;
+
 export default function QRScanner({ onScanSuccess }: QRScannerProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const isProcessingRef = useRef<boolean>(false); // Prevents concurrent scans
+  const lastScannedRef = useRef<string | null>(null); // Last scanned org ID
+  const lastScanTimeRef = useRef<number>(0); // Timestamp of last scan
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState('');
   const [cameras, setCameras] = useState<any[]>([]);
@@ -26,24 +32,52 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
 
   const handleScanSuccess = useCallback(
     async (decodedText: string) => {
-      // Assuming QR code contains: organization_id
-      const organizationId = decodedText;
+      const organizationId = decodedText.trim();
+      const now = Date.now();
 
-      // Check for duplicate visit
-      const session = getStudentSession();
-      if (session) {
-        const alreadyVisited = await checkIfVisited(
-          session.studentId,
-          organizationId
-        );
-        if (alreadyVisited) {
-          toast.error('You have already visited this stall!');
-          return;
-        }
+      // Check 1: Already processing a scan
+      if (isProcessingRef.current) {
+        return;
       }
 
-      if (typeof onScanSuccess === 'function') {
-        onScanSuccess(organizationId);
+      // Check 2: Same QR code scanned within cooldown period
+      if (
+        lastScannedRef.current === organizationId &&
+        now - lastScanTimeRef.current < SCAN_COOLDOWN_MS
+      ) {
+        return;
+      }
+
+      // Lock processing
+      isProcessingRef.current = true;
+      lastScannedRef.current = organizationId;
+      lastScanTimeRef.current = now;
+
+      try {
+        // Check for duplicate visit in database
+        const session = getStudentSession();
+        if (session) {
+          const alreadyVisited = await checkIfVisited(
+            session.studentId,
+            organizationId
+          );
+          if (alreadyVisited) {
+            toast.error('You have already visited this stall!');
+            return;
+          }
+        }
+
+        if (typeof onScanSuccess === 'function') {
+          await onScanSuccess(organizationId);
+        }
+      } catch (error) {
+        console.error('Scan processing error:', error);
+        toast.error('Failed to process scan. Please try again.');
+      } finally {
+        // Unlock after cooldown period
+        setTimeout(() => {
+          isProcessingRef.current = false;
+        }, SCAN_COOLDOWN_MS);
       }
     },
     [onScanSuccess]
@@ -100,7 +134,7 @@ export default function QRScanner({ onScanSuccess }: QRScannerProps) {
       await scanner.start(
         cameraConfig,
         {
-          fps: 10, // Increased for faster detection
+          fps: 5, // Reduced to prevent rapid multiple scans
           qrbox: { width: 250, height: 250 },
           disableFlip: true,
           // Removed videoConstraints to fix default camera selection issues

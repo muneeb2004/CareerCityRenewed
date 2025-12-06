@@ -22,10 +22,14 @@ export default function StudentFeedbackPage() {
   const [currentOrgIndex, setCurrentOrgIndex] = useState(0);
   const [responses, setResponses] = useState<Record<string, string | string[]>>({});
 
-  // Derived question categories
+  // Derived question categories (sorted by order)
   const orgSelectQuestion = questions.find(q => q.type === 'organization_select');
-  const perOrgQuestions = questions.filter(q => q.isPerOrganization);
-  const generalQuestions = questions.filter(q => q.type !== 'organization_select' && !q.isPerOrganization);
+  const perOrgQuestions = questions
+    .filter(q => q.isPerOrganization)
+    .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+  const generalQuestions = questions
+    .filter(q => q.type !== 'organization_select' && !q.isPerOrganization)
+    .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
 
   useEffect(() => {
     const fetchData = async () => {
@@ -62,11 +66,12 @@ export default function StudentFeedbackPage() {
 
   const handleOrgSelection = (orgId: string, checked: boolean) => {
     const maxSelection = orgSelectQuestion?.selectionCount || 5;
+    const selectionMode = orgSelectQuestion?.selectionMode || 'up_to';
     if (checked) {
       if (selectedOrgs.length < maxSelection) {
         setSelectedOrgs([...selectedOrgs, orgId]);
       } else {
-        toast.error(`You can only select ${maxSelection} organizations`);
+        toast.error(`You can only select ${selectionMode === 'up_to' ? 'up to ' : ''}${maxSelection} organizations`);
       }
     } else {
       setSelectedOrgs(selectedOrgs.filter(id => id !== orgId));
@@ -88,10 +93,21 @@ export default function StudentFeedbackPage() {
         handleSubmit();
       }
     } else if (currentStep === 'org-selection') {
-      const minSelection = orgSelectQuestion?.selectionCount || 5;
-      if (selectedOrgs.length < minSelection) {
-        toast.error(`Please select ${minSelection} organizations`);
-        return;
+      const maxSelection = orgSelectQuestion?.selectionCount || 5;
+      const selectionMode = orgSelectQuestion?.selectionMode || 'up_to';
+      
+      // For "up_to" mode, just need at least 1 selection
+      // For "exactly" mode, need exactly the specified count
+      if (selectionMode === 'up_to') {
+        if (selectedOrgs.length === 0) {
+          toast.error('Please select at least 1 organization');
+          return;
+        }
+      } else {
+        if (selectedOrgs.length !== maxSelection) {
+          toast.error(`Please select exactly ${maxSelection} organizations`);
+          return;
+        }
       }
       // Store org selection response
       handleResponseChange(orgSelectQuestion!.questionId, selectedOrgs);
@@ -490,7 +506,10 @@ export default function StudentFeedbackPage() {
                   {orgSelectQuestion.text}
                 </label>
                 <p className="text-sm text-gray-500 mb-4">
-                  Select {orgSelectQuestion.selectionCount || 5} organizations ({selectedOrgs.length}/{orgSelectQuestion.selectionCount || 5} selected)
+                  {orgSelectQuestion.selectionMode === 'exactly' 
+                    ? `Select exactly ${orgSelectQuestion.selectionCount || 5} organizations`
+                    : `Select up to ${orgSelectQuestion.selectionCount || 5} organizations`
+                  } ({selectedOrgs.length}/{orgSelectQuestion.selectionCount || 5} selected)
                 </p>
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                   {organizations.map((org) => (
@@ -518,7 +537,11 @@ export default function StudentFeedbackPage() {
               </div>
               <button
                 onClick={proceedToNextStep}
-                disabled={selectedOrgs.length < (orgSelectQuestion.selectionCount || 5)}
+                disabled={
+                  orgSelectQuestion.selectionMode === 'exactly'
+                    ? selectedOrgs.length !== (orgSelectQuestion.selectionCount || 5)
+                    : selectedOrgs.length === 0
+                }
                 className="btn-primary w-full text-lg shadow-xl hover:shadow-blue-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Continue

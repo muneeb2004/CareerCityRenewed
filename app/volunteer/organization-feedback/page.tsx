@@ -516,7 +516,7 @@ export default function OrganizationFeedbackPage() {
                 <p className="text-gray-500 font-medium">No questions have been set by the staff yet.</p>
               </div>
             ) : (
-              questions.map((question) => (
+              [...questions].sort((a, b) => (a.order ?? 999) - (b.order ?? 999)).map((question) => (
                 <div key={question.questionId} className="glass-hover p-6 rounded-xl border border-white/50 transition-all duration-200">
                   <label className="block text-base font-bold text-gray-800 mb-3">
                     {question.text}

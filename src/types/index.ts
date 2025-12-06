@@ -110,6 +110,7 @@ export interface OrganizationFeedbackQuestion {
   followUpLabel?: string; // Label for combined type text input
   placeholder?: string; // Placeholder for text inputs
   allowOther?: boolean; // Allow "Other" option with text input
+  order?: number; // Display order (lower = first)
 }
 
 export interface VolunteerQuestion {
@@ -123,8 +124,10 @@ export interface VolunteerQuestion {
   followUpLabel?: string; // Label for combined type text input
   placeholder?: string; // Placeholder for text inputs
   allowOther?: boolean; // Allow "Other" option with text input
+  order?: number; // Display order (lower = first)
   // Organization selection specific fields
   selectionCount?: number; // Number of organizations to select (e.g., 5)
+  selectionMode?: 'exactly' | 'up_to'; // Whether selection count is exact or maximum
   isPerOrganization?: boolean; // If true, this question repeats for each selected org
   linkedToQuestionId?: string; // Links to the organization_select question
 }

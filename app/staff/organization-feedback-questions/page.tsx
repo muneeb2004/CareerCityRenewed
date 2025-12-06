@@ -169,6 +169,38 @@ export default function OrganizationFeedbackQuestionManagement() {
     }
   };
 
+  // Reorder questions
+  const handleReorder = async (questionId: string, direction: 'up' | 'down') => {
+    const sortedQuestions = [...questions].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+    const currentIndex = sortedQuestions.findIndex(q => q.questionId === questionId);
+    
+    if (currentIndex === -1) return;
+    if (direction === 'up' && currentIndex === 0) return;
+    if (direction === 'down' && currentIndex === sortedQuestions.length - 1) return;
+    
+    const swapIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    const currentQuestion = sortedQuestions[currentIndex];
+    const swapQuestion = sortedQuestions[swapIndex];
+    
+    try {
+      // Swap order values
+      const currentOrder = currentQuestion.order ?? currentIndex;
+      const swapOrder = swapQuestion.order ?? swapIndex;
+      
+      await updateOrganizationFeedbackQuestion(currentQuestion.questionId, { order: swapOrder });
+      await updateOrganizationFeedbackQuestion(swapQuestion.questionId, { order: currentOrder });
+      
+      toast.success('Question reordered');
+      fetchQuestions();
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to reorder question');
+    }
+  };
+
+  // Get sorted questions
+  const sortedQuestions = [...questions].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+
   return (
     <div className="space-y-6">
       <Toaster position="top-center" />
@@ -403,15 +435,34 @@ export default function OrganizationFeedbackQuestionManagement() {
         <h2 className="text-xl font-bold mb-6 text-gray-800 flex items-center gap-2">
             <svg className="w-6 h-6 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
              Existing Questions
-             <span className="text-sm font-normal text-gray-400 ml-2">({questions.length})</span>
+             <span className="text-sm font-normal text-gray-400 ml-2">({sortedQuestions.length})</span>
         </h2>
         <div className="space-y-4">
-          {questions.map((question) => (
+          {sortedQuestions.map((question, index) => (
             <div
               key={question.questionId}
               className="glass-hover p-5 rounded-xl border border-white/60 flex items-center justify-between group transition-all duration-300"
             >
-              <div>
+              {/* Reorder buttons */}
+              <div className="flex flex-col gap-1 mr-3 opacity-50 group-hover:opacity-100">
+                <button 
+                  onClick={() => handleReorder(question.questionId, 'up')}
+                  disabled={index === 0}
+                  className="p-1 text-gray-400 hover:text-violet-600 hover:bg-violet-50 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  title="Move up"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" /></svg>
+                </button>
+                <button 
+                  onClick={() => handleReorder(question.questionId, 'down')}
+                  disabled={index === sortedQuestions.length - 1}
+                  className="p-1 text-gray-400 hover:text-violet-600 hover:bg-violet-50 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  title="Move down"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+              </div>
+              <div className="flex-1">
                 <p className="font-bold text-gray-800 text-lg">{question.text}</p>
                 <div className="flex flex-wrap items-center gap-2 mt-2">
                     <span className="text-xs font-semibold uppercase tracking-wider text-violet-600 bg-violet-50 px-2 py-1 rounded-md">

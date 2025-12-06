@@ -29,6 +29,7 @@ export default function StudentQuestionManagement() {
     followUpLabel?: string;
     placeholder?: string;
     selectionCount?: number;
+    selectionMode?: 'exactly' | 'up_to';
     isPerOrganization?: boolean;
     linkedToQuestionId?: string;
     allowOther?: boolean;
@@ -42,6 +43,7 @@ export default function StudentQuestionManagement() {
     followUpLabel: '',
     placeholder: '',
     selectionCount: 5,
+    selectionMode: 'up_to',
     isPerOrganization: false,
     linkedToQuestionId: '',
     allowOther: false,
@@ -110,6 +112,7 @@ export default function StudentQuestionManagement() {
       followUpLabel: '',
       placeholder: '',
       selectionCount: 5,
+      selectionMode: 'up_to',
       isPerOrganization: false,
       linkedToQuestionId: '',
       allowOther: false,
@@ -151,6 +154,7 @@ export default function StudentQuestionManagement() {
       // Organization select specific
       if (form.type === 'organization_select') {
         questionData.selectionCount = form.selectionCount;
+        questionData.selectionMode = form.selectionMode || 'up_to';
       }
 
       // Per-organization question linking
@@ -194,6 +198,7 @@ export default function StudentQuestionManagement() {
       followUpLabel: question.followUpLabel || '',
       placeholder: question.placeholder || '',
       selectionCount: question.selectionCount || 5,
+      selectionMode: question.selectionMode || 'up_to',
       isPerOrganization: question.isPerOrganization || false,
       linkedToQuestionId: question.linkedToQuestionId || '',
       allowOther: question.allowOther || false,
@@ -214,10 +219,52 @@ export default function StudentQuestionManagement() {
     }
   };
 
+  // Reorder questions within a category
+  const handleReorder = async (questionId: string, direction: 'up' | 'down', categoryQuestions: VolunteerQuestion[]) => {
+    const sortedQuestions = [...categoryQuestions].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+    const currentIndex = sortedQuestions.findIndex(q => q.questionId === questionId);
+    
+    if (currentIndex === -1) return;
+    if (direction === 'up' && currentIndex === 0) return;
+    if (direction === 'down' && currentIndex === sortedQuestions.length - 1) return;
+    
+    const swapIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    const currentQuestion = sortedQuestions[currentIndex];
+    const swapQuestion = sortedQuestions[swapIndex];
+    
+    try {
+      // Swap order values
+      const currentOrder = currentQuestion.order ?? currentIndex;
+      const swapOrder = swapQuestion.order ?? swapIndex;
+      
+      await updateVolunteerQuestion(currentQuestion.questionId, { order: swapOrder });
+      await updateVolunteerQuestion(swapQuestion.questionId, { order: currentOrder });
+      
+      toast.success('Question reordered');
+      fetchQuestions();
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to reorder question');
+    }
+  };
+
   // Get linked questions for display
   const getLinkedQuestions = (questionId: string) => {
     return questions.filter(q => q.linkedToQuestionId === questionId);
   };
+
+  // Get sorted questions by category
+  const orgSelectQuestions = questions
+    .filter(q => q.type === 'organization_select')
+    .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+  
+  const perOrgQuestionsFiltered = questions
+    .filter(q => q.isPerOrganization)
+    .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+  
+  const generalQuestionsFiltered = questions
+    .filter(q => q.type !== 'organization_select' && !q.isPerOrganization)
+    .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
 
   // Check if current question type supports per-organization linking
   const supportsPerOrgLinking = form.type !== 'organization_select' && organizationSelectQuestions.length > 0;
@@ -405,9 +452,46 @@ export default function StudentQuestionManagement() {
                 </svg>
                 <span className="font-semibold text-violet-700">Organization Selection Settings</span>
               </div>
+              
+              {/* Selection Mode Toggle */}
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Selection Mode
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, selectionMode: 'up_to' })}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      form.selectionMode === 'up_to'
+                        ? 'bg-violet-500 text-white shadow-md'
+                        : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    Up to
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, selectionMode: 'exactly' })}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      form.selectionMode === 'exactly'
+                        ? 'bg-violet-500 text-white shadow-md'
+                        : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    Exactly
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {form.selectionMode === 'up_to' 
+                    ? 'Students can select 1 or more organizations, up to the maximum' 
+                    : 'Students must select exactly this many organizations'}
+                </p>
+              </div>
+
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Number of Organizations to Select
+                  {form.selectionMode === 'up_to' ? 'Maximum' : 'Number of'} Organizations to Select
                 </label>
                 <input
                   type="number"
@@ -419,7 +503,9 @@ export default function StudentQuestionManagement() {
                   className="input-modern w-32"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Students will select this many organizations from the list of all participating stalls
+                  {form.selectionMode === 'up_to'
+                    ? 'Students can select up to this many organizations from the list'
+                    : 'Students must select exactly this many organizations from the list'}
                 </p>
               </div>
             </div>
@@ -609,19 +695,38 @@ export default function StudentQuestionManagement() {
       {/* Questions List - Organized by Type */}
       <div className="space-y-6">
         {/* Organization Selection Questions */}
-        {questions.filter(q => q.type === 'organization_select').length > 0 && (
+        {orgSelectQuestions.length > 0 && (
           <div className="card-modern border-l-4 border-violet-500">
             <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
               <svg className="w-6 h-6 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
               Organization Selection
-              <span className="text-sm font-normal text-gray-400">({questions.filter(q => q.type === 'organization_select').length})</span>
+              <span className="text-sm font-normal text-gray-400">({orgSelectQuestions.length})</span>
             </h2>
             <div className="space-y-4">
-              {questions.filter(q => q.type === 'organization_select').map((question) => (
+              {orgSelectQuestions.map((question, index) => (
                 <div key={question.questionId}>
                   <div className="glass-hover p-5 rounded-xl border border-violet-200 bg-violet-50/30 flex items-center justify-between group transition-all duration-300">
+                    {/* Reorder buttons */}
+                    <div className="flex flex-col gap-1 mr-3 opacity-50 group-hover:opacity-100">
+                      <button 
+                        onClick={() => handleReorder(question.questionId, 'up', orgSelectQuestions)}
+                        disabled={index === 0}
+                        className="p-1 text-gray-400 hover:text-violet-600 hover:bg-violet-50 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        title="Move up"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" /></svg>
+                      </button>
+                      <button 
+                        onClick={() => handleReorder(question.questionId, 'down', orgSelectQuestions)}
+                        disabled={index === orgSelectQuestions.length - 1}
+                        className="p-1 text-gray-400 hover:text-violet-600 hover:bg-violet-50 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        title="Move down"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                      </button>
+                    </div>
                     <div className="flex-1">
                       <p className="font-bold text-gray-800 text-lg">{question.text}</p>
                       <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -629,7 +734,7 @@ export default function StudentQuestionManagement() {
                           {QUESTION_TYPE_LABELS[question.type]}
                         </span>
                         <span className="text-xs text-violet-500 bg-violet-100 px-2 py-1 rounded-md">
-                          Select {question.selectionCount || 5} organizations
+                          {question.selectionMode === 'up_to' ? 'Up to' : 'Exactly'} {question.selectionCount || 5} organizations
                         </span>
                       </div>
                       {/* Show linked questions */}
@@ -664,23 +769,42 @@ export default function StudentQuestionManagement() {
         )}
 
         {/* Per-Organization Questions */}
-        {questions.filter(q => q.isPerOrganization).length > 0 && (
+        {perOrgQuestionsFiltered.length > 0 && (
           <div className="card-modern border-l-4 border-emerald-500">
             <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
               <svg className="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
               Per-Organization Questions
-              <span className="text-sm font-normal text-gray-400">({questions.filter(q => q.isPerOrganization).length})</span>
+              <span className="text-sm font-normal text-gray-400">({perOrgQuestionsFiltered.length})</span>
             </h2>
             <p className="text-sm text-gray-500 mb-4">These questions repeat for each organization selected by the student</p>
             <div className="space-y-4">
-              {questions.filter(q => q.isPerOrganization).map((question) => (
+              {perOrgQuestionsFiltered.map((question, index) => (
                 <div
                   key={question.questionId}
                   className="glass-hover p-5 rounded-xl border border-emerald-200 bg-emerald-50/30 flex items-center justify-between group transition-all duration-300"
                 >
-                  <div>
+                  {/* Reorder buttons */}
+                  <div className="flex flex-col gap-1 mr-3 opacity-50 group-hover:opacity-100">
+                    <button 
+                      onClick={() => handleReorder(question.questionId, 'up', perOrgQuestionsFiltered)}
+                      disabled={index === 0}
+                      className="p-1 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      title="Move up"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" /></svg>
+                    </button>
+                    <button 
+                      onClick={() => handleReorder(question.questionId, 'down', perOrgQuestionsFiltered)}
+                      disabled={index === perOrgQuestionsFiltered.length - 1}
+                      className="p-1 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      title="Move down"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                  </div>
+                  <div className="flex-1">
                     <p className="font-bold text-gray-800 text-lg">{question.text}</p>
                     <div className="flex flex-wrap items-center gap-2 mt-2">
                       <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 bg-emerald-100 px-2 py-1 rounded-md">
@@ -721,16 +845,35 @@ export default function StudentQuestionManagement() {
             </svg>
             General Questions
             <span className="text-sm font-normal text-gray-400">
-              ({questions.filter(q => q.type !== 'organization_select' && !q.isPerOrganization).length})
+              ({generalQuestionsFiltered.length})
             </span>
           </h2>
           <div className="space-y-4">
-            {questions.filter(q => q.type !== 'organization_select' && !q.isPerOrganization).map((question) => (
+            {generalQuestionsFiltered.map((question, index) => (
               <div
                 key={question.questionId}
                 className="glass-hover p-5 rounded-xl border border-white/60 flex items-center justify-between group transition-all duration-300"
               >
-                <div>
+                {/* Reorder buttons */}
+                <div className="flex flex-col gap-1 mr-3 opacity-50 group-hover:opacity-100">
+                  <button 
+                    onClick={() => handleReorder(question.questionId, 'up', generalQuestionsFiltered)}
+                    disabled={index === 0}
+                    className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    title="Move up"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" /></svg>
+                  </button>
+                  <button 
+                    onClick={() => handleReorder(question.questionId, 'down', generalQuestionsFiltered)}
+                    disabled={index === generalQuestionsFiltered.length - 1}
+                    className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    title="Move down"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                  </button>
+                </div>
+                <div className="flex-1">
                   <p className="font-bold text-gray-800 text-lg">{question.text}</p>
                   <div className="flex flex-wrap items-center gap-2 mt-2">
                     <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
@@ -780,7 +923,7 @@ export default function StudentQuestionManagement() {
                 </div>
               </div>
             ))}
-            {questions.filter(q => q.type !== 'organization_select' && !q.isPerOrganization).length === 0 && (
+            {generalQuestionsFiltered.length === 0 && (
               <p className="text-gray-400 text-center py-8">No general questions added yet</p>
             )}
           </div>
