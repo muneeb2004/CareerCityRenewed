@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Camera, CameraOff, RefreshCw, Loader2, CheckCircle } from 'lucide-react';
+import { Camera, CameraOff, RefreshCw, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
 
 interface QRScannerProps {
   onScan: (result: string) => void;
@@ -11,7 +11,11 @@ interface QRScannerProps {
 interface CameraDevice {
   deviceId: string;
   label: string;
+  score: number; // Priority score for camera selection
 }
+
+// Session-based scan history to prevent duplicate scans of same employer
+const scannedCodesThisSession = new Set<string>();
 
 export default function QRScanner({ onScan, onError }: QRScannerProps) {
   const [cameras, setCameras] = useState<CameraDevice[]>([]);
@@ -19,190 +23,300 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
   const [status, setStatus] = useState<'loading' | 'scanning' | 'paused' | 'success' | 'error'>('loading');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [lastScanned, setLastScanned] = useState<string | null>(null);
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [scannedCount, setScannedCount] = useState(0);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<{ stop: () => void } | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const mountedRef = useRef(true);
   const scanCooldownRef = useRef(false);
   const isStoppingRef = useRef(false);
-  const lastScannedCodeRef = useRef<string | null>(null); // Track last scanned to prevent duplicates
+  const isSwitchingRef = useRef(false);
 
-  // Filter out ultrawide/telephoto cameras
-  const isMainCamera = (label: string): boolean => {
+  // Score cameras to prioritize main back camera
+  // Higher score = better camera for QR scanning
+  const scoreCameraForQR = (label: string): number => {
     const l = label.toLowerCase();
-    return !l.includes('ultra') && !l.includes('wide') && !l.includes('tele') && 
-           !l.includes('zoom') && !l.includes('macro') && !l.includes('depth');
+    let score = 50; // Base score
+
+    // Heavily penalize non-main cameras
+    if (l.includes('ultra') || l.includes('wide angle') || l.includes('ultrawide')) score -= 100;
+    if (l.includes('tele') || l.includes('zoom') || l.includes('telephoto')) score -= 100;
+    if (l.includes('macro')) score -= 100;
+    if (l.includes('depth') || l.includes('tof')) score -= 100;
+    if (l.includes('front') || l.includes('selfie')) score -= 80;
+    if (l.includes('ir') || l.includes('infrared')) score -= 100;
+
+    // Boost main/back cameras
+    if (l.includes('back') || l.includes('rear')) score += 30;
+    if (l.includes('main') || l.includes('primary')) score += 40;
+    if (l.includes('wide') && !l.includes('ultra')) score += 20; // "wide" without "ultra" is often the main
+    if (l.includes('camera 0') || l.includes('camera0')) score += 25; // Often the main camera
+    if (l.includes('environment')) score += 20;
+
+    // Samsung specific patterns
+    if (l.includes('camera2 0')) score += 30; // Samsung main camera pattern
+    if (l.includes('camera2 1')) score -= 20; // Usually ultrawide on Samsung
+    if (l.includes('camera2 2')) score -= 30; // Usually telephoto on Samsung
+    if (l.includes('camera2 3')) score -= 40; // Usually macro/depth on Samsung
+
+    return score;
   };
 
-  // STOP camera - the critical function
+  // Completely stop camera and release all resources
   const stopCamera = useCallback(async () => {
-    if (isStoppingRef.current) return;
+    if (isStoppingRef.current) {
+      console.log('stopCamera: Already stopping, skipping');
+      return;
+    }
     isStoppingRef.current = true;
-    
-    console.log('stopCamera: Starting cleanup...');
+    console.log('stopCamera: Starting full cleanup...');
 
-    // 1. Stop ZXing controls FIRST - this is the most important
+    // 1. Stop ZXing controls FIRST
     if (controlsRef.current) {
       try {
         controlsRef.current.stop();
         console.log('stopCamera: ZXing controls stopped');
       } catch (e) {
-        console.log('stopCamera: ZXing stop error:', e);
+        console.log('stopCamera: ZXing stop error (ignored):', e);
       }
       controlsRef.current = null;
     }
 
-    // 2. Stop the video element's stream
+    // 2. Stop the stored stream reference
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
+        console.log('stopCamera: Stopping stored track:', track.label, track.readyState);
+        track.stop();
+      });
+      streamRef.current = null;
+    }
+
+    // 3. Stop video element's stream (may be different from stored ref)
     if (videoRef.current) {
       const video = videoRef.current;
       
       if (video.srcObject) {
         const stream = video.srcObject as MediaStream;
         stream.getTracks().forEach(track => {
-          console.log('stopCamera: Stopping track:', track.label, track.readyState);
+          console.log('stopCamera: Stopping video track:', track.label, track.readyState);
           track.stop();
         });
         video.srcObject = null;
       }
       
       video.pause();
-      video.src = '';
-      video.load();
+      try {
+        video.src = '';
+        video.load();
+      } catch (e) {
+        // Ignore load errors
+      }
     }
 
-    // 3. Wait a tick for browser to release
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // 4. Wait for browser to release camera
+    await new Promise(resolve => setTimeout(resolve, 150));
     
-    // 4. Reset scan tracking refs
+    // 5. Reset cooldown
     scanCooldownRef.current = false;
-    lastScannedCodeRef.current = null;
     
     isStoppingRef.current = false;
     console.log('stopCamera: Cleanup complete');
   }, []);
 
-  // Initialize cameras
+  // Initialize and enumerate cameras
   const initCameras = useCallback(async () => {
     try {
       setStatus('loading');
       setErrorMsg(null);
 
-      // Get permission
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      stream.getTracks().forEach(t => t.stop());
+      // First, get camera permission with back camera preference
+      console.log('initCameras: Requesting camera permission...');
+      const permissionStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      });
+      
+      // Get the device ID of the camera that was granted
+      const grantedTrack = permissionStream.getVideoTracks()[0];
+      const grantedDeviceId = grantedTrack?.getSettings()?.deviceId;
+      console.log('initCameras: Permission granted, device:', grantedTrack?.label);
+      
+      // Stop the permission stream
+      permissionStream.getTracks().forEach(t => t.stop());
 
-      // Get cameras
+      // Now enumerate all devices
       const devices = await navigator.mediaDevices.enumerateDevices();
       const videoDevices = devices.filter(d => d.kind === 'videoinput');
       
-      const allCams: CameraDevice[] = videoDevices.map((d, i) => ({
+      console.log('initCameras: Found cameras:', videoDevices.map(d => d.label));
+
+      // Score and sort cameras
+      const scoredCams: CameraDevice[] = videoDevices.map((d, i) => ({
         deviceId: d.deviceId,
-        label: d.label || `Camera ${i + 1}`
+        label: d.label || `Camera ${i + 1}`,
+        score: scoreCameraForQR(d.label || '')
       }));
 
-      const mainCams = allCams.filter(c => isMainCamera(c.label));
-      const cams = mainCams.length > 0 ? mainCams : allCams;
+      // Sort by score (highest first)
+      scoredCams.sort((a, b) => b.score - a.score);
 
-      if (cams.length === 0) throw new Error('No cameras found');
+      // Filter to only cameras with positive scores (main cameras)
+      const mainCams = scoredCams.filter(c => c.score > 0);
+      const camsToUse = mainCams.length > 0 ? mainCams : scoredCams;
 
-      // Find back camera
-      const backIdx = cams.findIndex(c => {
-        const l = c.label.toLowerCase();
-        return l.includes('back') || l.includes('rear') || l.includes('environment');
-      });
+      console.log('initCameras: Scored cameras:', camsToUse.map(c => `${c.label} (${c.score})`));
+
+      if (camsToUse.length === 0) {
+        throw new Error('No cameras found');
+      }
+
+      // If the granted camera is in our list, prefer it
+      let bestIdx = 0;
+      if (grantedDeviceId) {
+        const grantedIdx = camsToUse.findIndex(c => c.deviceId === grantedDeviceId);
+        if (grantedIdx >= 0 && camsToUse[grantedIdx].score >= 0) {
+          bestIdx = grantedIdx;
+          console.log('initCameras: Using granted camera at index', bestIdx);
+        }
+      }
 
       if (mountedRef.current) {
-        setCameras(cams);
-        setSelectedCameraIndex(backIdx >= 0 ? backIdx : 0);
+        setCameras(camsToUse);
+        setSelectedCameraIndex(bestIdx);
       }
     } catch (err) {
+      console.error('initCameras error:', err);
       if (mountedRef.current) {
-        setErrorMsg(err instanceof Error ? err.message : 'Camera error');
+        const msg = err instanceof Error ? err.message : 'Camera error';
+        setErrorMsg(msg.includes('Permission') ? 'Camera permission denied' : msg);
         setStatus('error');
-        onError?.(err instanceof Error ? err.message : 'Camera error');
+        onError?.(msg);
       }
     }
   }, [onError]);
 
-  // Start scanning
+  // Start the scanner with selected camera
   const startCamera = useCallback(async () => {
-    if (!videoRef.current || cameras.length === 0 || !mountedRef.current) return;
-    if (isStoppingRef.current) return; // Don't start while stopping
+    if (!videoRef.current || cameras.length === 0 || !mountedRef.current) {
+      console.log('startCamera: Prerequisites not met');
+      return;
+    }
+    if (isStoppingRef.current || isSwitchingRef.current) {
+      console.log('startCamera: Still stopping/switching, aborting');
+      return;
+    }
 
     const cam = cameras[selectedCameraIndex];
-    if (!cam) return;
+    if (!cam) {
+      console.log('startCamera: No camera at index', selectedCameraIndex);
+      return;
+    }
 
-    console.log('startCamera: Starting with camera:', cam.label);
+    console.log('startCamera: Starting with:', cam.label, '(score:', cam.score, ')');
 
     try {
-      // Make sure we're clean first
+      // Ensure clean state
       await stopCamera();
-
+      
       if (!mountedRef.current) return;
 
-      // Import ZXing
+      // Small delay after stop to ensure camera is released
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Import ZXing dynamically
       const { BrowserQRCodeReader } = await import('@zxing/browser');
       
       if (!mountedRef.current) return;
 
+      // Create reader with conservative settings
       const reader = new BrowserQRCodeReader(undefined, {
-        delayBetweenScanAttempts: 150,
-        delayBetweenScanSuccess: 3000, // 3 second cooldown at library level
+        delayBetweenScanAttempts: 200, // Slower scanning = more reliable
+        delayBetweenScanSuccess: 5000, // 5 second library-level cooldown
       });
 
+      // Start decoding
       const controls = await reader.decodeFromVideoDevice(
         cam.deviceId,
         videoRef.current,
         (result, error) => {
           if (!mountedRef.current) return;
 
-          // Skip if cooldown is active (using ref to avoid closure issues)
-          if (result && !scanCooldownRef.current) {
+          if (result) {
             const code = result.getText();
             
-            // Skip if this is the same code we just scanned
-            if (code === lastScannedCodeRef.current) {
+            // Check cooldown first (most common case)
+            if (scanCooldownRef.current) {
+              console.log('Scan blocked: cooldown active');
               return;
             }
+
+            // Check if already scanned this session
+            if (scannedCodesThisSession.has(code)) {
+              console.log('Scan blocked: already scanned this session:', code);
+              // Show warning briefly
+              setDuplicateWarning('Already scanned this employer!');
+              setTimeout(() => {
+                if (mountedRef.current) setDuplicateWarning(null);
+              }, 2000);
+              return;
+            }
+
+            // Valid new scan!
+            console.log('Valid scan:', code);
             
-            // Set cooldown and track code immediately
+            // Set cooldown IMMEDIATELY
             scanCooldownRef.current = true;
-            lastScannedCodeRef.current = code;
             
+            // Add to session history
+            scannedCodesThisSession.add(code);
+            setScannedCount(scannedCodesThisSession.size);
+            
+            // Update UI
             setLastScanned(code);
             setStatus('success');
 
+            // Haptic feedback
             if (navigator.vibrate) navigator.vibrate(100);
+            
+            // Notify parent
             onScan(code);
 
-            // Reset after 3 seconds
+            // Reset cooldown after 5 seconds
             setTimeout(() => {
               if (mountedRef.current) {
                 scanCooldownRef.current = false;
-                lastScannedCodeRef.current = null;
                 setLastScanned(null);
                 setStatus('scanning');
               }
-            }, 3000);
+            }, 5000);
           }
 
+          // Only log real errors, not "not found" which is normal
           if (error && error.name !== 'NotFoundException') {
             console.log('Scan error:', error.message);
           }
         }
       );
 
-      // Store controls for later cleanup
+      // Store controls and stream reference
       controlsRef.current = controls;
+      if (videoRef.current?.srcObject) {
+        streamRef.current = videoRef.current.srcObject as MediaStream;
+      }
       
       if (mountedRef.current) {
         setStatus('scanning');
-        console.log('startCamera: Now scanning');
+        console.log('startCamera: Scanner active');
       }
     } catch (err) {
       console.error('startCamera error:', err);
       if (mountedRef.current) {
-        setErrorMsg('Failed to start scanner');
+        setErrorMsg('Failed to start scanner. Try switching camera.');
         setStatus('error');
       }
     }
@@ -217,11 +331,46 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
     }
   }, [stopCamera]);
 
-  // Handle resume button
+  // Handle resume button  
   const handleResume = useCallback(() => {
     console.log('handleResume: User clicked resume');
     startCamera();
   }, [startCamera]);
+
+  // Handle camera switch with retry logic
+  const handleSwitchCamera = useCallback(async () => {
+    if (cameras.length <= 1 || isSwitchingRef.current) return;
+    
+    console.log('handleSwitchCamera: Switching camera...');
+    isSwitchingRef.current = true;
+    
+    try {
+      await stopCamera();
+      
+      // Wait for camera to fully release
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      const newIndex = (selectedCameraIndex + 1) % cameras.length;
+      console.log('handleSwitchCamera: Switching to index', newIndex, cameras[newIndex]?.label);
+      
+      setSelectedCameraIndex(newIndex);
+      
+      // Wait a bit more then start
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      if (mountedRef.current) {
+        isSwitchingRef.current = false;
+        // startCamera will be triggered by the useEffect watching selectedCameraIndex
+      }
+    } catch (err) {
+      console.error('handleSwitchCamera error:', err);
+      isSwitchingRef.current = false;
+      if (mountedRef.current) {
+        setErrorMsg('Camera switch failed. Try again.');
+        setStatus('error');
+      }
+    }
+  }, [cameras, selectedCameraIndex, stopCamera]);
 
   // Mount effect - init cameras
   useEffect(() => {
@@ -231,10 +380,15 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
     return () => {
       console.log('QRScanner unmounting...');
       mountedRef.current = false;
-      // Synchronously stop on unmount
+      
+      // Synchronous cleanup on unmount
       if (controlsRef.current) {
         try { controlsRef.current.stop(); } catch (e) { /* ignore */ }
         controlsRef.current = null;
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
       }
       if (videoRef.current?.srcObject) {
         (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
@@ -246,38 +400,31 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
   // Start scanning when cameras are loaded
   useEffect(() => {
     if (cameras.length > 0 && status === 'loading') {
+      console.log('Auto-starting scanner...');
       startCamera();
     }
   }, [cameras.length, status, startCamera]);
 
-  // Handle camera switch
-  const handleSwitchCamera = useCallback(async () => {
-    if (cameras.length <= 1) return;
-    
-    await stopCamera();
-    setSelectedCameraIndex(i => (i + 1) % cameras.length);
-  }, [cameras.length, stopCamera]);
-
   // Effect to restart after camera switch
   useEffect(() => {
-    if (status === 'paused' && cameras.length > 0) {
-      // Don't auto-restart if user manually paused
-      return;
-    }
-    if (cameras.length > 0 && (status === 'scanning' || status === 'success')) {
-      // Camera index changed while scanning - restart
-      // But only if we're not in the middle of stopping
-      const timer = setTimeout(() => {
-        if (mountedRef.current && !isStoppingRef.current) {
-          startCamera();
-        }
-      }, 200);
-      return () => clearTimeout(timer);
-    }
+    // Skip if no cameras, paused, or still switching
+    if (cameras.length === 0 || status === 'paused' || status === 'loading') return;
+    if (isSwitchingRef.current) return;
+    
+    // Small delay to allow state to settle
+    const timer = setTimeout(() => {
+      if (mountedRef.current && !isStoppingRef.current && !isSwitchingRef.current) {
+        console.log('Camera index changed, restarting scanner...');
+        startCamera();
+      }
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  // Only run when selectedCameraIndex changes
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCameraIndex]);
 
-  // Visibility change
+  // Visibility change handler
   useEffect(() => {
     let wasScanning = false;
 
@@ -294,7 +441,7 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
           console.log('Tab visible, resuming camera');
           setTimeout(() => {
             if (mountedRef.current) startCamera();
-          }, 300);
+          }, 500);
         }
       }
     };
@@ -303,7 +450,7 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [status, stopCamera, startCamera]);
 
-  // Loading
+  // Loading state
   if (status === 'loading' && cameras.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-8 bg-gray-800 rounded-xl">
@@ -313,7 +460,7 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
     );
   }
 
-  // Error
+  // Error state
   if (status === 'error') {
     return (
       <div className="flex flex-col items-center justify-center p-8 bg-gray-800 rounded-xl">
@@ -364,8 +511,18 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
           </div>
         )}
 
+        {/* Duplicate warning overlay */}
+        {duplicateWarning && (
+          <div className="absolute inset-0 flex items-center justify-center bg-yellow-500/20 backdrop-blur-sm">
+            <div className="text-center">
+              <AlertTriangle className="w-16 h-16 text-yellow-400 mx-auto mb-3" />
+              <p className="text-yellow-400 font-bold">{duplicateWarning}</p>
+            </div>
+          </div>
+        )}
+
         {/* Target frame */}
-        {isActive && status !== 'success' && (
+        {isActive && status !== 'success' && !duplicateWarning && (
           <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
             <div className="relative w-48 h-48">
               <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-blue-400 rounded-tl-lg"></div>
@@ -388,7 +545,8 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
           {cameras.length > 1 && (
             <button
               onClick={handleSwitchCamera}
-              className="flex items-center justify-center w-10 h-10 bg-gray-700 hover:bg-gray-600 text-white rounded-lg"
+              disabled={isSwitchingRef.current}
+              className="flex items-center justify-center w-10 h-10 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded-lg"
               title="Switch camera"
             >
               <RefreshCw className="w-5 h-5" />
@@ -412,6 +570,13 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
           ? `Scanned: ${lastScanned?.substring(0, 20)}...`
           : "Point the camera at an employer's QR code to scan"}
       </p>
+
+      {/* Session info */}
+      {scannedCount > 0 && (
+        <p className="text-xs text-gray-500 text-center">
+          {scannedCount} employer{scannedCount > 1 ? 's' : ''} scanned this session
+        </p>
+      )}
     </div>
   );
 }
