@@ -6,6 +6,7 @@ import { Camera, CameraOff, RefreshCw, Loader2, CheckCircle, AlertTriangle } fro
 interface QRScannerProps {
   onScan: (result: string) => void;
   onError?: (error: string) => void;
+  alreadyScannedIds?: string[]; // Organization IDs already scanned (from Firestore)
 }
 
 interface CameraDevice {
@@ -14,10 +15,9 @@ interface CameraDevice {
   score: number; // Priority score for camera selection
 }
 
-// Session-based scan history to prevent duplicate scans of same employer
-const scannedCodesThisSession = new Set<string>();
-
-export default function QRScanner({ onScan, onError }: QRScannerProps) {
+export default function QRScanner({ onScan, onError, alreadyScannedIds = [] }: QRScannerProps) {
+  // Session-based scan history (combines prop + session scans)
+  const alreadyScannedRef = useRef(new Set<string>(alreadyScannedIds));
   const [cameras, setCameras] = useState<CameraDevice[]>([]);
   const [selectedCameraIndex, setSelectedCameraIndex] = useState(0);
   const [status, setStatus] = useState<'loading' | 'scanning' | 'paused' | 'success' | 'error'>('loading');
@@ -33,6 +33,11 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
   const scanCooldownRef = useRef(false);
   const isStoppingRef = useRef(false);
   const isSwitchingRef = useRef(false);
+
+  // Update alreadyScannedRef when prop changes
+  useEffect(() => {
+    alreadyScannedIds.forEach(id => alreadyScannedRef.current.add(id));
+  }, [alreadyScannedIds]);
 
   // Score cameras to prioritize main back camera
   // Higher score = better camera for QR scanning
@@ -131,19 +136,35 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
       setStatus('loading');
       setErrorMsg(null);
 
-      // First, get camera permission with back camera preference
-      console.log('initCameras: Requesting camera permission...');
-      const permissionStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        } 
-      });
+      // First, get camera permission - use EXACT constraint for environment camera
+      console.log('initCameras: Requesting camera permission with environment constraint...');
+      let permissionStream: MediaStream;
+      let grantedDeviceId: string | undefined;
+      
+      try {
+        // Try exact environment (back) camera first - this forces main camera on most devices
+        permissionStream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: { exact: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          } 
+        });
+      } catch {
+        // Fallback to ideal if exact fails
+        console.log('initCameras: Exact environment failed, trying ideal...');
+        permissionStream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          } 
+        });
+      }
       
       // Get the device ID of the camera that was granted
       const grantedTrack = permissionStream.getVideoTracks()[0];
-      const grantedDeviceId = grantedTrack?.getSettings()?.deviceId;
+      grantedDeviceId = grantedTrack?.getSettings()?.deviceId;
       console.log('initCameras: Permission granted, device:', grantedTrack?.label);
       
       // Stop the permission stream
@@ -175,13 +196,14 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
         throw new Error('No cameras found');
       }
 
-      // If the granted camera is in our list, prefer it
+      // ALWAYS prefer the camera that was granted with facingMode:environment
+      // This is the camera the browser determined is the "main back camera"
       let bestIdx = 0;
       if (grantedDeviceId) {
         const grantedIdx = camsToUse.findIndex(c => c.deviceId === grantedDeviceId);
-        if (grantedIdx >= 0 && camsToUse[grantedIdx].score >= 0) {
+        if (grantedIdx >= 0) {
           bestIdx = grantedIdx;
-          console.log('initCameras: Using granted camera at index', bestIdx);
+          console.log('initCameras: Using browser-selected environment camera at index', bestIdx);
         }
       }
 
@@ -255,11 +277,11 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
               return;
             }
 
-            // Check if already scanned this session
-            if (scannedCodesThisSession.has(code)) {
-              console.log('Scan blocked: already scanned this session:', code);
+            // Check if already scanned (Firestore + session)
+            if (alreadyScannedRef.current.has(code)) {
+              console.log('Scan blocked: already scanned this employer:', code);
               // Show warning briefly
-              setDuplicateWarning('Already scanned this employer!');
+              setDuplicateWarning('Already visited this employer!');
               setTimeout(() => {
                 if (mountedRef.current) setDuplicateWarning(null);
               }, 2000);
@@ -272,9 +294,9 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
             // Set cooldown IMMEDIATELY
             scanCooldownRef.current = true;
             
-            // Add to session history
-            scannedCodesThisSession.add(code);
-            setScannedCount(scannedCodesThisSession.size);
+            // Add to scanned set to prevent re-scan
+            alreadyScannedRef.current.add(code);
+            setScannedCount(alreadyScannedRef.current.size);
             
             // Update UI
             setLastScanned(code);

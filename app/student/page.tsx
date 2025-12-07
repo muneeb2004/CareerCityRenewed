@@ -80,6 +80,12 @@ export default function StudentPortal() {
   };
 
   const handleScanSuccess = async (organizationId: string) => {
+    // Check if already scanned this organization (defense in depth)
+    if (scans.some(s => s.organizationId === organizationId)) {
+      toast.error('You have already visited this employer!');
+      return;
+    }
+
     const organizationData = await getOrganization(organizationId);
     if (!organizationData) {
       toast.error('Invalid Organization QR Code');
@@ -199,7 +205,10 @@ export default function StudentPortal() {
                         <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4h4v4H3V4zm14 0h4v4h-4V4zM3 16h4v4H3v-4zm14 0h4v4h-4v-4zm-7-7h4v4h-4V9zm0 7h4v4h-4v-4zm-7-7h4v4H3V9zm14 0h4v4h-4V9z" /></svg>
                         Scan QR Code
                     </h2>
-                    <QRScanner onScan={handleScanSuccess} />
+                    <QRScanner 
+                      onScan={handleScanSuccess} 
+                      alreadyScannedIds={scans.map(s => s.organizationId)}
+                    />
                 </div>
             </div>
 
