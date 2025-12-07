@@ -25,6 +25,7 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
   const mountedRef = useRef(true);
   const scanCooldownRef = useRef(false);
   const isStoppingRef = useRef(false);
+  const lastScannedCodeRef = useRef<string | null>(null); // Track last scanned to prevent duplicates
 
   // Filter out ultrawide/telephoto cameras
   const isMainCamera = (label: string): boolean => {
@@ -71,6 +72,10 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
 
     // 3. Wait a tick for browser to release
     await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // 4. Reset scan tracking refs
+    scanCooldownRef.current = false;
+    lastScannedCodeRef.current = null;
     
     isStoppingRef.current = false;
     console.log('stopCamera: Cleanup complete');
@@ -141,8 +146,8 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
       if (!mountedRef.current) return;
 
       const reader = new BrowserQRCodeReader(undefined, {
-        delayBetweenScanAttempts: 100,
-        delayBetweenScanSuccess: 500,
+        delayBetweenScanAttempts: 150,
+        delayBetweenScanSuccess: 3000, // 3 second cooldown at library level
       });
 
       const controls = await reader.decodeFromVideoDevice(
@@ -151,22 +156,34 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
         (result, error) => {
           if (!mountedRef.current) return;
 
+          // Skip if cooldown is active (using ref to avoid closure issues)
           if (result && !scanCooldownRef.current) {
             const code = result.getText();
+            
+            // Skip if this is the same code we just scanned
+            if (code === lastScannedCodeRef.current) {
+              return;
+            }
+            
+            // Set cooldown and track code immediately
             scanCooldownRef.current = true;
+            lastScannedCodeRef.current = code;
+            
             setLastScanned(code);
             setStatus('success');
 
             if (navigator.vibrate) navigator.vibrate(100);
             onScan(code);
 
+            // Reset after 3 seconds
             setTimeout(() => {
               if (mountedRef.current) {
                 scanCooldownRef.current = false;
+                lastScannedCodeRef.current = null;
                 setLastScanned(null);
                 setStatus('scanning');
               }
-            }, 2000);
+            }, 3000);
           }
 
           if (error && error.name !== 'NotFoundException') {
