@@ -152,7 +152,7 @@ export default function AnalyticsPage() {
             )}
           </div>
            <div className="p-4 bg-emerald-100 rounded-full text-emerald-600">
-             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4c1 1 0 0 1 1 1v3c0 1-1 1-1 1h-1v-1a2 2 0 1 0-2 0v1h-1a2 2 0 0 0-2 0v-1H9.05a1 1 0 0 0-.82-1.566a2 2 0 0 0-2.806 0A1 1 0 0 0 5 12v2a1 1 0 0 0 1 1h1v1c0 1 0 1 1 1h1v-1.82a1 1 0 0 0-.26-.726A2 2 0 0 0 7.17 11H7v-.17a1 1 0 0 0-1.147-.983A2 2 0 0 0 5 11h.02a1 1 0 0 0 .01-1.832A1 1 0 0 0 5.03 7h.05a2 2 0 0 0 3.84 0h.05A1 1 0 0 0 9 7h1.05a1 1 0 0 0 .82-1.566A2 2 0 0 0 10.05 5H9a1 1 0 0 0-1 .99V7m3 0h5" /></svg>
+             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4h4v4H3V4zm14 0h4v4h-4V4zM3 16h4v4H3v-4zm14 0h4v4h-4v-4zm-7-7h4v4h-4V9zm0 7h4v4h-4v-4zm-7-7h4v4H3V9zm14 0h4v4h-4V9z" /></svg>
           </div>
         </div>
       </div>

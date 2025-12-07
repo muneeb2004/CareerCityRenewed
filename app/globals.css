@@ -156,3 +156,22 @@
 .animate-slide-in-right {
   animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
+
+/* QR Scanner scanning line animation */
+@keyframes scanLine {
+  0% {
+    top: 0;
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    top: 100%;
+    opacity: 1;
+  }
+}
+
+.animate-scan-line {
+  animation: scanLine 2s ease-in-out infinite;
+}
