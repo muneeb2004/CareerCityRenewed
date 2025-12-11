@@ -519,22 +519,22 @@ export default function StudentFeedbackPage() {
                   id="studentId"
                   value={studentId}
                   onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '').slice(0, 5);
+                    const value = e.target.value.toLowerCase().slice(0, 7);
                     setStudentId(value);
                   }}
-                  placeholder="Enter your 5-digit student ID"
+                  placeholder="e.g., ab12345"
                   className="input-modern"
-                  maxLength={5}
-                  pattern="\d{5}"
+                  maxLength={7}
+                  pattern="[a-zA-Z]{2}\d{5}"
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  {studentId.length}/5 digits
+                  Format: 2 letters + 5 digits ({studentId.length}/7 characters)
                 </p>
               </div>
               <button
                 onClick={proceedToNextStep}
-                disabled={studentId.length !== 5}
+                disabled={!/^[a-zA-Z]{2}\d{5}$/.test(studentId)}
                 className="btn-primary w-full text-lg shadow-xl hover:shadow-blue-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Continue
