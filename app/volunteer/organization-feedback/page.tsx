@@ -125,7 +125,7 @@ export default function OrganizationFeedbackPage() {
     const values = Array.from({ length: max }, (_, i) => i + 1);
     
     return (
-      <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+      <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
         <div className="flex justify-between text-xs font-semibold text-gray-500 px-1 mb-3 uppercase tracking-wide">
           <span>{question.minLabel || '1'}</span>
           <span>{question.maxLabel || String(max)}</span>
@@ -383,13 +383,14 @@ export default function OrganizationFeedbackPage() {
       <Toaster position="top-center" />
       <div className="w-full max-w-2xl">
         <div className="card-modern">
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-6">
             <Image
               src="/favicon-optimized.png"
               alt="Career City Logo"
-              width={56}
-              height={56}
-              className="rounded-xl shadow-lg"
+              width={512}
+              height={512}
+              className="w-auto h-32 object-contain"
+              priority
             />
           </div>
           <h1 className="text-3xl font-extrabold text-center mb-8 bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-violet-600">
@@ -398,7 +399,7 @@ export default function OrganizationFeedbackPage() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Organization Selection - Searchable Dropdown */}
-            <div className="glass-hover p-6 rounded-xl border border-violet-200 bg-violet-50/30 relative z-40">
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative z-40">
               <label className="block text-base font-bold text-gray-800 mb-3">
                 Select Your Organization
               </label>
@@ -535,7 +536,7 @@ export default function OrganizationFeedbackPage() {
               </div>
             ) : (
               [...questions].sort((a, b) => (a.order ?? 999) - (b.order ?? 999)).map((question) => (
-                <div key={question.questionId} className="glass-hover p-6 rounded-xl border border-white/50 transition-all duration-200">
+                <div key={question.questionId} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm transition-all duration-200 hover:shadow-md">
                   <label className="block text-base font-bold text-gray-800 mb-3">
                     {question.text}
                   </label>

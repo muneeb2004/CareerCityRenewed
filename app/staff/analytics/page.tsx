@@ -105,7 +105,7 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="card-modern flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
-            <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">
+            <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-violet-600">
             Live Analytics
             </h1>
             <p className="text-gray-500 text-sm mt-1">Real-time insights into event activity</p>

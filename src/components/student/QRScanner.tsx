@@ -1,22 +1,26 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Camera, CameraOff, RefreshCw, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Camera, CameraOff, RefreshCw, Loader2, CheckCircle, AlertTriangle, Flashlight, FlashlightOff } from 'lucide-react';
+import { BrowserQRCodeReader, IScannerControls } from '@zxing/browser';
+import { haptics } from '../../lib/haptics';
+
+const DEBUG_SCANNER = process.env.NODE_ENV === 'development';
+const log = (...args: unknown[]) => DEBUG_SCANNER && console.log('[QRScanner]', ...args);
 
 interface QRScannerProps {
   onScan: (result: string) => void;
   onError?: (error: string) => void;
-  alreadyScannedIds?: string[]; // Organization IDs already scanned (from Firestore)
+  alreadyScannedIds?: string[];
 }
 
 interface CameraDevice {
   deviceId: string;
   label: string;
-  score: number; // Priority score for camera selection
+  score: number;
 }
 
 export default function QRScanner({ onScan, onError, alreadyScannedIds = [] }: QRScannerProps) {
-  // Session-based scan history (combines prop + session scans)
   const alreadyScannedRef = useRef(new Set<string>(alreadyScannedIds));
   const [cameras, setCameras] = useState<CameraDevice[]>([]);
   const [selectedCameraIndex, setSelectedCameraIndex] = useState(0);
@@ -25,473 +29,439 @@ export default function QRScanner({ onScan, onError, alreadyScannedIds = [] }: Q
   const [lastScanned, setLastScanned] = useState<string | null>(null);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [scannedCount, setScannedCount] = useState(0);
+  
+  // Torch state
+  const [hasTorch, setHasTorch] = useState(false);
+  const [isTorchOn, setIsTorchOn] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const controlsRef = useRef<{ stop: () => void } | null>(null);
+  const readerRef = useRef<BrowserQRCodeReader | null>(null);
+  const controlsRef = useRef<IScannerControls | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const mountedRef = useRef(true);
   const scanCooldownRef = useRef(false);
-  const isStoppingRef = useRef(false);
-  const isSwitchingRef = useRef(false);
+  
+  // Lifecycle & Concurrency Management
+  const mountIdRef = useRef<string>('');
+  const isMountedRef = useRef(false);
+  const isCleaningUpRef = useRef(false);
 
-  // Update alreadyScannedRef when prop changes
+  // Initialize reader once
+  useEffect(() => {
+    if (!readerRef.current) {
+      readerRef.current = new BrowserQRCodeReader(undefined, {
+        delayBetweenScanAttempts: 150, 
+        delayBetweenScanSuccess: 3000,
+      });
+    }
+  }, []);
+
   useEffect(() => {
     alreadyScannedIds.forEach(id => alreadyScannedRef.current.add(id));
   }, [alreadyScannedIds]);
 
-  // Score cameras to prioritize main back camera
-  // Higher score = better camera for QR scanning
   const scoreCameraForQR = (label: string): number => {
     const l = label.toLowerCase();
-    let score = 50; // Base score
-
-    // Heavily penalize non-main cameras
+    let score = 50;
     if (l.includes('ultra') || l.includes('wide angle') || l.includes('ultrawide')) score -= 100;
     if (l.includes('tele') || l.includes('zoom') || l.includes('telephoto')) score -= 100;
     if (l.includes('macro')) score -= 100;
     if (l.includes('depth') || l.includes('tof')) score -= 100;
     if (l.includes('front') || l.includes('selfie')) score -= 80;
     if (l.includes('ir') || l.includes('infrared')) score -= 100;
-
-    // Boost main/back cameras
     if (l.includes('back') || l.includes('rear')) score += 30;
     if (l.includes('main') || l.includes('primary')) score += 40;
-    if (l.includes('wide') && !l.includes('ultra')) score += 20; // "wide" without "ultra" is often the main
-    if (l.includes('camera 0') || l.includes('camera0')) score += 25; // Often the main camera
+    if (l.includes('wide') && !l.includes('ultra')) score += 20;
+    if (l.includes('camera 0') || l.includes('camera0')) score += 25;
     if (l.includes('environment')) score += 20;
-
-    // Samsung specific patterns
-    if (l.includes('camera2 0')) score += 30; // Samsung main camera pattern
-    if (l.includes('camera2 1')) score -= 20; // Usually ultrawide on Samsung
-    if (l.includes('camera2 2')) score -= 30; // Usually telephoto on Samsung
-    if (l.includes('camera2 3')) score -= 40; // Usually macro/depth on Samsung
-
+    if (l.includes('camera2 0')) score += 30;
     return score;
   };
 
-  // Completely stop camera and release all resources
   const stopCamera = useCallback(async () => {
-    if (isStoppingRef.current) {
-      console.log('stopCamera: Already stopping, skipping');
-      return;
-    }
-    isStoppingRef.current = true;
-    console.log('stopCamera: Starting full cleanup...');
+    log('stopCamera: Cleanup starting...');
 
-    // 1. Stop ZXing controls FIRST
     if (controlsRef.current) {
       try {
         controlsRef.current.stop();
-        console.log('stopCamera: ZXing controls stopped');
-      } catch (e) {
-        console.log('stopCamera: ZXing stop error (ignored):', e);
-      }
+        log('stopCamera: Controls stopped.');
+      } catch (e) { /* ignore */ }
       controlsRef.current = null;
     }
 
-    // 2. Stop the stored stream reference
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => {
-        console.log('stopCamera: Stopping stored track:', track.label, track.readyState);
-        track.stop();
+        try {
+          track.stop();
+          log(`stopCamera: Track ${track.label} stopped.`);
+        } catch (e) { /* ignore */ }
       });
       streamRef.current = null;
     }
 
-    // 3. Stop video element's stream (may be different from stored ref)
     if (videoRef.current) {
-      const video = videoRef.current;
-      
-      if (video.srcObject) {
-        const stream = video.srcObject as MediaStream;
-        stream.getTracks().forEach(track => {
-          console.log('stopCamera: Stopping video track:', track.label, track.readyState);
-          track.stop();
-        });
-        video.srcObject = null;
-      }
-      
-      video.pause();
-      try {
-        video.src = '';
-        video.load();
-      } catch (e) {
-        // Ignore load errors
-      }
+      videoRef.current.srcObject = null;
+      videoRef.current.load();
     }
 
-    // 4. Wait for browser to release camera
-    await new Promise(resolve => setTimeout(resolve, 150));
-    
-    // 5. Reset cooldown
+    setHasTorch(false);
+    setIsTorchOn(false);
     scanCooldownRef.current = false;
     
-    isStoppingRef.current = false;
-    console.log('stopCamera: Cleanup complete');
+    // Wait briefly for hardware release
+    await new Promise(resolve => setTimeout(resolve, 150));
+    log('stopCamera: Cleanup done');
   }, []);
 
-  // Initialize and enumerate cameras
-  const initCameras = useCallback(async () => {
+  const initCameras = useCallback(async (currentMountId: string) => {
+    // Early exit if not mounted or mount ID changed
+    if (!isMountedRef.current || currentMountId !== mountIdRef.current) {
+      log(`initCameras: Skipping - stale mount (${currentMountId} vs ${mountIdRef.current})`);
+      return;
+    }
+    
     try {
-      setStatus('loading');
-      setErrorMsg(null);
-
-      // First, get camera permission - use EXACT constraint for environment camera
-      console.log('initCameras: Requesting camera permission with environment constraint...');
-      let permissionStream: MediaStream;
-      let grantedDeviceId: string | undefined;
+      log(`initCameras: Starting (Mount: ${currentMountId})...`);
       
+      // Explicitly ask for environment camera permission first
       try {
-        // Try exact environment (back) camera first - this forces main camera on most devices
-        permissionStream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            facingMode: { exact: 'environment' },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          } 
-        });
-      } catch {
-        // Fallback to ideal if exact fails
-        console.log('initCameras: Exact environment failed, trying ideal...');
-        permissionStream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            facingMode: { ideal: 'environment' },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          } 
-        });
+        log('initCameras: Requesting permissions...');
+        const permStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        log('initCameras: Permissions granted.');
+        permStream.getTracks().forEach(t => t.stop());
+      } catch (e) {
+        log('initCameras: Permission check failed/fallback:', e);
+      }
+
+      // Check again after async operation
+      if (!isMountedRef.current || currentMountId !== mountIdRef.current) {
+        log('initCameras: Aborted after permission request');
+        return;
+      }
+
+      log('initCameras: Enumerating devices...');
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      
+      // Check again after async operation
+      if (!isMountedRef.current || currentMountId !== mountIdRef.current) {
+        log('initCameras: Aborted after device enumeration');
+        return;
       }
       
-      // Get the device ID of the camera that was granted
-      const grantedTrack = permissionStream.getVideoTracks()[0];
-      grantedDeviceId = grantedTrack?.getSettings()?.deviceId;
-      console.log('initCameras: Permission granted, device:', grantedTrack?.label);
-      
-      // Stop the permission stream
-      permissionStream.getTracks().forEach(t => t.stop());
-
-      // Now enumerate all devices
-      const devices = await navigator.mediaDevices.enumerateDevices();
       const videoDevices = devices.filter(d => d.kind === 'videoinput');
-      
-      console.log('initCameras: Found cameras:', videoDevices.map(d => d.label));
+      log(`initCameras: Found ${videoDevices.length} video devices.`);
 
-      // Score and sort cameras
+      if (videoDevices.length === 0) throw new Error('No cameras found on this device.');
+
       const scoredCams: CameraDevice[] = videoDevices.map((d, i) => ({
         deviceId: d.deviceId,
         label: d.label || `Camera ${i + 1}`,
         score: scoreCameraForQR(d.label || '')
       }));
 
-      // Sort by score (highest first)
       scoredCams.sort((a, b) => b.score - a.score);
-
-      // Filter to only cameras with positive scores (main cameras)
       const mainCams = scoredCams.filter(c => c.score > 0);
       const camsToUse = mainCams.length > 0 ? mainCams : scoredCams;
 
-      console.log('initCameras: Scored cameras:', camsToUse.map(c => `${c.label} (${c.score})`));
-
-      if (camsToUse.length === 0) {
-        throw new Error('No cameras found');
-      }
-
-      // ALWAYS prefer the camera that was granted with facingMode:environment
-      // This is the camera the browser determined is the "main back camera"
-      let bestIdx = 0;
-      if (grantedDeviceId) {
-        const grantedIdx = camsToUse.findIndex(c => c.deviceId === grantedDeviceId);
-        if (grantedIdx >= 0) {
-          bestIdx = grantedIdx;
-          console.log('initCameras: Using browser-selected environment camera at index', bestIdx);
-        }
-      }
-
-      if (mountedRef.current) {
+      if (isMountedRef.current && currentMountId === mountIdRef.current) {
+        log('initCameras: Setting cameras state.');
         setCameras(camsToUse);
-        setSelectedCameraIndex(bestIdx);
+        setSelectedCameraIndex(0);
       }
     } catch (err) {
-      console.error('initCameras error:', err);
-      if (mountedRef.current) {
-        const msg = err instanceof Error ? err.message : 'Camera error';
-        setErrorMsg(msg.includes('Permission') ? 'Camera permission denied' : msg);
-        setStatus('error');
-        onError?.(msg);
+      if (!isMountedRef.current || currentMountId !== mountIdRef.current) return;
+      log('initCameras error:', err);
+      
+      let msg = 'Camera error';
+      if (err instanceof DOMException) {
+          if (err.name === 'NotAllowedError') msg = 'Camera permission denied. Please allow access in settings.';
+          if (err.name === 'NotFoundError') msg = 'No camera device found.';
+          if (err.name === 'NotReadableError') msg = 'Camera is in use by another app.';
+      } else if (err instanceof Error) {
+          msg = err.message;
       }
+      setErrorMsg(msg);
+      setStatus('error');
+      onError?.(msg);
     }
   }, [onError]);
 
-  // Start the scanner with selected camera
-  const startCamera = useCallback(async () => {
-    if (!videoRef.current || cameras.length === 0 || !mountedRef.current) {
-      console.log('startCamera: Prerequisites not met');
+  const toggleTorch = useCallback(async () => {
+    if (!streamRef.current || !isMountedRef.current) return;
+    const track = streamRef.current.getVideoTracks()[0];
+    if (!track) return;
+
+    try {
+      const newState = !isTorchOn;
+      await track.applyConstraints({
+        advanced: [{ torch: newState }]
+      } as any);
+      if (isMountedRef.current) {
+        setIsTorchOn(newState);
+      }
+    } catch (e) {
+      log('Error toggling torch:', e);
+    }
+  }, [isTorchOn]);
+
+  const startCamera = useCallback(async (currentMountId: string) => {
+    // Early exit checks
+    if (!isMountedRef.current || currentMountId !== mountIdRef.current) {
+      log('startCamera: Skipping - stale mount');
       return;
     }
-    if (isStoppingRef.current || isSwitchingRef.current) {
-      console.log('startCamera: Still stopping/switching, aborting');
+    
+    if (!videoRef.current || cameras.length === 0) {
+      log('startCamera: Prerequisites not met.');
+      return;
+    }
+
+    // Prevent concurrent camera operations
+    if (isCleaningUpRef.current) {
+      log('startCamera: Cleanup in progress, skipping');
       return;
     }
 
     const cam = cameras[selectedCameraIndex];
-    if (!cam) {
-      console.log('startCamera: No camera at index', selectedCameraIndex);
-      return;
+    if (!cam) return;
+
+    // Optimization: If stream is already active with same device, don't restart
+    if (streamRef.current && videoRef.current && videoRef.current.srcObject) {
+        const activeTrack = streamRef.current.getVideoTracks()[0];
+        if (activeTrack && activeTrack.readyState === 'live') {
+          const currentDeviceId = activeTrack.getSettings().deviceId;
+          if (currentDeviceId === cam.deviceId) {
+             log('startCamera: Camera already active with correct device, skipping restart.');
+             if (isMountedRef.current && currentMountId === mountIdRef.current) setStatus('scanning');
+             return;
+          }
+        }
     }
 
-    console.log('startCamera: Starting with:', cam.label, '(score:', cam.score, ')');
+    log(`startCamera: Starting ${cam.label} (Mount: ${currentMountId})`);
 
     try {
-      // Ensure clean state
+      isCleaningUpRef.current = true;
       await stopCamera();
+      isCleaningUpRef.current = false;
       
-      if (!mountedRef.current) return;
+      // Check mount status after cleanup
+      if (!isMountedRef.current || currentMountId !== mountIdRef.current) {
+        log('startCamera: Aborted after cleanup');
+        return;
+      }
 
-      // Small delay after stop to ensure camera is released
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Import ZXing dynamically
-      const { BrowserQRCodeReader } = await import('@zxing/browser');
-      
-      if (!mountedRef.current) return;
-
-      // Create reader with conservative settings
-      const reader = new BrowserQRCodeReader(undefined, {
-        delayBetweenScanAttempts: 200, // Slower scanning = more reliable
-        delayBetweenScanSuccess: 5000, // 5 second library-level cooldown
+      log('startCamera: getUserMedia...');
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          deviceId: { exact: cam.deviceId },
+          width: { ideal: 640, max: 1280 },
+          height: { ideal: 480, max: 720 },
+          frameRate: { ideal: 30 }
+        }
       });
+      
+      // Check mount status after getUserMedia
+      if (!isMountedRef.current || currentMountId !== mountIdRef.current) {
+          log('startCamera: Aborted after getUserMedia - cleaning up stream');
+          stream.getTracks().forEach(t => t.stop());
+          return;
+      }
 
-      // Start decoding
-      const controls = await reader.decodeFromVideoDevice(
-        cam.deviceId,
-        videoRef.current,
+      log('startCamera: Stream obtained.');
+      streamRef.current = stream;
+      
+      const track = stream.getVideoTracks()[0];
+      const capabilities = track.getCapabilities() as any;
+      setHasTorch(!!capabilities?.torch);
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await new Promise<void>((resolve, reject) => {
+            if (videoRef.current) {
+                videoRef.current.onloadedmetadata = () => resolve();
+                videoRef.current.onerror = (e) => reject(e);
+            } else {
+                reject(new Error('Video element lost'));
+            }
+        });
+      }
+
+      // Check mount status after video loaded
+      if (!isMountedRef.current || currentMountId !== mountIdRef.current) {
+        log('startCamera: Aborted after video loaded');
+        return;
+      }
+
+      log('startCamera: Starting decoder...');
+      if (!readerRef.current) {
+          readerRef.current = new BrowserQRCodeReader(undefined, {
+            delayBetweenScanAttempts: 150,
+            delayBetweenScanSuccess: 3000
+          });
+      }
+
+      controlsRef.current = await readerRef.current.decodeFromVideoElement(
+        videoRef.current!,
         (result, error) => {
-          if (!mountedRef.current) return;
-
+          // Use refs instead of closure values for freshness
+          if (!isMountedRef.current || mountIdRef.current !== currentMountId) return;
+          
           if (result) {
             const code = result.getText();
-            
-            // Check cooldown first (most common case)
-            if (scanCooldownRef.current) {
-              console.log('Scan blocked: cooldown active');
-              return;
-            }
+            if (scanCooldownRef.current) return;
 
-            // Check if already scanned (Firestore + session)
             if (alreadyScannedRef.current.has(code)) {
-              console.log('Scan blocked: already scanned this employer:', code);
-              // Show warning briefly
               setDuplicateWarning('Already visited this employer!');
-              setTimeout(() => {
-                if (mountedRef.current) setDuplicateWarning(null);
+              haptics.warning(); // Haptic feedback for duplicate
+              setTimeout(() => { 
+                  if (isMountedRef.current && mountIdRef.current === currentMountId) {
+                    setDuplicateWarning(null);
+                  }
               }, 2000);
               return;
             }
 
-            // Valid new scan!
-            console.log('Valid scan:', code);
-            
-            // Set cooldown IMMEDIATELY
+            log('Valid scan:', code);
             scanCooldownRef.current = true;
-            
-            // Add to scanned set to prevent re-scan
             alreadyScannedRef.current.add(code);
             setScannedCount(alreadyScannedRef.current.size);
             
-            // Update UI
             setLastScanned(code);
             setStatus('success');
-
-            // Haptic feedback
-            if (navigator.vibrate) navigator.vibrate(100);
             
-            // Notify parent
+            // Premium haptic feedback for successful scan
+            haptics.success();
+            
             onScan(code);
 
-            // Reset cooldown after 5 seconds
             setTimeout(() => {
-              if (mountedRef.current) {
+              if (isMountedRef.current && mountIdRef.current === currentMountId) {
                 scanCooldownRef.current = false;
                 setLastScanned(null);
                 setStatus('scanning');
               }
-            }, 5000);
-          }
-
-          // Only log real errors, not "not found" which is normal
-          if (error && error.name !== 'NotFoundException') {
-            console.log('Scan error:', error.message);
+            }, 4000);
           }
         }
       );
+      log('startCamera: Decoder started.');
 
-      // Store controls and stream reference
-      controlsRef.current = controls;
-      if (videoRef.current?.srcObject) {
-        streamRef.current = videoRef.current.srcObject as MediaStream;
-      }
-      
-      if (mountedRef.current) {
+      if (isMountedRef.current && currentMountId === mountIdRef.current) {
         setStatus('scanning');
-        console.log('startCamera: Scanner active');
       }
     } catch (err) {
-      console.error('startCamera error:', err);
-      if (mountedRef.current) {
-        setErrorMsg('Failed to start scanner. Try switching camera.');
-        setStatus('error');
+      isCleaningUpRef.current = false;
+      if (!isMountedRef.current || currentMountId !== mountIdRef.current) return;
+      log('startCamera error:', err);
+      
+      let msg = 'Failed to start camera.';
+      if (err instanceof DOMException && err.name === 'NotAllowedError') {
+          msg = 'Permission denied. Please reset permissions and try again.';
       }
+      setErrorMsg(msg);
+      setStatus('error');
+      onError?.(msg);
     }
-  }, [cameras, selectedCameraIndex, onScan, stopCamera]);
+  }, [cameras, selectedCameraIndex, onScan, stopCamera, onError]);
 
-  // Handle pause button
-  const handlePause = useCallback(async () => {
-    console.log('handlePause: User clicked pause');
-    await stopCamera();
-    if (mountedRef.current) {
-      setStatus('paused');
-    }
-  }, [stopCamera]);
-
-  // Handle resume button  
-  const handleResume = useCallback(() => {
-    console.log('handleResume: User clicked resume');
-    startCamera();
-  }, [startCamera]);
-
-  // Handle camera switch with retry logic
-  const handleSwitchCamera = useCallback(async () => {
-    if (cameras.length <= 1 || isSwitchingRef.current) return;
-    
-    console.log('handleSwitchCamera: Switching camera...');
-    isSwitchingRef.current = true;
-    
-    try {
-      await stopCamera();
-      
-      // Wait for camera to fully release
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      const newIndex = (selectedCameraIndex + 1) % cameras.length;
-      console.log('handleSwitchCamera: Switching to index', newIndex, cameras[newIndex]?.label);
-      
-      setSelectedCameraIndex(newIndex);
-      
-      // Wait a bit more then start
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
-      if (mountedRef.current) {
-        isSwitchingRef.current = false;
-        // startCamera will be triggered by the useEffect watching selectedCameraIndex
-      }
-    } catch (err) {
-      console.error('handleSwitchCamera error:', err);
-      isSwitchingRef.current = false;
-      if (mountedRef.current) {
-        setErrorMsg('Camera switch failed. Try again.');
-        setStatus('error');
-      }
-    }
-  }, [cameras, selectedCameraIndex, stopCamera]);
-
-  // Mount effect - init cameras
+  // Main Lifecycle
   useEffect(() => {
-    mountedRef.current = true;
-    initCameras();
+    // 1. Setup Mount ID and mounted flag
+    const myMountId = Math.random().toString(36).substring(7);
+    mountIdRef.current = myMountId;
+    isMountedRef.current = true;
+    isCleaningUpRef.current = false;
+    log(`QRScanner: Mounted (ID: ${myMountId})`);
+
+    // 2. Initialize cameras after a brief delay to avoid React Strict Mode race
+    const initTimer = setTimeout(() => {
+      if (isMountedRef.current && mountIdRef.current === myMountId) {
+        initCameras(myMountId);
+      }
+    }, 50);
 
     return () => {
-      console.log('QRScanner unmounting...');
-      mountedRef.current = false;
+      log(`QRScanner: Unmounting (ID: ${myMountId})`);
+      // 3. Immediately mark as unmounted to stop all in-flight operations
+      isMountedRef.current = false;
+      mountIdRef.current = '';
       
-      // Synchronous cleanup on unmount
+      clearTimeout(initTimer);
+
+      // 4. Synchronous cleanup of camera resources
       if (controlsRef.current) {
-        try { controlsRef.current.stop(); } catch (e) { /* ignore */ }
+        try {
+          controlsRef.current.stop();
+        } catch (e) { /* ignore */ }
         controlsRef.current = null;
       }
+
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current.getTracks().forEach(track => {
+          try {
+            track.stop();
+          } catch (e) { /* ignore */ }
+        });
         streamRef.current = null;
       }
-      if (videoRef.current?.srcObject) {
-        (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
-        videoRef.current.srcObject = null;
-      }
     };
-  }, [initCameras]);
+  }, [initCameras, stopCamera]);
 
-  // Start scanning when cameras are loaded
+  // Camera Switch / Start Effect
   useEffect(() => {
-    if (cameras.length > 0 && status === 'loading') {
-      console.log('Auto-starting scanner...');
-      startCamera();
+    const myMountId = mountIdRef.current;
+    if (!myMountId || !isMountedRef.current) return;
+
+    if (cameras.length > 0) {
+        // Debounce to allow state to settle and avoid rapid restarts
+        const timer = setTimeout(() => {
+            if (isMountedRef.current && mountIdRef.current === myMountId) {
+                startCamera(myMountId);
+            }
+        }, 100);
+        return () => clearTimeout(timer);
     }
-  }, [cameras.length, status, startCamera]);
+  }, [selectedCameraIndex, cameras.length, startCamera]);
 
-  // Effect to restart after camera switch
-  useEffect(() => {
-    // Skip if no cameras, paused, or still switching
-    if (cameras.length === 0 || status === 'paused' || status === 'loading') return;
-    if (isSwitchingRef.current) return;
+  const handleSwitchCamera = () => {
+    if (cameras.length < 2 || !isMountedRef.current) return;
+    const nextIdx = (selectedCameraIndex + 1) % cameras.length;
+    setSelectedCameraIndex(nextIdx);
+  };
+
+  const handlePauseResume = async () => {
+    if (!isMountedRef.current) return;
     
-    // Small delay to allow state to settle
-    const timer = setTimeout(() => {
-      if (mountedRef.current && !isStoppingRef.current && !isSwitchingRef.current) {
-        console.log('Camera index changed, restarting scanner...');
-        startCamera();
-      }
-    }, 300);
-    
-    return () => clearTimeout(timer);
-  // Only run when selectedCameraIndex changes
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCameraIndex]);
+    if (status === 'paused') {
+      await startCamera(mountIdRef.current);
+    } else {
+      await stopCamera();
+      if (isMountedRef.current) setStatus('paused');
+    }
+  };
 
-  // Visibility change handler
-  useEffect(() => {
-    let wasScanning = false;
-
-    const handleVisibility = async () => {
-      if (document.hidden) {
-        wasScanning = status === 'scanning' || status === 'success';
-        if (wasScanning) {
-          console.log('Tab hidden, stopping camera');
-          await stopCamera();
-          if (mountedRef.current) setStatus('paused');
-        }
-      } else {
-        if (wasScanning && mountedRef.current) {
-          console.log('Tab visible, resuming camera');
-          setTimeout(() => {
-            if (mountedRef.current) startCamera();
-          }, 500);
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibility);
-    return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, [status, stopCamera, startCamera]);
-
-  // Loading state
   if (status === 'loading' && cameras.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 bg-gray-800 rounded-xl">
-        <Loader2 className="w-12 h-12 animate-spin text-blue-400 mb-4" />
-        <p className="text-gray-300">Initializing camera...</p>
+      <div className="flex flex-col items-center justify-center p-12 bg-gray-100 rounded-xl border border-gray-200">
+        <Loader2 className="w-10 h-10 animate-spin text-blue-500 mb-3" />
+        <p className="text-gray-500 font-medium">Starting Camera...</p>
       </div>
     );
   }
 
-  // Error state
   if (status === 'error') {
     return (
-      <div className="flex flex-col items-center justify-center p-8 bg-gray-800 rounded-xl">
-        <CameraOff className="w-12 h-12 text-red-400 mb-4" />
-        <p className="text-red-400 font-semibold mb-2">Camera Error</p>
-        <p className="text-gray-400 text-sm text-center mb-4">{errorMsg}</p>
+      <div className="flex flex-col items-center justify-center p-8 bg-red-50 rounded-xl border border-red-100 text-center">
+        <CameraOff className="w-12 h-12 text-red-500 mb-3" />
+        <p className="text-red-700 font-bold mb-1">Camera Error</p>
+        <p className="text-red-600 text-sm mb-4 max-w-xs">{errorMsg}</p>
         <button
-          onClick={initCameras}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          onClick={() => {
+              if (isMountedRef.current) {
+                initCameras(mountIdRef.current);
+              }
+          }}
+          className="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-sm"
         >
           <RefreshCw className="w-4 h-4" /> Try Again
         </button>
@@ -503,8 +473,7 @@ export default function QRScanner({ onScan, onError, alreadyScannedIds = [] }: Q
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Scanner */}
-      <div className="relative w-full aspect-[4/3] overflow-hidden rounded-xl bg-black">
+      <div className="relative w-full aspect-square sm:aspect-4/3 overflow-hidden rounded-2xl bg-black shadow-inner ring-1 ring-black/10">
         <video
           ref={videoRef}
           className="absolute inset-0 w-full h-full object-cover"
@@ -513,91 +482,93 @@ export default function QRScanner({ onScan, onError, alreadyScannedIds = [] }: Q
           autoPlay
         />
 
-        {/* Paused overlay */}
         {status === 'paused' && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-800/90">
-            <div className="text-center">
-              <CameraOff className="w-16 h-16 text-gray-500 mx-auto mb-3" />
-              <p className="text-gray-400">Scanner paused</p>
-            </div>
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/80 backdrop-blur-sm text-white">
+            <CameraOff className="w-12 h-12 mb-3 opacity-80" />
+            <p className="font-medium opacity-90">Scanner Paused</p>
           </div>
         )}
 
-        {/* Success overlay */}
         {status === 'success' && (
-          <div className="absolute inset-0 flex items-center justify-center bg-green-500/20 backdrop-blur-sm">
-            <div className="text-center animate-pulse">
-              <CheckCircle className="w-20 h-20 text-green-400 mx-auto mb-3" />
-              <p className="text-green-400 font-bold text-lg">Scanned!</p>
-            </div>
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-emerald-500/90 backdrop-blur-sm text-white animate-in fade-in duration-200">
+            <CheckCircle className="w-16 h-16 mb-2 drop-shadow-md" />
+            <p className="text-xl font-bold drop-shadow-sm">Scanned!</p>
           </div>
         )}
 
-        {/* Duplicate warning overlay */}
         {duplicateWarning && (
-          <div className="absolute inset-0 flex items-center justify-center bg-yellow-500/20 backdrop-blur-sm">
-            <div className="text-center">
-              <AlertTriangle className="w-16 h-16 text-yellow-400 mx-auto mb-3" />
-              <p className="text-yellow-400 font-bold">{duplicateWarning}</p>
-            </div>
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-amber-500/90 backdrop-blur-sm text-white animate-in fade-in duration-200">
+            <AlertTriangle className="w-16 h-16 mb-2 drop-shadow-md" />
+            <p className="text-lg font-bold drop-shadow-sm">{duplicateWarning}</p>
           </div>
         )}
 
-        {/* Target frame */}
-        {isActive && status !== 'success' && !duplicateWarning && (
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-            <div className="relative w-48 h-48">
-              <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-blue-400 rounded-tl-lg"></div>
-              <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-blue-400 rounded-tr-lg"></div>
-              <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-blue-400 rounded-bl-lg"></div>
-              <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-blue-400 rounded-br-lg"></div>
-              <div className="absolute inset-x-0 h-0.5 bg-blue-400 animate-scan-line"></div>
-              <div className="absolute inset-0 border-2 border-dashed border-blue-400/50 rounded-lg"></div>
-            </div>
+        {isActive && !duplicateWarning && status !== 'success' && (
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute inset-0 border-40 border-black/30"></div>
+            <div className="absolute top-10 left-10 w-8 h-8 border-t-4 border-l-4 border-white/80 rounded-tl-lg drop-shadow-sm"></div>
+            <div className="absolute top-10 right-10 w-8 h-8 border-t-4 border-r-4 border-white/80 rounded-tr-lg drop-shadow-sm"></div>
+            <div className="absolute bottom-10 left-10 w-8 h-8 border-b-4 border-l-4 border-white/80 rounded-bl-lg drop-shadow-sm"></div>
+            <div className="absolute bottom-10 right-10 w-8 h-8 border-b-4 border-r-4 border-white/80 rounded-br-lg drop-shadow-sm"></div>
+            <div className="absolute top-10 left-10 right-10 h-0.5 bg-blue-400/80 shadow-[0_0_8px_rgba(96,165,250,0.8)] animate-scan-line"></div>
           </div>
         )}
       </div>
 
-      {/* Controls */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex-1 text-sm text-gray-400 truncate">
-          {cameras[selectedCameraIndex]?.label || 'Camera'}
+      <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl border border-gray-200 shadow-sm">
+        <div className="flex-1 min-w-0 mr-4">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0.5">Active Camera</p>
+            <p className="text-sm font-medium text-gray-900 truncate">
+                {cameras[selectedCameraIndex]?.label || 'Unknown Camera'}
+            </p>
         </div>
+
         <div className="flex items-center gap-2">
-          {cameras.length > 1 && (
+            {hasTorch && isActive && (
+                <button
+                    onClick={toggleTorch}
+                    className={`p-3 rounded-xl transition-all ${
+                        isTorchOn 
+                        ? 'bg-amber-100 text-amber-600 shadow-inner' 
+                        : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
+                    }`}
+                    title="Toggle Flashlight"
+                >
+                    {isTorchOn ? <Flashlight className="w-5 h-5 fill-current" /> : <FlashlightOff className="w-5 h-5" />}
+                </button>
+            )}
+
+            {cameras.length > 1 && (
+                <button
+                    onClick={handleSwitchCamera}
+                    className="p-3 bg-white text-gray-700 rounded-xl border border-gray-200 hover:bg-gray-100 disabled:opacity-50 transition-colors shadow-sm"
+                    title="Switch Camera"
+                >
+                    <RefreshCw className="w-5 h-5" />
+                </button>
+            )}
+
             <button
-              onClick={handleSwitchCamera}
-              disabled={isSwitchingRef.current}
-              className="flex items-center justify-center w-10 h-10 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded-lg"
-              title="Switch camera"
+                onClick={handlePauseResume}
+                className={`p-3 rounded-xl text-white shadow-sm transition-all active:scale-95 ${
+                    isActive 
+                        ? 'bg-red-500 hover:bg-red-600 shadow-red-200' 
+                        : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-200'
+                }`}
+                title={isActive ? 'Pause Scanner' : 'Resume Scanner'}
             >
-              <RefreshCw className="w-5 h-5" />
+                {isActive ? <CameraOff className="w-5 h-5" /> : <Camera className="w-5 h-5" />}
             </button>
-          )}
-          <button
-            onClick={isActive ? handlePause : handleResume}
-            className={`flex items-center justify-center w-10 h-10 rounded-lg text-white ${
-              isActive ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'
-            }`}
-            title={isActive ? 'Pause' : 'Resume'}
-          >
-            {isActive ? <CameraOff className="w-5 h-5" /> : <Camera className="w-5 h-5" />}
-          </button>
         </div>
       </div>
 
-      {/* Instructions */}
-      <p className="text-sm text-gray-400 text-center">
-        {status === 'success' 
-          ? `Scanned: ${lastScanned?.substring(0, 20)}...`
-          : "Point the camera at an employer's QR code to scan"}
-      </p>
-
-      {/* Session info */}
       {scannedCount > 0 && (
-        <p className="text-xs text-gray-500 text-center">
-          {scannedCount} employer{scannedCount > 1 ? 's' : ''} scanned this session
-        </p>
+        <div className="text-center">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full border border-blue-100">
+                <CheckCircle className="w-3 h-3" />
+                {scannedCount} scan{scannedCount !== 1 && 's'} this session
+            </span>
+        </div>
       )}
     </div>
   );

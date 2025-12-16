@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import CameraCleanup from '../src/components/CameraCleanup';
@@ -9,10 +9,25 @@ const inter = Inter({
   variable: '--font-inter',
 });
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#5B2C6F',
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://career-city.vercel.app'),
   title: 'HU Career City',
   description: 'HU Career City 2026 - Career Fair Management System',
+  manifest: '/manifest.json',
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
+  formatDetection: {
+    telephone: false,
+  },
   openGraph: {
     images: '/HU-Logo.png',
   },

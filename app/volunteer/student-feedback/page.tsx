@@ -443,8 +443,8 @@ export default function StudentFeedbackPage() {
     };
 
     return (
-      <div className="glass-hover p-6 rounded-xl border border-white/50 transition-all duration-200">
-        <label className="block text-base font-bold text-gray-800 mb-3">
+      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm transition-shadow duration-200 hover:shadow-md">
+        <label className="block text-base font-bold text-gray-900 mb-3">
           {questionText}
         </label>
         {renderInput()}
@@ -478,13 +478,14 @@ export default function StudentFeedbackPage() {
       <Toaster position="top-center" />
       <div className="w-full max-w-2xl">
         <div className="card-modern">
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-6">
             <Image
               src="/favicon-optimized.png"
               alt="Career City Logo"
-              width={56}
-              height={56}
-              className="rounded-xl shadow-lg"
+              width={512}
+              height={512}
+              className="w-auto h-32 object-contain"
+              priority
             />
           </div>
           <h1 className="text-3xl font-extrabold text-center mb-4 bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-violet-600">
@@ -535,7 +536,7 @@ export default function StudentFeedbackPage() {
               <button
                 onClick={proceedToNextStep}
                 disabled={!/^[a-zA-Z]{2}\d{5}$/.test(studentId)}
-                className="btn-primary w-full text-lg shadow-xl hover:shadow-blue-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-primary w-full text-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Continue
               </button>
@@ -545,8 +546,8 @@ export default function StudentFeedbackPage() {
           {/* Step: Organization Selection */}
           {currentStep === 'org-selection' && orgSelectQuestion && (
             <div className="space-y-6">
-              <div className="glass-hover p-6 rounded-xl border border-violet-200 bg-violet-50/30">
-                <label className="block text-base font-bold text-gray-800 mb-1">
+              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                <label className="block text-base font-bold text-gray-900 mb-1">
                   {orgSelectQuestion.text}
                 </label>
                 <p className="text-sm text-gray-500 mb-4">
@@ -561,8 +562,8 @@ export default function StudentFeedbackPage() {
                       key={org.organizationId}
                       className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
                         selectedOrgs.includes(org.organizationId)
-                          ? 'border-violet-500 bg-violet-50'
-                          : 'border-gray-200 hover:border-violet-300'
+                          ? 'border-violet-500 bg-violet-50 ring-1 ring-violet-500'
+                          : 'border-gray-200 hover:border-violet-300 hover:shadow-sm'
                       }`}
                     >
                       <input
@@ -572,7 +573,7 @@ export default function StudentFeedbackPage() {
                         className="w-4 h-4 text-violet-600 border-gray-300 rounded focus:ring-violet-500"
                       />
                       <div className="ml-3">
-                        <span className="font-medium text-gray-800">{org.name}</span>
+                        <span className="font-medium text-gray-900">{org.name}</span>
                         <span className="text-sm text-gray-500 ml-2">• Booth {org.boothNumber}</span>
                       </div>
                     </label>
@@ -586,7 +587,7 @@ export default function StudentFeedbackPage() {
                     ? selectedOrgs.length !== (orgSelectQuestion.selectionCount || 5)
                     : selectedOrgs.length === 0
                 }
-                className="btn-primary w-full text-lg shadow-xl hover:shadow-blue-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-primary w-full text-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Continue
               </button>
@@ -629,7 +630,7 @@ export default function StudentFeedbackPage() {
 
               <button
                 onClick={proceedToNextStep}
-                className="btn-primary w-full text-lg shadow-xl hover:shadow-blue-500/40"
+                className="btn-primary w-full text-lg"
               >
                 {currentOrgIndex < selectedOrgs.length - 1 
                   ? `Next Organization (${currentOrgIndex + 2}/${selectedOrgs.length})`
@@ -656,7 +657,7 @@ export default function StudentFeedbackPage() {
               <button
                 onClick={proceedToNextStep}
                 disabled={loading}
-                className="btn-primary w-full text-lg shadow-xl hover:shadow-blue-500/40"
+                className="btn-primary w-full text-lg"
               >
                 {loading ? 'Submitting...' : 'Submit Feedback'}
               </button>
@@ -671,7 +672,7 @@ export default function StudentFeedbackPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-gray-800">Thank You!</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Thank You!</h2>
               <p className="text-gray-600">Your feedback has been submitted successfully.</p>
               <button
                 onClick={resetForm}

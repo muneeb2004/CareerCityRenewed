@@ -1,8 +1,6 @@
-// Prompt for Copilot: "Create React component for student registration with Student ID input (validates xx#####), auto-filled email, full name input, using validation utils, and Firestore student creation"
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   validateStudentId,
   generateEmail,
@@ -15,6 +13,7 @@ import {
 import { createScan } from '../../firestore/scans';
 import { updateOrganizationVisitors } from '../../firestore/organizations';
 import { saveStudentSession } from '../../lib/storage';
+import { haptics } from '../../lib/haptics';
 import toast from 'react-hot-toast';
 
 interface StudentRegistrationProps {
@@ -36,7 +35,7 @@ export default function StudentRegistration({
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleStudentIdChange = (value: string) => {
+  const handleStudentIdChange = useCallback((value: string) => {
     const cleanId = value.toLowerCase().trim();
     setStudentId(cleanId);
 
@@ -44,26 +43,30 @@ export default function StudentRegistration({
     if (validation.isValid) {
       setEmail(generateEmail(cleanId));
       setError('');
+      haptics.success(); // Subtle feedback for valid input
     } else if (cleanId.length > 0) {
       setError(validation.error || '');
       setEmail('');
     }
-  };
+  }, []);
 
   const handleSubmit = async () => {
     const validation = validateStudentId(studentId);
     if (!validation.isValid) {
       setError(validation.error || 'Invalid Student ID');
+      haptics.error();
       return;
     }
 
     if (!fullName.trim()) {
       setError('Please enter your full name');
+      haptics.error();
       return;
     }
 
     setLoading(true);
     setError('');
+    haptics.impact();
 
     try {
       // Check if student exists
@@ -93,11 +96,13 @@ export default function StudentRegistration({
       // Save session (using a default program)
       saveStudentSession(studentId, 'Computer Science');
 
+      haptics.success();
       toast.success('Visit recorded successfully!');
       onComplete();
     } catch (err) {
       console.error('Registration error:', err);
       setError('Registration failed. Please try again.');
+      haptics.error();
       toast.error('Registration failed');
     } finally {
       setLoading(false);

@@ -223,11 +223,11 @@ export default function StudentRecordsPage() {
             </div>
           )}
         </div>
-        <div className="glass-card p-3 md:p-4 text-center">
+        <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-3 md:p-4 text-center">
           <div className="text-2xl md:text-3xl font-bold text-blue-600">{students.length}</div>
           <div className="text-xs md:text-sm text-gray-500">Students</div>
         </div>
-        <div className="glass-card p-3 md:p-4 text-center">
+        <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-3 md:p-4 text-center">
           <div className="text-2xl md:text-3xl font-bold text-violet-600">{feedbackRecords.length}</div>
           <div className="text-xs md:text-sm text-gray-500">Feedback</div>
         </div>
@@ -236,7 +236,7 @@ export default function StudentRecordsPage() {
       {loading ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Student List Skeleton */}
-          <div className="glass-card p-4 md:p-6">
+          <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-4 md:p-6">
              <Skeleton className="h-8 w-48 mb-4" />
              <div className="space-y-2">
                 {Array.from({length: 4}).map((_, i) => (
@@ -257,7 +257,7 @@ export default function StudentRecordsPage() {
              </div>
           </div>
           {/* Detail Panel Skeleton */}
-          <div className="glass-card p-4 md:p-6 hidden lg:block">
+          <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-4 md:p-6 hidden lg:block">
              <div className="space-y-6">
                 <div className="border-b border-gray-200 pb-4 space-y-3">
                    <Skeleton className="h-8 w-3/4" />
@@ -283,7 +283,7 @@ export default function StudentRecordsPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Student List */}
-          <div className={`glass-card p-4 sm:p-6 ${selectedStudent ? 'hidden lg:block' : 'block'}`}>
+          <div className={`bg-white border border-gray-200 shadow-sm rounded-xl p-4 sm:p-6 ${selectedStudent ? 'hidden lg:block' : 'block'}`}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg sm:text-xl font-bold text-gray-800">
                 Students ({filteredStudents.length})
@@ -353,7 +353,7 @@ export default function StudentRecordsPage() {
           </div>
 
           {/* Student Detail Panel */}
-          <div className={`glass-card p-4 sm:p-6 ${selectedStudent ? 'block' : 'hidden lg:block'}`}>
+          <div className={`bg-white border border-gray-200 shadow-sm rounded-xl p-4 sm:p-6 ${selectedStudent ? 'block' : 'hidden lg:block'}`}>
             {selectedStudent ? (
               <div>
                 {/* Mobile Back Button */}

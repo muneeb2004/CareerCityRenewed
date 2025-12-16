@@ -1,142 +1,198 @@
 @import "tailwindcss";
 
 @theme {
-  /* Habib University Color Palette Override */
+  /* Habib University Color Palette - Refined for Enterprise */
   
-  /* Primary - Deep Purple Mapping (replaces blue) */
-  --color-blue-50: #F2EBF5;
-  --color-blue-100: #E1CDEA;
-  --color-blue-200: #CBA5D9;
-  --color-blue-300: #B57CC8;
-  --color-blue-400: #9E54B7;
-  --color-blue-500: #5B2C6F; /* Deep Purple */
-  --color-blue-600: #4A245A;
-  --color-blue-700: #391B45;
-  --color-blue-800: #281230;
-  --color-blue-900: #170A1B;
-  --color-blue-950: #0E0411;
+  /* Primary - Deep Purple (Brand Core) */
+  --color-blue-50: #F5F3FF;
+  --color-blue-100: #EDE9FE;
+  --color-blue-200: #DDD6FE;
+  --color-blue-300: #C4B5FD;
+  --color-blue-400: #A78BFA;
+  --color-blue-500: #8B5CF6;
+  --color-blue-600: #5B2C6F; /* HU Brand Purple */
+  --color-blue-700: #4A245A;
+  --color-blue-800: #391B45;
+  --color-blue-900: #2E1065;
+  --color-blue-950: #170A1B;
 
-  /* Secondary - Royal Purple Mapping (replaces violet) */
-  --color-violet-50: #F4EEF6;
-  --color-violet-100: #E5D3EB;
-  --color-violet-200: #CEA5DB;
-  --color-violet-300: #B778CB;
-  --color-violet-400: #A04BAF;
-  --color-violet-500: #6B3E7E; /* Royal Purple */
-  --color-violet-600: #563265;
+  /* Secondary - Royal Purple/Violet */
+  --color-violet-50: #FDF4FF;
+  --color-violet-100: #FAE8FF;
+  --color-violet-200: #F5D0FE;
+  --color-violet-300: #F0ABFC;
+  --color-violet-400: #E879F9;
+  --color-violet-500: #D946EF;
+  --color-violet-600: #6B3E7E; /* HU Brand Secondary */
   --color-violet-700: #41264C;
   --color-violet-800: #2C1933;
-  --color-violet-900: #170D1A;
-  --color-violet-950: #0B060D;
+  --color-violet-900: #701A75;
+  --color-violet-950: #4A044E;
 
-  /* Utility - Success Green Mapping (replaces emerald) */
-  --color-emerald-50: #E9F6EC;
-  --color-emerald-100: #C8EAD0;
-  --color-emerald-200: #A7DEB4;
-  --color-emerald-300: #86D298;
-  --color-emerald-400: #65C67C;
-  --color-emerald-500: #28A745; /* Success Green */
-  --color-emerald-600: #208637;
-  --color-emerald-700: #186429;
-  --color-emerald-800: #10431C;
-  --color-emerald-900: #08210E;
-  --color-emerald-950: #041107;
+  /* Semantic - Success/Green */
+  --color-emerald-50: #ECFDF5;
+  --color-emerald-600: #059669;
+  --color-emerald-700: #047857;
 
-  /* Neutrals - Gray Mapping */
-  --color-gray-50: #F5F5F5; /* Light Gray */
-  --color-gray-100: #EBEBEB;
-  --color-gray-200: #DDDDDD;
-  --color-gray-300: #CCCCCC;
-  --color-gray-400: #999999;
-  --color-gray-500: #666666;
-  --color-gray-600: #4A4A4A; /* Dark Gray */
-  --color-gray-700: #333333;
-  --color-gray-800: #1A1A1A;
-  --color-gray-900: #000000; /* Black */
-  --color-gray-950: #000000;
-
-  /* Map Slate to Gray for consistency if used */
-  --color-slate-50: #F5F5F5;
-  --color-slate-100: #EBEBEB;
-  --color-slate-900: #000000;
+  /* Neutrals - Slate for professional clean look */
+  --color-gray-50: #F8FAFC;
+  --color-gray-100: #F1F5F9;
+  --color-gray-200: #E2E8F0;
+  --color-gray-300: #CBD5E1;
+  --color-gray-400: #94A3B8;
+  --color-gray-500: #64748B;
+  --color-gray-600: #475569;
+  --color-gray-700: #334155;
+  --color-gray-800: #1E293B;
+  --color-gray-900: #0F172A;
+  --color-gray-950: #020617;
 
   /* Semantic Variables */
-  --color-primary: var(--color-blue-500);
-  --color-secondary: var(--color-violet-500);
-  --color-accent: #FF9933; /* Bright Orange */
-  --color-accent-yellow: #F5B041; /* Golden Yellow */
+  --color-primary: var(--color-blue-600);
+  --color-secondary: var(--color-violet-600);
+  --color-accent: #F59E0B; /* Amber 500 - Professional Accent */
   
-  --animate-fade-in-up: fadeInUp 0.5s ease-out forwards;
+  --animate-fade-in-up: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-600 antialiased;
-    /* Simplified corporate background with subtle gradient */
+    @apply bg-gray-50 text-gray-800 antialiased;
+    /* Clean, professional background */
     background-image: 
-      radial-gradient(at 0% 0%, rgba(91, 44, 111, 0.08) 0px, transparent 50%), /* Deep Purple */
-      radial-gradient(at 100% 0%, rgba(107, 62, 126, 0.08) 0px, transparent 50%), /* Royal Purple */
-      radial-gradient(at 100% 100%, rgba(255, 153, 51, 0.05) 0px, transparent 50%), /* Bright Orange */
-      radial-gradient(at 0% 100%, rgba(245, 176, 65, 0.05) 0px, transparent 50%); /* Golden Yellow */
-    background-attachment: fixed;
+      radial-gradient(circle at top right, rgba(91, 44, 111, 0.03), transparent 40%),
+      radial-gradient(circle at bottom left, rgba(107, 62, 126, 0.03), transparent 40%);
     min-height: 100vh;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight font-semibold text-gray-900;
   }
 }
 
 @layer utilities {
-  .glass {
-    @apply bg-white/70 backdrop-blur-lg border border-white/60 shadow-xl;
-  }
-  
-  .glass-hover {
-    @apply hover:bg-white/80 transition-all duration-300 hover:shadow-2xl hover:-translate-y-0.5 hover:border-blue-100;
+  /* Corporate Card: Clean, subtle border, enhanced interactions */
+  .card-modern {
+    @apply bg-white border border-gray-200 shadow-sm rounded-xl p-6 md:p-8 
+    animate-fade-in-up transition-all duration-300 ease-out
+    hover:shadow-lg hover:border-gray-300;
   }
 
+  .card-interactive {
+    @apply bg-white border border-gray-200 shadow-sm rounded-xl p-6 md:p-8 
+    animate-fade-in-up transition-all duration-300 ease-out cursor-pointer
+    hover:shadow-xl hover:border-gray-300 hover:-translate-y-1
+    active:scale-[0.99] active:shadow-md;
+  }
+
+  /* Buttons: Solid, high contrast, premium interactions */
   .btn-primary {
-    @apply bg-linear-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 px-6 rounded-xl 
-    shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all duration-300 active:scale-95;
+    @apply bg-blue-600 text-white font-medium py-2.5 px-5 rounded-lg
+    border border-transparent relative overflow-hidden
+    shadow-sm hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5
+    focus:ring-4 focus:ring-blue-600/20 focus:outline-none
+    transition-all duration-200 ease-out
+    active:scale-[0.97] active:shadow-sm
+    disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none disabled:hover:shadow-sm;
   }
 
   .btn-secondary {
-    @apply bg-linear-to-r from-violet-500 to-violet-600 text-white font-semibold py-3 px-6 rounded-xl 
-    shadow-lg hover:shadow-violet-500/30 hover:-translate-y-0.5 transition-all duration-300 active:scale-95;
+    @apply bg-white text-gray-700 font-medium py-2.5 px-5 rounded-lg
+    border border-gray-300 relative overflow-hidden
+    shadow-sm hover:bg-gray-50 hover:text-gray-900 hover:shadow-md hover:-translate-y-0.5
+    focus:ring-4 focus:ring-gray-200 focus:outline-none
+    transition-all duration-200 ease-out
+    active:scale-[0.97] active:shadow-sm;
   }
 
   .btn-accent {
-    @apply bg-linear-to-r from-accent to-accent-yellow text-white font-semibold py-3 px-6 rounded-xl 
-    shadow-lg hover:shadow-orange-500/30 hover:-translate-y-0.5 transition-all duration-300 active:scale-95;
+    @apply bg-accent text-white font-medium py-2.5 px-5 rounded-lg
+    border border-transparent relative overflow-hidden
+    shadow-sm hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5
+    focus:ring-4 focus:ring-accent/20 focus:outline-none
+    transition-all duration-200 ease-out
+    active:scale-[0.97] active:shadow-sm;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 text-white font-medium py-2.5 px-5 rounded-lg
+    border border-transparent relative overflow-hidden
+    shadow-sm hover:bg-red-700 hover:shadow-lg hover:-translate-y-0.5
+    focus:ring-4 focus:ring-red-600/20 focus:outline-none
+    transition-all duration-200 ease-out
+    active:scale-[0.97] active:shadow-sm;
+  }
+
+  .btn-success {
+    @apply bg-emerald-600 text-white font-medium py-2.5 px-5 rounded-lg
+    border border-transparent relative overflow-hidden
+    shadow-sm hover:bg-emerald-700 hover:shadow-lg hover:-translate-y-0.5
+    focus:ring-4 focus:ring-emerald-600/20 focus:outline-none
+    transition-all duration-200 ease-out
+    active:scale-[0.97] active:shadow-sm;
+  }
+
+  .btn-ghost {
+    @apply text-gray-600 hover:bg-gray-100 hover:text-gray-900 font-medium py-2 px-4 rounded-lg
+    transition-colors duration-200;
   }
   
+  /* Inputs: Accessible, clear focus rings with premium interactions */
   .input-modern {
-    @apply bg-white/60 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full p-3 
-    backdrop-blur-sm transition-all duration-200 hover:bg-white placeholder-gray-400 shadow-sm;
-  }
-
-  /* Style select dropdowns */
-  select.input-modern {
-    @apply cursor-pointer;
-  }
-
-  select.input-modern option {
-    @apply bg-white text-gray-900 py-2 px-3;
-  }
-
-  select.input-modern option:hover,
-  select.input-modern option:focus,
-  select.input-modern option:checked {
-    @apply bg-blue-500 text-white;
+    @apply bg-white border border-gray-300 text-gray-900 text-base md:text-sm rounded-lg 
+    focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 
+    block w-full p-2.5 
+    placeholder-gray-400 shadow-xs 
+    transition-all duration-200 ease-out
+    hover:border-gray-400 hover:shadow-sm
+    focus:shadow-md;
   }
   
-  .card-modern {
-    @apply bg-white/70 backdrop-blur-lg border border-white/60 shadow-xl rounded-2xl p-6 md:p-8 animate-fade-in-up;
+  .input-error {
+    @apply border-red-500 focus:ring-red-500/20 focus:border-red-500
+    bg-red-50/50;
+  }
+  
+  .input-success {
+    @apply border-emerald-500 focus:ring-emerald-500/20 focus:border-emerald-500
+    bg-emerald-50/50;
+  }
+  
+  .label-modern {
+    @apply block mb-1.5 text-sm font-medium text-gray-700 transition-colors duration-200;
+  }
+
+  /* Badge/Tag Styles */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-primary {
+    @apply bg-blue-50 text-blue-700 border border-blue-100;
+  }
+  .badge-success {
+    @apply bg-emerald-50 text-emerald-700 border border-emerald-100;
+  }
+  .badge-gray {
+    @apply bg-gray-100 text-gray-700 border border-gray-200;
+  }
+
+  /* Mobile Touch Optimization */
+  button, a, input, select, textarea {
+    @apply touch-manipulation; 
   }
 }
 
+/* ============================================
+   MICRO-INTERACTIONS & ANIMATIONS
+   Premium feel with subtle, purposeful motion
+   ============================================ */
+
+/* Base Animations */
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -144,20 +200,248 @@
   }
 }
 
-@keyframes slideInRight {
+@keyframes fadeInDown {
   from {
-    transform: translateX(100%);
+    opacity: 0;
+    transform: translateY(-10px);
   }
   to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
     transform: translateX(0);
   }
 }
 
-.animate-slide-in-right {
-  animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-/* QR Scanner scanning line animation */
+/* Bounce & Spring Animations */
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bounceInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+  }
+  60% {
+    transform: translateY(-5px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes springPop {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  70% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Success Animation */
+@keyframes successPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(-10deg);
+  }
+  50% {
+    transform: scale(1.2) rotate(5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes successCheckmark {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Ripple Effect */
+@keyframes ripple {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 0.5;
+  }
+  100% {
+    width: 500px;
+    height: 500px;
+    opacity: 0;
+  }
+}
+
+/* Shimmer/Skeleton Loading */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Pulse Variations */
+@keyframes pulseSubtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+@keyframes pulseMedium {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(0.98);
+  }
+}
+
+@keyframes pulseStrong {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 0 var(--pulse-color, rgba(91, 44, 111, 0.4));
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.02);
+    box-shadow: 0 0 0 8px var(--pulse-color, rgba(91, 44, 111, 0));
+  }
+}
+
+@keyframes pulseRing {
+  0% {
+    box-shadow: 0 0 0 0 var(--pulse-color, rgba(91, 44, 111, 0.5));
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(91, 44, 111, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(91, 44, 111, 0);
+  }
+}
+
+/* Shake Animation (for errors) */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-4px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(4px);
+  }
+}
+
+/* Wiggle Animation (for attention) */
+@keyframes wiggle {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-3deg);
+  }
+  75% {
+    transform: rotate(3deg);
+  }
+}
+
+/* Float Animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+/* Glow Animation */
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 5px var(--glow-color, rgba(91, 44, 111, 0.3));
+  }
+  50% {
+    box-shadow: 0 0 20px var(--glow-color, rgba(91, 44, 111, 0.5));
+  }
+}
+
+/* Spin Animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Scanner Line */
 @keyframes scanLine {
   0% {
     top: 0;
@@ -172,6 +456,276 @@
   }
 }
 
+/* Typing Dots */
+@keyframes typingDots {
+  0%, 20% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+  80%, 100% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+}
+
+/* Gradient Shift */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Modal Entrance */
+@keyframes modalEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modalExit {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+}
+
+@keyframes backdropEnter {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* ============================================
+   ANIMATION UTILITY CLASSES
+   ============================================ */
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in-down {
+  animation: fadeInDown 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in-scale {
+  animation: fadeInScale 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-bounce-in {
+  animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.animate-bounce-in-up {
+  animation: bounceInUp 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.animate-spring-pop {
+  animation: springPop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.animate-success-pop {
+  animation: successPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.animate-ripple {
+  animation: ripple 0.6s ease-out forwards;
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 2s ease-in-out infinite;
+}
+
+.animate-pulse-medium {
+  animation: pulseMedium 1.5s ease-in-out infinite;
+}
+
+.animate-pulse-strong {
+  animation: pulseStrong 1.5s ease-in-out infinite;
+}
+
+.animate-pulse-ring {
+  animation: pulseRing 2s infinite;
+}
+
+.animate-shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+.animate-wiggle {
+  animation: wiggle 0.5s ease-in-out;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin 3s linear infinite;
+}
+
 .animate-scan-line {
   animation: scanLine 2s ease-in-out infinite;
+}
+
+.animate-typing-dots {
+  animation: typingDots 1.4s infinite;
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease infinite;
+}
+
+.animate-modal-enter {
+  animation: modalEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-modal-exit {
+  animation: modalExit 0.2s ease-in forwards;
+}
+
+.animate-backdrop-enter {
+  animation: backdropEnter 0.2s ease-out forwards;
+}
+
+/* ============================================
+   HOVER & INTERACTION STATES
+   ============================================ */
+
+/* Lift on hover */
+.hover-lift {
+  @apply transition-all duration-200 ease-out;
+}
+.hover-lift:hover {
+  @apply -translate-y-0.5 shadow-lg;
+}
+
+/* Scale on hover */
+.hover-scale {
+  @apply transition-transform duration-200 ease-out;
+}
+.hover-scale:hover {
+  @apply scale-[1.02];
+}
+
+/* Glow on hover */
+.hover-glow {
+  @apply transition-shadow duration-300;
+}
+.hover-glow:hover {
+  box-shadow: 0 0 20px var(--glow-color, rgba(91, 44, 111, 0.3));
+}
+
+/* Active press effect */
+.press-effect {
+  @apply transition-transform duration-100 ease-out active:scale-[0.97];
+}
+
+/* Focus ring animation */
+.focus-ring-animated:focus {
+  @apply ring-4 ring-blue-600/20;
+  animation: pulseRing 1s ease-out;
+}
+
+/* Card hover with tilt preparation */
+.card-interactive {
+  @apply transition-all duration-300 ease-out;
+}
+.card-interactive:hover {
+  @apply -translate-y-1 shadow-xl;
+}
+
+/* Button with ripple support */
+.btn-ripple {
+  @apply relative overflow-hidden;
+}
+
+/* Input focus glow */
+.input-glow:focus {
+  @apply ring-4 ring-blue-600/15;
+  box-shadow: 0 0 0 3px rgba(91, 44, 111, 0.1), 0 0 15px rgba(91, 44, 111, 0.1);
+}
+
+/* Success state */
+.state-success {
+  @apply ring-2 ring-emerald-500/30 bg-emerald-50/50;
+}
+
+/* Error state with shake */
+.state-error {
+  @apply ring-2 ring-red-500/30 bg-red-50/50;
+}
+.state-error.shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+/* Loading state */
+.state-loading {
+  @apply pointer-events-none opacity-70;
+}
+
+/* ============================================
+   STAGGER ANIMATION DELAYS
+   ============================================ */
+
+.stagger-1 { animation-delay: 50ms; }
+.stagger-2 { animation-delay: 100ms; }
+.stagger-3 { animation-delay: 150ms; }
+.stagger-4 { animation-delay: 200ms; }
+.stagger-5 { animation-delay: 250ms; }
+.stagger-6 { animation-delay: 300ms; }
+.stagger-7 { animation-delay: 350ms; }
+.stagger-8 { animation-delay: 400ms; }
+
+/* ============================================
+   REDUCED MOTION
+   Respects user preferences for reduced motion
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

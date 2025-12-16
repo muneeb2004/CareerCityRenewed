@@ -172,7 +172,7 @@ export default function OrganizationManagement() {
       {/* Header */}
       <div className="card-modern flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
-            <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-violet-600">
+            <h1 className="text-3xl font-bold text-gray-900">
             Organization Management
             </h1>
             <p className="text-gray-500 text-sm mt-1">Manage participating companies and their details</p>
@@ -186,7 +186,7 @@ export default function OrganizationManagement() {
             {bulkQR ? 'Hide Bulk QR' : 'Generate Bulk QR'}
             </button>
             <button
-            className="btn-primary font-semibold py-2 px-4 rounded-xl transition-all duration-200"
+            className="btn-primary font-semibold py-2 px-4 rounded-lg transition-all duration-200"
             onClick={() => {
                 setEditingOrganization(null);
                 reset({
@@ -218,7 +218,7 @@ export default function OrganizationManagement() {
         >
           <div className="flex-1 overflow-y-auto space-y-4 pb-4"> {/* Scrollable content */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Organization ID</label>
+              <label className="label-modern">Organization ID</label>
               <input
                 {...register('organizationId')}
                 placeholder="e.g. google-pakistan"
@@ -230,7 +230,7 @@ export default function OrganizationManagement() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+              <label className="label-modern">Name</label>
               <input
                 {...register('name')}
                 placeholder="e.g. Google"
@@ -240,7 +240,7 @@ export default function OrganizationManagement() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Industry</label>
+              <label className="label-modern">Industry</label>
               <input
                 {...register('industry')}
                 placeholder="e.g. Technology"
@@ -250,7 +250,7 @@ export default function OrganizationManagement() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Booth Number</label>
+              <label className="label-modern">Booth Number</label>
               <input
                 {...register('boothNumber')}
                 placeholder="e.g. A-12"
@@ -260,7 +260,7 @@ export default function OrganizationManagement() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
+              <label className="label-modern">Contact Person</label>
               <input
                 {...register('contactPerson')}
                 placeholder="Full Name"
@@ -270,7 +270,7 @@ export default function OrganizationManagement() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <label className="label-modern">Email</label>
               <input
                 {...register('email')}
                 placeholder="contact@company.com"
@@ -280,7 +280,7 @@ export default function OrganizationManagement() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <label className="label-modern">Category</label>
               <input
                 {...register('category')}
                 placeholder="e.g. Gold Sponsor"
@@ -305,7 +305,7 @@ export default function OrganizationManagement() {
       {/* Bulk QR Section */}
       {bulkQR && (
         <div className="card-modern">
-          <h2 className="text-xl font-bold mb-6 text-gray-800 border-b border-gray-100 pb-2">
+          <h2 className="text-xl font-bold mb-6 text-gray-900 border-b border-gray-100 pb-2">
             Bulk QR Code Generator
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -313,10 +313,10 @@ export default function OrganizationManagement() {
               <div
                 key={organization.organizationId}
                 onClick={() => handleSelectOrganization(organization.organizationId)}
-                className={`glass p-4 rounded-xl flex flex-col items-center border transition-all duration-200 cursor-pointer ${
+                className={`p-4 rounded-xl flex flex-col items-center border transition-all duration-200 cursor-pointer shadow-sm ${
                   selectedOrganizations.includes(organization.organizationId)
-                    ? 'border-blue-500 bg-blue-50/50 ring-2 ring-blue-200' 
-                    : 'border-white/40 hover:border-blue-300 hover:bg-white/80'
+                    ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200 ring-offset-1' 
+                    : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-md'
                 }`}
               >
                 <div className="w-full flex justify-end">
@@ -341,8 +341,8 @@ export default function OrganizationManagement() {
 
       {/* Organization List */}
       <div className="card-modern h-[calc(100vh-200px)] flex flex-col">
-        <h2 className="text-xl font-bold mb-6 text-gray-800 flex items-center gap-2 shrink-0">
-            <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+        <h2 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2 shrink-0">
+            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
             Participating Organizations
             {!fetching && <span className="text-sm font-normal text-gray-400 ml-2">({organizations.length})</span>}
         </h2>
@@ -372,7 +372,7 @@ export default function OrganizationManagement() {
                 {organizations.map((organization) => (
                 <div
                 key={organization.organizationId}
-                className="glass-hover p-5 rounded-xl border border-white/60 flex flex-col items-center relative group transition-all duration-300"
+                className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col items-center relative group transition-all duration-300 hover:shadow-md hover:border-blue-300"
                 >
                 <div className="transform transition-transform group-hover:scale-105">
                     <QRCodeGenerator organization={organization} />
@@ -384,7 +384,7 @@ export default function OrganizationManagement() {
                     </h3>
                     
                     <div className="flex items-center justify-center gap-2 mt-1 text-xs text-gray-500">
-                        <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md font-medium">
+                        <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md font-medium border border-blue-100">
                             Booth {organization.boothNumber}
                         </span>
                     </div>
@@ -393,7 +393,7 @@ export default function OrganizationManagement() {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2 mt-4 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200 absolute top-2 right-2 bg-white/90 backdrop-blur-sm p-1 rounded-lg shadow-sm">
+                <div className="flex items-center gap-2 mt-4 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200 absolute top-2 right-2 bg-white border border-gray-100 p-1 rounded-lg shadow-sm">
                     <button
                     onClick={() => handleEdit(organization)}
                     className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"

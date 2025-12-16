@@ -3,16 +3,24 @@ import Image from 'next/image';
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      <div className="card-modern max-w-xl w-full text-center space-y-8">
+    <div 
+      className="relative min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden"
+    >
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-fixed" 
+        style={{ backgroundImage: 'url("/HUCareerCityPhoto.jpg")' }}
+      />
+      <div className="absolute inset-0 bg-black/60 backdrop-brightness-50" /> {/* Subtle Dark Overlay */}
+      <div className="card-modern max-w-xl w-full text-center space-y-8 relative z-10">
         <div className="space-y-4">
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-6">
             <Image
               src="/favicon-optimized.png"
               alt="Career City Logo"
-              width={80}
-              height={80}
-              className="rounded-xl shadow-lg"
+              width={512}
+              height={512}
+              className="w-auto h-56 object-contain"
+              priority
             />
           </div>
           <h1 className="text-5xl font-extrabold bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-violet-600 pb-2">

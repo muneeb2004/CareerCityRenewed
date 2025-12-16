@@ -34,7 +34,7 @@ export default function StaffLayout({
             height={32}
             className="rounded-lg"
           />
-          <span className="font-bold text-gray-800">Staff Portal</span>
+          <span className="font-bold text-white">Staff Portal</span>
         </div>
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -80,7 +80,7 @@ export default function StaffLayout({
                 height={40}
                 className="rounded-lg"
               />
-              <h2 className="text-2xl font-extrabold bg-clip-text text-transparent bg-linear-to-r from-blue-400 to-violet-400">
+              <h2 className="text-2xl font-extrabold text-white">
                 Staff Portal
               </h2>
             </div>

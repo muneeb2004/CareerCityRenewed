@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { QuestionType } from '../../types';
+import { haptics } from '../../lib/haptics';
 
 export interface Question {
   questionId: string;
@@ -35,26 +36,37 @@ export default function FeedbackForm({
 }: FeedbackFormProps) {
   const [id, setId] = useState('');
   const [responses, setResponses] = useState<Record<string, string | string[]>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(id, responses);
-    setId('');
-    setResponses({});
-  };
+    setIsSubmitting(true);
+    haptics.impact();
+    
+    // Simulate brief delay for premium feel
+    setTimeout(() => {
+      onSubmit(id, responses);
+      haptics.success();
+      setId('');
+      setResponses({});
+      setIsSubmitting(false);
+    }, 150);
+  }, [id, responses, onSubmit]);
 
-  const handleResponseChange = (questionId: string, value: string | string[]) => {
+  const handleResponseChange = useCallback((questionId: string, value: string | string[]) => {
+    haptics.select();
     setResponses((prev) => ({ ...prev, [questionId]: value }));
-  };
+  }, []);
 
-  const handleCheckboxChange = (questionId: string, option: string, checked: boolean) => {
+  const handleCheckboxChange = useCallback((questionId: string, option: string, checked: boolean) => {
+    haptics.tap();
     const current = (responses[questionId] as string[]) || [];
     if (checked) {
-      handleResponseChange(questionId, [...current, option]);
+      setResponses((prev) => ({ ...prev, [questionId]: [...current, option] }));
     } else {
-      handleResponseChange(questionId, current.filter((o) => o !== option));
+      setResponses((prev) => ({ ...prev, [questionId]: current.filter((o) => o !== option) }));
     }
-  };
+  }, [responses]);
 
   // Render scale/range selector
   const renderScale = (question: Question, namePrefix = '') => {
@@ -63,16 +75,17 @@ export default function FeedbackForm({
     const fieldName = namePrefix ? `${question.questionId}_${namePrefix}` : question.questionId;
     
     return (
-      <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm transition-all duration-300 hover:shadow-md">
         <div className="flex justify-between text-xs font-semibold text-gray-500 px-1 mb-3 uppercase tracking-wide">
           <span>{question.minLabel || '1'}</span>
           <span>{question.maxLabel || String(max)}</span>
         </div>
         <div className="flex justify-between items-center px-2">
-          {values.map((value) => (
+          {values.map((value, index) => (
             <label
               key={value}
               className="flex flex-col items-center cursor-pointer group relative"
+              style={{ animationDelay: `${index * 50}ms` }}
             >
               <input
                 type="radio"
@@ -83,7 +96,7 @@ export default function FeedbackForm({
                 className="sr-only peer"
                 required
               />
-              <div className="w-10 h-10 flex items-center justify-center rounded-full bg-white border-2 border-gray-200 text-gray-500 font-bold transition-all duration-200 peer-checked:border-blue-500 peer-checked:bg-blue-500 peer-checked:text-white peer-checked:scale-110 group-hover:border-blue-300 shadow-sm">
+              <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 border-2 border-gray-200 text-gray-500 font-bold transition-all duration-200 peer-checked:border-blue-600 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:scale-110 peer-checked:shadow-lg peer-focus:ring-2 peer-focus:ring-offset-2 peer-focus:ring-blue-600 group-hover:border-blue-300 group-hover:scale-105 active:scale-95">
                 {value}
               </div>
             </label>
@@ -101,10 +114,11 @@ export default function FeedbackForm({
     
     return (
       <div className="space-y-2">
-        {(question.options || []).map((option) => (
+        {(question.options || []).map((option, index) => (
           <label
             key={option}
-            className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-checked:border-blue-500 has-checked:bg-blue-50"
+            className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-400 hover:bg-blue-50/50 cursor-pointer transition-all duration-200 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 has-[:checked]:ring-1 has-[:checked]:ring-blue-600 has-[:checked]:shadow-sm active:scale-[0.99] hover:shadow-sm animate-fade-in-up"
+            style={{ animationDelay: `${index * 30}ms` }}
           >
             <input
               type="radio"
@@ -112,7 +126,7 @@ export default function FeedbackForm({
               value={option}
               checked={responses[fieldName] === option}
               onChange={(e) => handleResponseChange(fieldName, e.target.value)}
-              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-600 transition-transform duration-150"
               required
             />
             <span className="ml-3 text-gray-700">{option}</span>
@@ -121,7 +135,7 @@ export default function FeedbackForm({
         {question.allowOther && (
           <>
             <label
-              className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-checked:border-blue-500 has-checked:bg-blue-50"
+              className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-400 hover:bg-blue-50/50 cursor-pointer transition-all duration-200 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 has-[:checked]:ring-1 has-[:checked]:ring-blue-600 has-[:checked]:shadow-sm active:scale-[0.99]"
             >
               <input
                 type="radio"
@@ -129,7 +143,7 @@ export default function FeedbackForm({
                 value="__other__"
                 checked={isOtherSelected}
                 onChange={(e) => handleResponseChange(fieldName, e.target.value)}
-                className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-600"
                 required
               />
               <span className="ml-3 text-gray-700">Other</span>
@@ -138,9 +152,9 @@ export default function FeedbackForm({
               <input
                 type="text"
                 value={(responses[otherFieldName] as string) || ''}
-                onChange={(e) => handleResponseChange(otherFieldName, e.target.value)}
+                onChange={(e) => setResponses(prev => ({ ...prev, [otherFieldName]: e.target.value }))}
                 placeholder="Please specify..."
-                className="input-modern ml-7 mt-2"
+                className="input-modern ml-7 mt-2 animate-fade-in-up"
                 required
               />
             )}
@@ -158,17 +172,18 @@ export default function FeedbackForm({
     
     return (
       <div className="space-y-2">
-        {(question.options || []).map((option) => (
+        {(question.options || []).map((option, index) => (
           <label
             key={option}
-            className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-checked:border-blue-500 has-checked:bg-blue-50"
+            className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-400 hover:bg-blue-50/50 cursor-pointer transition-all duration-200 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 has-[:checked]:ring-1 has-[:checked]:ring-blue-600 has-[:checked]:shadow-sm active:scale-[0.99] hover:shadow-sm animate-fade-in-up"
+            style={{ animationDelay: `${index * 30}ms` }}
           >
             <input
               type="checkbox"
               value={option}
               checked={selected.includes(option)}
               onChange={(e) => handleCheckboxChange(question.questionId, option, e.target.checked)}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-600"
             />
             <span className="ml-3 text-gray-700">{option}</span>
           </label>
@@ -176,14 +191,14 @@ export default function FeedbackForm({
         {question.allowOther && (
           <>
             <label
-              className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-all duration-200 has-checked:border-blue-500 has-checked:bg-blue-50"
+              className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-blue-400 hover:bg-blue-50/50 cursor-pointer transition-all duration-200 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 has-[:checked]:ring-1 has-[:checked]:ring-blue-600"
             >
               <input
                 type="checkbox"
                 value="__other__"
                 checked={isOtherSelected}
                 onChange={(e) => handleCheckboxChange(question.questionId, '__other__', e.target.checked)}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-600"
               />
               <span className="ml-3 text-gray-700">Other</span>
             </label>
@@ -306,12 +321,12 @@ export default function FeedbackForm({
     <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-2xl">
         <div className="card-modern">
-          <h1 className="text-3xl font-extrabold text-center mb-8 bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-violet-600">
+          <h1 className="text-3xl font-bold text-center mb-8 text-gray-900">
             {title}
           </h1>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="id" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="id" className="label-modern">
                 {idLabel}
               </label>
               <input
@@ -332,10 +347,10 @@ export default function FeedbackForm({
               </div>
             ) : (
               questions.map((question) => (
-                <div key={question.questionId} className="glass-hover p-6 rounded-xl border border-white/50 transition-all duration-200">
+                <div key={question.questionId} className="bg-gray-50 p-6 rounded-xl border border-gray-200 transition-shadow duration-200 hover:shadow-md">
                   <label
                     htmlFor={question.questionId}
-                    className="block text-base font-bold text-gray-800 mb-3"
+                    className="block text-base font-semibold text-gray-900 mb-4"
                   >
                     {question.text}
                   </label>
@@ -347,7 +362,7 @@ export default function FeedbackForm({
             <div className="pt-4">
               <button
                 type="submit"
-                className="btn-primary w-full text-lg shadow-xl hover:shadow-blue-500/40"
+                className="btn-primary w-full text-base"
               >
                 {submitButtonText}
               </button>

@@ -1,0 +1,21 @@
+{
+  "name": "HU Career City 2026",
+  "short_name": "Career City",
+  "description": "Habib University Career City 2026 Management System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#5B2C6F",
+  "icons": [
+    {
+      "src": "/favicon-optimized.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-optimized.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
