@@ -3,11 +3,12 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import PageTransition from '@/lib/components/ui/PageTransition';
 import Breadcrumbs from '@/lib/components/ui/Breadcrumbs';
 import { ErrorBoundary } from 'react-error-boundary';
 import { ErrorFallback } from '@/lib/components/ui/ErrorFallback';
+import { toast } from 'react-hot-toast';
 
 export default function StaffLayout({
   children,
@@ -16,11 +17,27 @@ export default function StaffLayout({
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   // Close mobile menu when route changes
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      toast.success('Logged out successfully');
+      router.push('/staff/login');
+      router.refresh();
+    } catch (error) {
+      toast.error('Failed to log out');
+    }
+  };
+
+  if (pathname?.startsWith('/staff/login')) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -129,6 +146,18 @@ export default function StaffLayout({
             >
                  <span className="group-hover:text-blue-300 transition-colors">Analytics</span>
             </Link>
+
+            <div className="pt-4 mt-4 border-t border-white/10">
+              <button
+                onClick={handleLogout}
+                className="w-full flex px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 items-center gap-3 group text-red-300 hover:text-red-200"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span className="transition-colors">Logout</span>
+              </button>
+            </div>
         </nav>
       </aside>
 
