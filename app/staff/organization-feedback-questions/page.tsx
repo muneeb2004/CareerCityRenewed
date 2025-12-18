@@ -35,7 +35,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { SortableItem } from '@/lib/components/ui/SortableItem';
+import { SortableItem, DragHandle } from '@/lib/components/ui/SortableItem';
 
 export default function OrganizationFeedbackQuestionManagement() {
   const [questions, setQuestions] = useState<OrganizationFeedbackQuestion[]>([]);
@@ -511,9 +511,9 @@ export default function OrganizationFeedbackQuestionManagement() {
                             className="glass-hover p-5 rounded-xl border border-white/60 flex items-center justify-between group transition-all duration-300"
                           >
                             {/* Drag Handle */}
-                            <div className="mr-3 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600">
+                            <DragHandle className="mr-3 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600">
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8h16M4 16h16" /></svg>
-                            </div>
+                            </DragHandle>
                             <div className="flex-1">
                               <p className="font-bold text-gray-800 text-lg">{question.text}</p>
                               <div className="flex flex-wrap items-center gap-2 mt-2">
