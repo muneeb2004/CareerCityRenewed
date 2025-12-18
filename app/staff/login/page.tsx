@@ -24,8 +24,8 @@ export default function StaffLogin() {
 
       if (res.ok) {
         toast.success('Login successful');
-        router.push('/staff');
-        router.refresh();
+        // Force a full page load to ensure mobile viewport/styles are correctly reset
+        window.location.href = '/staff';
       } else {
         const data = await res.json();
         toast.error(data.message || 'Login failed');
