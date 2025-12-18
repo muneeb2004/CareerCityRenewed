@@ -19,13 +19,13 @@ export default function Home() {
               alt="Career City Logo"
               width={512}
               height={512}
-              className="w-auto h-56 object-contain"
+              className="w-auto h-32 sm:h-56 object-contain"
               priority
             />
           </div>
-          <h1 className="text-5xl font-extrabold bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-violet-600 pb-2">
+          <h1 className="text-3xl sm:text-5xl font-extrabold bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-violet-600 pb-2">
             HU Career City
-            <span className="block text-3xl font-bold text-gray-700 mt-2">2026</span>
+            <span className="block text-2xl sm:text-3xl font-bold text-gray-700 mt-2">2026</span>
           </h1>
           <p className="text-lg text-gray-600 leading-relaxed">
             Welcome to the official portal for the Habib University Career City

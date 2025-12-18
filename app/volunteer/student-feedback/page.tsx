@@ -484,11 +484,11 @@ export default function StudentFeedbackPage() {
               alt="Career City Logo"
               width={512}
               height={512}
-              className="w-auto h-32 object-contain"
+              className="w-auto h-20 sm:h-32 object-contain"
               priority
             />
           </div>
-          <h1 className="text-3xl font-extrabold text-center mb-4 bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-violet-600">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-center mb-4 bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-violet-600">
             Student Feedback Form
           </h1>
 

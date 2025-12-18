@@ -14,11 +14,11 @@ export default function VolunteerPortal() {
               alt="Career City Logo"
               width={512}
               height={512}
-              className="w-auto h-40 object-contain"
+              className="w-auto h-24 sm:h-40 object-contain"
               priority
             />
           </div>
-          <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-linear-to-r from-accent to-accent-yellow mb-2">
+          <h1 className="text-3xl sm:text-4xl font-extrabold bg-clip-text text-transparent bg-linear-to-r from-accent to-accent-yellow mb-2">
             Volunteer Portal
           </h1>
           <p className="text-lg text-gray-600">
