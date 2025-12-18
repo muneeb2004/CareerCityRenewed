@@ -18,7 +18,7 @@ export default function VolunteerPortal() {
               priority
             />
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold bg-clip-text text-transparent bg-linear-to-r from-accent to-accent-yellow mb-2">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-blue-600 mb-2">
             Volunteer Portal
           </h1>
           <p className="text-lg text-gray-600">
