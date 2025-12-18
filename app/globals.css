@@ -74,13 +74,13 @@
 @layer utilities {
   /* Corporate Card: Clean, subtle border, enhanced interactions */
   .card-modern {
-    @apply bg-white border border-gray-200 shadow-sm rounded-xl p-6 md:p-8 
+    @apply bg-white border border-gray-200 shadow-sm rounded-xl p-4 md:p-8 
     animate-fade-in-up transition-all duration-300 ease-out
     hover:shadow-lg hover:border-gray-300;
   }
 
   .card-interactive {
-    @apply bg-white border border-gray-200 shadow-sm rounded-xl p-6 md:p-8 
+    @apply bg-white border border-gray-200 shadow-sm rounded-xl p-4 md:p-8 
     animate-fade-in-up transition-all duration-300 ease-out cursor-pointer
     hover:shadow-xl hover:border-gray-300 hover:-translate-y-1
     active:scale-[0.99] active:shadow-md;
