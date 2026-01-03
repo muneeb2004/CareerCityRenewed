@@ -7,6 +7,18 @@ import { Student } from '@/models/Student';
 import { Organization } from '@/models/Organization';
 import { revalidatePath } from 'next/cache';
 
+// Helper to serialize MongoDB documents for client components
+// Converts _id to string and Date objects to ISO strings
+function serializeScan(scan: any): IScan {
+  return {
+    ...scan,
+    _id: scan._id.toString(),
+    timestamp: scan.timestamp?.toISOString?.() ?? scan.timestamp,
+    createdAt: scan.createdAt?.toISOString?.() ?? scan.createdAt,
+    updatedAt: scan.updatedAt?.toISOString?.() ?? scan.updatedAt,
+  } as IScan;
+}
+
 const MAX_RETRIES = 3;
 const TRANSACTION_TIMEOUT = 10000; // 10 seconds
 
@@ -164,11 +176,7 @@ export async function getScansByStudent(studentId: string): Promise<IScan[]> {
       .sort({ timestamp: -1 })
       .lean();
 
-    return scans.map(scan => ({
-      ...scan,
-      _id: scan._id.toString(),
-      timestamp: scan.timestamp, // Keep as Date, serialization handled by Next.js or caller
-    })) as unknown as IScan[];
+    return scans.map(serializeScan);
   } catch (error) {
     console.error('Error getting scans:', error);
     return [];
@@ -183,11 +191,7 @@ export async function getAllScans(): Promise<IScan[]> {
       .sort({ timestamp: -1 })
       .lean();
 
-    return scans.map(scan => ({
-      ...scan,
-      _id: scan._id.toString(),
-      timestamp: scan.timestamp,
-    })) as unknown as IScan[];
+    return scans.map(serializeScan);
   } catch (error) {
     console.error('Error getting all scans:', error);
     return [];
@@ -202,11 +206,7 @@ export async function getScansByOrganization(organizationId: string): Promise<IS
       .sort({ timestamp: -1 })
       .lean();
 
-    return scans.map(scan => ({
-      ...scan,
-      _id: scan._id.toString(),
-      timestamp: scan.timestamp,
-    })) as unknown as IScan[];
+    return scans.map(serializeScan);
   } catch (error) {
     console.error('Error getting scans by organization:', error);
     return [];

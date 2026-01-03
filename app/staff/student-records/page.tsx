@@ -96,9 +96,13 @@ export default function StudentRecordsPage() {
   });
 
   // Format date
-  const formatDate = (date: Date | { toDate: () => Date } | undefined) => {
+  const formatDate = (date: Date | string | { toDate: () => Date } | undefined) => {
     if (!date) return 'N/A';
-    const d = typeof date === 'object' && 'toDate' in date ? date.toDate() : date;
+    const d = typeof date === 'string' 
+      ? new Date(date) 
+      : typeof date === 'object' && 'toDate' in date 
+        ? date.toDate() 
+        : date;
     return d.toLocaleString();
   };
 

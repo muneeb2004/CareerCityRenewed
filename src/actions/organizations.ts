@@ -4,6 +4,17 @@ import dbConnect from '@/lib/db';
 import { Organization, IOrganization } from '@/models/Organization';
 import { revalidatePath } from 'next/cache';
 
+// Helper to serialize MongoDB documents for client components
+// Converts _id to string and Date objects to ISO strings
+function serializeOrg(org: any): IOrganization {
+  return {
+    ...org,
+    _id: org._id.toString(),
+    createdAt: org.createdAt?.toISOString?.() ?? org.createdAt,
+    updatedAt: org.updatedAt?.toISOString?.() ?? org.updatedAt,
+  } as IOrganization;
+}
+
 export async function getOrganization(organizationId: string): Promise<IOrganization | null> {
   await dbConnect();
   
@@ -11,10 +22,7 @@ export async function getOrganization(organizationId: string): Promise<IOrganiza
     const org = await Organization.findOne({ organizationId }).lean();
     if (!org) return null;
 
-    return {
-      ...org,
-      _id: org._id.toString(),
-    } as unknown as IOrganization;
+    return serializeOrg(org);
   } catch (error) {
     console.error('Error getting organization:', error);
     return null;
@@ -66,10 +74,7 @@ export async function getAllOrganizations(): Promise<IOrganization[]> {
 
   try {
     const orgs = await Organization.find({}).lean();
-    return orgs.map(org => ({
-      ...org,
-      _id: org._id.toString(),
-    })) as unknown as IOrganization[];
+    return orgs.map(serializeOrg);
   } catch (error) {
     console.error('Error getting all organizations:', error);
     return [];
@@ -83,10 +88,7 @@ export async function getOrganizationsByIds(organizationIds: string[]): Promise<
 
   try {
     const orgs = await Organization.find({ organizationId: { $in: organizationIds } }).lean();
-    return orgs.map(org => ({
-      ...org,
-      _id: org._id.toString(),
-    })) as unknown as IOrganization[];
+    return orgs.map(serializeOrg);
   } catch (error) {
     console.error('Error getting organizations by IDs:', error);
     return [];

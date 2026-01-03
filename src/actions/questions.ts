@@ -4,6 +4,17 @@ import dbConnect from '@/lib/db';
 import { VolunteerQuestion, OrgQuestion, IQuestion } from '@/models/Question';
 import { revalidatePath } from 'next/cache';
 
+// Helper to serialize MongoDB documents for client components
+function serializeQuestion(q: any): any {
+  return {
+    ...q,
+    questionId: q.slug, // Map slug to questionId for frontend compatibility
+    _id: q._id.toString(),
+    createdAt: q.createdAt?.toISOString?.() ?? q.createdAt,
+    updatedAt: q.updatedAt?.toISOString?.() ?? q.updatedAt,
+  };
+}
+
 // Helper to create a meaningful ID from text
 const createSlug = (text: string): string => {
   return text
@@ -41,11 +52,7 @@ export async function getAllVolunteerQuestions(): Promise<any[]> {
   
   try {
     const questions = await VolunteerQuestion.find({}).sort({ order: 1 }).lean();
-    return questions.map(q => ({
-      ...q,
-      questionId: q.slug, // Map slug to questionId for frontend compatibility
-      _id: q._id.toString()
-    }));
+    return questions.map(serializeQuestion);
   } catch (error) {
     console.error('Error getting volunteer questions:', error);
     return [];
@@ -103,11 +110,7 @@ export async function getAllOrganizationFeedbackQuestions(): Promise<any[]> {
 
   try {
     const questions = await OrgQuestion.find({}).sort({ order: 1 }).lean();
-    return questions.map(q => ({
-      ...q,
-      questionId: q.slug,
-      _id: q._id.toString()
-    }));
+    return questions.map(serializeQuestion);
   } catch (error) {
     console.error('Error getting org questions:', error);
     return [];

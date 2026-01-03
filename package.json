@@ -36,6 +36,7 @@
     "react-hot-toast": "^2.6.0",
     "react-window": "^2.2.3",
     "recharts": "^3.4.1",
+    "sharp": "^0.34.5",
     "zod": "^4.1.13",
     "zustand": "^5.0.9"
   },

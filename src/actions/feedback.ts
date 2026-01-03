@@ -82,7 +82,13 @@ export interface StudentFeedbackRecord {
   feedbackId: string;
   studentId: string;
   responses: Record<string, string | number | string[]>;
-  createdAt: Date;
+  createdAt: string;
+}
+
+// Helper to serialize dates for client components
+function serializeDate(date: any): string {
+  if (!date) return new Date().toISOString();
+  return date?.toISOString?.() ?? date;
 }
 
 export async function getAllStudentFeedback(): Promise<StudentFeedbackRecord[]> {
@@ -93,7 +99,7 @@ export async function getAllStudentFeedback(): Promise<StudentFeedbackRecord[]> 
       feedbackId: f.feedbackId,
       studentId: f.studentId || '',
       responses: f.responses instanceof Map ? Object.fromEntries(f.responses) : (f.responses || {}),
-      createdAt: f.timestamp || new Date(),
+      createdAt: serializeDate(f.timestamp),
     }));
   } catch (error) {
     console.error('Error getting all student feedback:', error);
@@ -111,7 +117,7 @@ export async function getStudentFeedbackByStudentId(studentId: string): Promise<
       feedbackId: feedback.feedbackId,
       studentId: feedback.studentId || '',
       responses: feedback.responses instanceof Map ? Object.fromEntries(feedback.responses) : (feedback.responses || {}),
-      createdAt: feedback.timestamp || new Date(),
+      createdAt: serializeDate(feedback.timestamp),
     };
   } catch (error) {
     console.error('Error getting student feedback:', error);
@@ -127,7 +133,7 @@ export async function getAllOrganizationFeedback(): Promise<any[]> {
       feedbackId: f.feedbackId,
       organizationId: f.organizationId || '',
       responses: f.responses instanceof Map ? Object.fromEntries(f.responses) : (f.responses || {}),
-      createdAt: f.timestamp || new Date(),
+      createdAt: serializeDate(f.timestamp),
     }));
   } catch (error) {
     console.error('Error getting all organization feedback:', error);

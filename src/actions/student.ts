@@ -7,6 +7,19 @@ import { Scan } from '@/models/Scan';
 import { Organization } from '@/models/Organization';
 import { revalidatePath } from 'next/cache';
 
+// Helper to serialize MongoDB documents for client components
+// Converts _id to string and Date objects to ISO strings
+function serializeStudent(student: any): IStudent {
+  return {
+    ...student,
+    _id: student._id.toString(),
+    registeredAt: student.registeredAt?.toISOString?.() ?? student.registeredAt,
+    lastScanTime: student.lastScanTime?.toISOString?.() ?? student.lastScanTime,
+    createdAt: student.createdAt?.toISOString?.() ?? student.createdAt,
+    updatedAt: student.updatedAt?.toISOString?.() ?? student.updatedAt,
+  } as IStudent;
+}
+
 export async function createStudent(
   studentId: string,
   email: string,
@@ -71,13 +84,7 @@ export async function getStudent(studentId: string): Promise<IStudent | null> {
     const student = await Student.findOne({ studentId }).lean();
     if (!student) return null;
     
-    // Convert _id and dates to plain objects/strings for client components
-    return {
-      ...student,
-      _id: student._id.toString(),
-      registeredAt: student.registeredAt,
-      lastScanTime: student.lastScanTime,
-    } as unknown as IStudent;
+    return serializeStudent(student);
   } catch (error) {
     console.error('Error getting student:', error);
     return null;
@@ -89,10 +96,7 @@ export async function getAllStudents(): Promise<IStudent[]> {
   
   try {
     const students = await Student.find({}).lean();
-    return students.map(student => ({
-      ...student,
-      _id: student._id.toString(),
-    })) as unknown as IStudent[];
+    return students.map(serializeStudent);
   } catch (error) {
     console.error('Error getting all students:', error);
     return [];
