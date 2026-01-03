@@ -1,14 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import {
-  getStudentSession,
-  clearStudentSession,
-  StudentSession,
-} from '../../src/lib/storage';
-import { getOrganization, updateOrganizationVisitors } from '../../src/firestore/organizations';
-import { getStudent, updateStudentVisit } from '../../src/firestore/student';
-import { getScansByStudent, createScan } from '../../src/firestore/scans';
+import { getStudentSession, clearStudentSession, StudentSession } from '../../src/lib/storage';
+import { getOrganization } from '../../src/firestore/organizations';
+import { getStudent } from '../../src/firestore/student';
+import { getScansByStudent, recordVisit } from '../../src/firestore/scans';
 import { generateEmail } from '../../src/lib/validation';
 import StudentRegistration from '../../src/components/student/StudentRegistration';
 import QRScanner from '../../src/components/student/QRScanner';
@@ -80,19 +76,15 @@ export default function StudentPortal() {
       }
 
       if (session) {
-        // Record the visit
-        await Promise.all([
-          updateStudentVisit(session.studentId, organizationId),
-          updateOrganizationVisitors(organizationId, session.studentId),
-          createScan(
-            session.studentId,
-            generateEmail(session.studentId),
-            session.program,
-            organizationId,
-            organizationData.name,
-            organizationData.boothNumber
-          )
-        ]);
+        // Record the visit using a transaction
+        await recordVisit(
+          session.studentId,
+          generateEmail(session.studentId),
+          session.program,
+          organizationId,
+          organizationData.name,
+          organizationData.boothNumber
+        );
 
         toast.success(`Visited ${organizationData.name}!`);
         

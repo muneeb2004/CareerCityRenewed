@@ -2,7 +2,7 @@ import {
   collection,
   getDocs,
   doc,
-  addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   serverTimestamp,
@@ -10,32 +10,41 @@ import {
 import { db } from '../lib/firebase';
 import { VolunteerQuestion } from '../types';
 
+// Helper to create a meaningful ID from text
+const createSlug = (text: string): string => {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '') // Remove non-word chars (except spaces and hyphens)
+    .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
+    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+};
+
 export const createVolunteerQuestion = async (
   question: Omit<VolunteerQuestion, 'questionId'>
 ): Promise<string> => {
   try {
     console.log('Firestore instance:', db); // Debug log
-    let questionsRef;
+    
+    // Generate a meaningful ID from the question text
+    const slugId = createSlug(question.text);
+    
+    // Fallback if slug is empty (e.g. question text was only special chars)
+    const finalId = slugId || `question-${Date.now()}`;
+
+    const docRef = doc(db, 'volunteerQuestions', finalId);
+
     try {
-      console.log('Firestore: Attempting to get collection reference.'); // Debug log
-      questionsRef = collection(db, 'volunteerQuestions');
-      console.log('Firestore: collection ref obtained.'); // Debug log
-    } catch (collectionError: unknown) {
-      console.error('Error getting collection reference:', collectionError);
-      throw collectionError;
-    }
-    let docRef;
-    try {
-      docRef = await addDoc(questionsRef, {
+      await setDoc(docRef, {
         ...question,
         createdAt: serverTimestamp(),
       });
-      console.log('Volunteer Question added to Firestore with ID: ', docRef.id); // NEW LOG
-    } catch (addDocError: unknown) {
-      console.error('Error adding document:', addDocError);
-      throw addDocError;
+      console.log('Volunteer Question added to Firestore with ID: ', finalId);
+    } catch (setDocError: unknown) {
+      console.error('Error adding document:', setDocError);
+      throw setDocError;
     }
-    return docRef.id;
+    return finalId;
   } catch (error) {
     console.error('Error creating volunteer question in Firestore: ', error);
     throw error;

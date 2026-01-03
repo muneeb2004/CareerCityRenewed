@@ -42,16 +42,51 @@ export default function FeedbackForm({
     e.preventDefault();
     setIsSubmitting(true);
     haptics.impact();
+
+    // Helper to create readable keys
+    const createKey = (text: string) => {
+      return text
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    };
     
+    // Transform responses to use readable keys
+    const transformedResponses: Record<string, string | string[]> = {};
+    
+    Object.entries(responses).forEach(([key, value]) => {
+      // Check if key is a direct questionId
+      const question = questions.find(q => q.questionId === key);
+      
+      if (question) {
+        transformedResponses[createKey(question.text)] = value;
+      } else {
+        // Handle suffixes like _text, _scale, _choice
+        const parts = key.split('_');
+        const suffix = parts.pop(); // e.g., 'text'
+        const baseId = parts.join('_');
+        const baseQuestion = questions.find(q => q.questionId === baseId);
+        
+        if (baseQuestion) {
+           transformedResponses[`${createKey(baseQuestion.text)}-${suffix}`] = value;
+        } else {
+           // Fallback to original key if not found (shouldn't happen)
+           transformedResponses[key] = value;
+        }
+      }
+    });
+
     // Simulate brief delay for premium feel
     setTimeout(() => {
-      onSubmit(id, responses);
+      onSubmit(id, transformedResponses);
       haptics.success();
       setId('');
       setResponses({});
       setIsSubmitting(false);
     }, 150);
-  }, [id, responses, onSubmit]);
+  }, [id, responses, onSubmit, questions]);
 
   const handleResponseChange = useCallback((questionId: string, value: string | string[]) => {
     haptics.select();
