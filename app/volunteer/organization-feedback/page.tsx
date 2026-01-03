@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { addOrganizationFeedback, hasOrganizationSubmittedFeedback } from '../../../src/firestore/organizationFeedback';
-import { getAllOrganizationFeedbackQuestions } from '../../../src/firestore/organizationFeedbackQuestions';
-import { getAllOrganizations } from '../../../src/firestore/organizations';
+import { addOrganizationFeedback, hasOrganizationSubmittedFeedback } from '../../../src/actions/feedback';
+import { getAllOrganizationFeedbackQuestions } from '../../../src/actions/questions';
+import { getAllOrganizations } from '../../../src/actions/organizations';
 import { OrganizationFeedbackQuestion, Organization } from '../../../src/types';
 import toast, { Toaster } from 'react-hot-toast';
 import Image from 'next/image';

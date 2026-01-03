@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useState, useEffect, useCallback } from 'react';
+import { getAllScans } from '@/actions/scans';
 import {
   BarChart,
   Bar,
@@ -15,7 +14,7 @@ import {
   LineChart,
   Line,
 } from 'recharts';
-import { Scan } from '@/types';
+import { Scan, toDate } from '@/types';
 import Papa from 'papaparse';
 import { Skeleton } from '@/lib/components/ui/Skeleton';
 
@@ -36,58 +35,61 @@ export default function AnalyticsPage() {
   });
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+
+  const processScans = useCallback((scansData: Scan[]) => {
+    const totalScans = scansData.length;
+
+    const scansPerOrg: { [key: string]: number } = {};
+    scansData.forEach((scan) => {
+      const orgName = scan.organizationName || 'Unknown';
+      scansPerOrg[orgName] = (scansPerOrg[orgName] || 0) + 1;
+    });
+    const scansPerOrgArray = Object.entries(scansPerOrg).map(
+      ([name, scans]) => ({ name, scans })
+    );
+
+    const scansOverTime: { [key: string]: number } = {};
+    scansData.forEach((scan) => {
+      const timestamp = toDate(scan.timestamp);
+      const time = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      scansOverTime[time] = (scansOverTime[time] || 0) + 1;
+    });
+    const scansOverTimeArray = Object.entries(scansOverTime).map(
+      ([time, scans]) => ({ time, scans })
+    );
+
+    const totalStudents = new Set(scansData.map((s) => s.studentId)).size;
+
+    return {
+      totalStudents,
+      totalScans,
+      scansPerOrg: scansPerOrgArray,
+      scansOverTime: scansOverTimeArray,
+    };
+  }, []);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const scansData = await getAllScans() as unknown as Scan[];
+      setScans(scansData);
+      setData(processScans(scansData));
+      setLastRefresh(new Date());
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [processScans]);
 
   useEffect(() => {
     setMounted(true);
-    const scansQuery = query(
-      collection(db, 'scans'),
-      orderBy('timestamp', 'asc')
-    );
+    fetchData();
 
-    const unsubscribe = onSnapshot(scansQuery, (snapshot) => {
-      const scansData = snapshot.docs.map(
-        (doc) => ({ ...doc.data(), scanId: doc.id } as Scan)
-      );
-      setScans(scansData);
-
-      // Process scans for analytics
-      const totalScans = scansData.length;
-
-      const scansPerOrg: { [key: string]: number } = {};
-      scansData.forEach((scan) => {
-        scansPerOrg[scan.organizationName] =
-          (scansPerOrg[scan.organizationName] || 0) + 1;
-      });
-      const scansPerOrgArray = Object.entries(scansPerOrg).map(
-        ([name, scans]) => ({ name, scans })
-      );
-
-      const scansOverTime: { [key: string]: number } = {};
-      scansData.forEach((scan) => {
-        const time = scan.timestamp
-          .toDate()
-          .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        scansOverTime[time] = (scansOverTime[time] || 0) + 1;
-      });
-      const scansOverTimeArray = Object.entries(scansOverTime).map(
-        ([time, scans]) => ({ time, scans })
-      );
-
-      // For total students, we need to query the students collection
-      // For now, we can get a unique count from the scans
-      const totalStudents = new Set(scansData.map((s) => s.studentId)).size;
-
-      setData({
-        totalStudents,
-        totalScans,
-        scansPerOrg: scansPerOrgArray,
-        scansOverTime: scansOverTimeArray,
-      });
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+    // Auto-refresh every 30 seconds for near real-time updates
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
 
   const exportToCSV = () => {
     const csv = Papa.unparse(scans);
@@ -108,15 +110,27 @@ export default function AnalyticsPage() {
             <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-violet-600">
             Live Analytics
             </h1>
-            <p className="text-gray-500 text-sm mt-1">Real-time insights into event activity</p>
+            <p className="text-gray-500 text-sm mt-1">
+              Auto-refreshes every 30s • Last updated: {lastRefresh.toLocaleTimeString()}
+            </p>
         </div>
-        <button
-            onClick={exportToCSV}
-            className="btn-secondary flex items-center gap-2"
-        >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-            Export to CSV
-        </button>
+        <div className="flex gap-2">
+          <button
+              onClick={fetchData}
+              disabled={loading}
+              className="btn-secondary flex items-center gap-2"
+          >
+              <svg className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              Refresh
+          </button>
+          <button
+              onClick={exportToCSV}
+              className="btn-secondary flex items-center gap-2"
+          >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              Export to CSV
+          </button>
+        </div>
       </div>
 
       {/* Key Metrics */}

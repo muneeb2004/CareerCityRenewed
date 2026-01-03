@@ -8,10 +8,8 @@ import {
 import {
   createStudent,
   getStudent,
-  updateStudentVisit,
-} from '../../firestore/student';
-import { createScan } from '../../firestore/scans';
-import { updateOrganizationVisitors } from '../../firestore/organizations';
+} from '../../actions/student'; // Server Actions
+import { recordVisit } from '../../actions/scans'; // Server Action
 import { saveStudentSession } from '../../lib/storage';
 import { haptics } from '../../lib/haptics';
 import toast from 'react-hot-toast';
@@ -73,59 +71,19 @@ export default function StudentRegistration({
       const existingStudent = await getStudent(studentId);
 
       if (!existingStudent) {
-        // Create new student
-        await createStudent(studentId, email, fullName.trim(), organizationId);
+        // Create new student (This action handles Student creation, Scan creation, and Org update atomically)
+        await createStudent(studentId, email, fullName.trim(), organizationId, organizationName, boothNumber);
       } else {
-        // Update existing student
-        await updateStudentVisit(studentId, organizationId);
+        // Existing student - just record a visit
+        await recordVisit(
+            studentId, 
+            email, 
+            existingStudent.program || 'Computer Science', 
+            organizationId, 
+            organizationName, 
+            boothNumber
+        );
       }
-
-      // Update organization visitors
-      await updateOrganizationVisitors(organizationId, studentId);
-
-      // Create scan record (using fullName in place of program for now)
-      // Passing 1 as scanCount since this is the first visit for a new student
-      // Note: If existing student, logic might need adjustment, but current flow seems to assume registration context.
-      // However, the code handles "existingStudent" branch.
-      // If existingStudent, scanCount should be incremented.
-      // Let's check if we should use recordVisit for existing student?
-      // But we already called updateStudentVisit separately.
-      
-      // To keep it simple and consistent with the requested change for NEW registrations (which create scan #1):
-      // We need to know the scan count.
-      
-      // If we want to be safe, we should probably fetch the student again or use the known count.
-      // But here we just did createStudent (count=1) or updateStudentVisit (count++).
-      
-      // Actually, if it's an EXISTING student, we don't know the new count easily here without reading it back.
-      // But wait, the previous code was just createScan(). 
-      // If I add a default param to createScan, it works as before (random ID) if I don't pass it.
-      // BUT the user wants the ID format.
-      
-      // For NEW students, we know it is 1.
-      // For EXISTING students, we should ideally use recordVisit instead of the split logic, 
-      // BUT createStudent handles the "create if not exists" logic which recordVisit doesn't.
-      
-      // Strategy:
-      // If new student: scanCount = 1.
-      // If existing student: we can't easily guess. 
-      // However, if we look at the flow:
-      // handleSubmit checks `getStudent`.
-      
-      let currentScanCount = 1;
-      if (existingStudent) {
-         currentScanCount = (existingStudent.scanCount || 0) + 1;
-      }
-
-      await createScan(
-        studentId,
-        email,
-        'Computer Science', // Default program for scan records
-        organizationId,
-        organizationName,
-        boothNumber,
-        currentScanCount
-      );
 
       // Save session (using a default program)
       saveStudentSession(studentId, 'Computer Science');
@@ -135,9 +93,16 @@ export default function StudentRegistration({
       onComplete();
     } catch (err) {
       console.error('Registration error:', err);
-      setError('Registration failed. Please try again.');
+      // Simplify error message for user
+      const msg = err instanceof Error ? err.message : 'Registration failed';
+      if (msg.includes('Already visited')) {
+         setError('You have already visited this stall.');
+         toast.error('Already visited');
+      } else {
+         setError('Registration failed. Please try again.');
+         toast.error('Registration failed');
+      }
       haptics.error();
-      toast.error('Registration failed');
     } finally {
       setLoading(false);
     }

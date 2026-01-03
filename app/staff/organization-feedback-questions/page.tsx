@@ -6,7 +6,7 @@ import {
   getAllOrganizationFeedbackQuestions,
   updateOrganizationFeedbackQuestion,
   deleteOrganizationFeedbackQuestion,
-} from '@/firestore/organizationFeedbackQuestions';
+} from '@/actions/questions';
 import {
   OrganizationFeedbackQuestion,
   QUESTION_TYPES,

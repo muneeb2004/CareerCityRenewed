@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { getStudentSession, clearStudentSession, StudentSession } from '../../src/lib/storage';
-import { getOrganization } from '../../src/firestore/organizations';
-import { getStudent } from '../../src/firestore/student';
-import { getScansByStudent, recordVisit } from '../../src/firestore/scans';
+import { getOrganization } from '../../src/actions/organizations';
+import { getStudent } from '../../src/actions/student';
+import { getScansByStudent, recordVisit } from '../../src/actions/scans';
 import { generateEmail } from '../../src/lib/validation';
 import StudentRegistration from '../../src/components/student/StudentRegistration';
 import QRScanner from '../../src/components/student/QRScanner';
@@ -44,9 +44,11 @@ export default function StudentPortal() {
     if (!session) return;
     try {
       const studentData = await getStudent(session.studentId);
-      setStudent(studentData);
+      // Cast the result to Student type compatible with frontend (handling any slight mismatches)
+      setStudent(studentData as unknown as Student);
+      
       const scanData = await getScansByStudent(session.studentId);
-      setScans(scanData);
+      setScans(scanData as unknown as Scan[]);
     } catch (error) {
       console.error('Error loading student data:', error);
     }
@@ -224,10 +226,10 @@ export default function StudentPortal() {
                       </div>
                       <div className="text-right">
                         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                          {mounted && scan.timestamp?.toDate().toLocaleDateString()}
+                          {mounted && new Date(scan.timestamp as unknown as string).toLocaleDateString()}
                         </p>
                         <p className="text-sm font-bold text-gray-700">
-                          {mounted && scan.timestamp?.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          {mounted && new Date(scan.timestamp as unknown as string).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                         </p>
                       </div>
                     </div>
@@ -266,7 +268,7 @@ export default function StudentPortal() {
               <div>
                 <p className="text-gray-500 text-sm font-medium uppercase tracking-wider">Last Visit</p>
                 <p className="text-xl font-bold text-gray-900 mt-1">
-                  {mounted && student.lastScanTime?.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                  {mounted && new Date(student.lastScanTime as unknown as string).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                 </p>
               </div>
               <div className="p-3 bg-emerald-50 rounded-full text-emerald-600">

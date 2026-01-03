@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Organization } from '../../types';
-import { getAllOrganizations } from '../../firestore/organizations';
+import { getAllOrganizations } from '../../actions/organizations';
 
 interface OrganizationState {
   organizations: Organization[];
@@ -22,7 +22,7 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
 
     try {
       const data = await getAllOrganizations();
-      set({ organizations: data, lastFetched: now });
+      set({ organizations: data as unknown as Organization[], lastFetched: now });
     } catch (error) {
       console.error('Failed to fetch organizations store:', error);
       throw error;

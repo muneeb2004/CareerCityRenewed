@@ -23,7 +23,7 @@ interface FeedbackFormProps {
   idPlaceholder: string;
   questions: Question[];
   submitButtonText: string;
-  onSubmit: (id: string, responses: Record<string, string | string[]>) => void;
+  onSubmit: (id: string, responses: Record<string, string | string[]>) => Promise<void>;
 }
 
 export default function FeedbackForm({
@@ -38,7 +38,7 @@ export default function FeedbackForm({
   const [responses, setResponses] = useState<Record<string, string | string[]>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = useCallback((e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     haptics.impact();
@@ -78,14 +78,19 @@ export default function FeedbackForm({
       }
     });
 
-    // Simulate brief delay for premium feel
-    setTimeout(() => {
-      onSubmit(id, transformedResponses);
-      haptics.success();
-      setId('');
-      setResponses({});
-      setIsSubmitting(false);
-    }, 150);
+    try {
+        await onSubmit(id, transformedResponses);
+        haptics.success();
+        setId('');
+        setResponses({});
+    } catch (error) {
+        console.error("Submission failed", error);
+        // Error handling logic (toast?) - passed from parent usually or handled here?
+        // Parent handles toast usually? No, here we just call onSubmit.
+        // If parent throws, we catch here.
+    } finally {
+        setIsSubmitting(false);
+    }
   }, [id, responses, onSubmit, questions]);
 
   const handleResponseChange = useCallback((questionId: string, value: string | string[]) => {

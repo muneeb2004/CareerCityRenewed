@@ -29,7 +29,8 @@ describe('ConfirmationModal', () => {
         message="Message"
       />
     );
-    fireEvent.click(screen.getByText('Confirm'));
+    // Use getByRole to specifically get the confirm button
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
     expect(handleConfirm).toHaveBeenCalledTimes(1);
   });
 

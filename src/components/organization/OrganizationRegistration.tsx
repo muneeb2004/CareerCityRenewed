@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { createOrganization } from '../../firestore/organizations';
+import { createOrganization } from '../../actions/organizations';
 import { slugify } from '../../lib/utils';
 import { haptics } from '../../lib/haptics';
 import toast from 'react-hot-toast';
 import { Organization } from '../../types';
-import { serverTimestamp } from 'firebase/firestore';
 
 const CATEGORIES = [
   'Technology',

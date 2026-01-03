@@ -1,54 +1,48 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { Scan, Student } from '@/types';
 import { Skeleton } from '@/lib/components/ui/Skeleton';
-import { getAllStudents } from '@/firestore/student';
+import { getAllStudents } from '@/actions/student';
+import { getAllScans } from '@/actions/scans';
 
 export default function StaffDashboard() {
   const [recentScans, setRecentScans] = useState<Scan[]>([]);
   const [totalScans, setTotalScans] = useState(0);
   const [totalStudents, setTotalStudents] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+
+  const fetchData = useCallback(async () => {
+    try {
+      const [students, scans] = await Promise.all([
+        getAllStudents(),
+        getAllScans(),
+      ]);
+      setTotalStudents(students.length);
+      setTotalScans(scans.length);
+      // Get recent 5 scans (already sorted by timestamp desc from action)
+      setRecentScans((scans as unknown as Scan[]).slice(0, 5));
+      setLastRefresh(new Date());
+    } catch (error) {
+      console.error("Error fetching dashboard data", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    // Real-time listener for scans
-    const scansQuery = query(
-      collection(db, 'scans'),
-      orderBy('timestamp', 'desc'),
-      limit(5)
-    );
-
-    const unsubscribe = onSnapshot(scansQuery, (snapshot) => {
-      const scansData = snapshot.docs.map(
-        (doc) => ({ ...doc.data(), scanId: doc.id } as Scan)
-      );
-      setRecentScans(scansData);
-    });
-
-    // Fetch total counts
-    const fetchCounts = async () => {
-      try {
-        const students = await getAllStudents();
-        setTotalStudents(students.length);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching dashboard data", error);
-        setLoading(false);
-      }
-    };
-
-    fetchCounts();
-
-    return () => unsubscribe();
-  }, []);
+    fetchData();
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
 
   const formatDate = (date: any) => {
     if (!date) return '';
-    return new Date(date.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const d = date instanceof Date ? date : new Date(date);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   return (

@@ -1,6 +1,11 @@
-// Prompt for Copilot: "Create TypeScript types for Student, Employer, Scan, and Feedback with Firestore Timestamp"
+// TypeScript types for Career City 2026 - MongoDB-based architecture
 
-import { Timestamp } from 'firebase/firestore';
+// Helper function to ensure Date type (kept for backward compatibility during transition)
+export function toDate(value: Date | null | undefined): Date {
+  if (!value) return new Date();
+  if (value instanceof Date) return value;
+  return new Date(value as any);
+}
 
 export const PROGRAMS = [
   'Computer Science',
@@ -20,8 +25,8 @@ export interface Student {
   program?: Program; // Optional now, kept for backward compatibility
   visitedStalls: string[];
   scanCount: number;
-  registeredAt: Timestamp;
-  lastScanTime: Timestamp;
+  registeredAt: Date;
+  lastScanTime: Date;
   feedbackSubmitted: boolean;
   feedbackId?: string;
 }
@@ -48,14 +53,14 @@ export interface Scan {
   organizationId: string;
   organizationName: string;
   boothNumber: string;
-  timestamp: Timestamp;
+  timestamp: Date;
   scanMethod: 'qr_code';
 }
 
 export interface StudentFeedback {
   feedbackId: string;
   studentId: string;
-  timestamp: Timestamp;
+  timestamp: Date;
   responses: Record<string, string | number | string[]>; // Flexible for dynamic questions
 }
 
@@ -131,7 +136,7 @@ export interface VolunteerQuestion {
 export interface OrganizationFeedback {
   feedbackId: string;
   organizationId: string;
-  timestamp: Timestamp;
+  timestamp: Date;
   responses: { [questionId: string]: string | number | string[] };
 }
 
@@ -154,7 +159,7 @@ export interface Volunteer {
 export interface VolunteerLog {
   logId: string;
   volunteerId: string;
-  timestamp: Timestamp;
+  timestamp: Date;
   action: 'check-in' | 'check-out' | 'quality-check';
   studentId?: string; // for quality-check
   notes?: string;
@@ -165,6 +170,6 @@ export interface InteractionLog {
   volunteerId: string;
   studentId: string;
   organizationId: string;
-  timestamp: Timestamp;
+  timestamp: Date;
   responses: { [questionId: string]: string | number | string[] };
 }

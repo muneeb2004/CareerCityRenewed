@@ -7,7 +7,7 @@ import {
   createOrganization,
   updateOrganization,
   deleteOrganization,
-} from '@/firestore/organizations';
+} from '@/actions/organizations';
 import QRCodeGenerator from '@/components/organization/QRCodeGenerator';
 import { Organization } from '@/types';
 import { Toaster } from 'react-hot-toast';

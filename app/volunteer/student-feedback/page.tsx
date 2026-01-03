@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { addStudentFeedback, hasStudentSubmittedFeedback } from '../../../src/firestore/studentFeedback';
-import { getAllVolunteerQuestions } from '../../../src/firestore/volunteerQuestions';
-import { getAllOrganizations } from '../../../src/firestore/organizations';
+import { addStudentFeedback, hasStudentSubmittedFeedback } from '../../../src/actions/feedback';
+import { getAllVolunteerQuestions } from '../../../src/actions/questions';
+import { getAllOrganizations } from '../../../src/actions/organizations';
 import { VolunteerQuestion, Organization, QuestionType } from '../../../src/types';
 import toast, { Toaster } from 'react-hot-toast';
 import Image from 'next/image';
@@ -42,8 +42,9 @@ export default function StudentFeedbackPage() {
         ]);
         console.log('Fetched questions:', questionsData);
         console.log('Fetched organizations:', orgsData);
-        setQuestions(questionsData);
-        setOrganizations(orgsData);
+        // Cast to expected types as actions return compatible structures
+        setQuestions(questionsData as unknown as VolunteerQuestion[]);
+        setOrganizations(orgsData as unknown as Organization[]);
       } catch (error) {
         console.error('Error fetching data:', error);
         toast.error('Failed to load form data.');

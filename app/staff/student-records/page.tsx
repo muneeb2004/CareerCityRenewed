@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getAllStudents } from '@/firestore/student';
-import { getAllStudentFeedback, StudentFeedbackRecord } from '@/firestore/studentFeedback';
-import { getAllOrganizations } from '@/firestore/organizations';
-import { getAllVolunteerQuestions } from '@/firestore/volunteerQuestions';
+import { getAllStudents } from '@/actions/student';
+import { getAllStudentFeedback, StudentFeedbackRecord } from '@/actions/feedback';
+import { getAllOrganizations } from '@/actions/organizations';
+import { getAllVolunteerQuestions } from '@/actions/questions';
 import { Student, Organization, VolunteerQuestion } from '@/types';
 import toast, { Toaster } from 'react-hot-toast';
 import { showError } from '@/lib/utils/toast';
@@ -43,10 +43,10 @@ export default function StudentRecordsPage() {
         getAllOrganizations(),
         getAllVolunteerQuestions(),
       ]);
-      setStudents(studentsData);
+      setStudents(studentsData as unknown as Student[]);
       setFeedbackRecords(feedbackData);
-      setOrganizations(orgsData);
-      setQuestions(questionsData);
+      setOrganizations(orgsData as unknown as Organization[]);
+      setQuestions(questionsData as unknown as VolunteerQuestion[]);
     } catch (error) {
       console.error('Error fetching data:', error);
       showError('Failed to load student records');

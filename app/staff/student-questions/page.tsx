@@ -6,7 +6,7 @@ import {
   getAllVolunteerQuestions,
   updateVolunteerQuestion,
   deleteVolunteerQuestion,
-} from '@/firestore/volunteerQuestions';
+} from '@/actions/questions';
 import {
   VolunteerQuestion,
   QUESTION_TYPES,

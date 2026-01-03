@@ -67,26 +67,27 @@ describe('PullToRefresh', () => {
     let resolveRefresh: (value?: unknown) => void;
     const longRunningRefresh = jest.fn(() => new Promise(resolve => { resolveRefresh = resolve; }));
     
-    render(
+    const { container: rootContainer } = render(
       <PullToRefresh onRefresh={longRunningRefresh}>
         <div style={{ height: '200px', overflowY: 'auto' }}>Content</div>
       </PullToRefresh>
     );
-    const container = screen.getByText('Content').closest('div') as HTMLElement;
+    const contentElement = screen.getByText('Content').closest('div') as HTMLElement;
 
-    fireEvent.touchStart(container, { touches: [{ clientY: 100 }] });
-    fireEvent.touchMove(container, { touches: [{ clientY: 200 }] });
-    fireEvent.touchEnd(container);
+    fireEvent.touchStart(contentElement, { touches: [{ clientY: 100 }] });
+    fireEvent.touchMove(contentElement, { touches: [{ clientY: 200 }] });
+    fireEvent.touchEnd(contentElement);
 
     await waitFor(() => {
       expect(longRunningRefresh).toHaveBeenCalledTimes(1);
-      expect(screen.getByRole('progressbar')).toBeInTheDocument(); // Assuming a spinner is used for progressbar role
+      // The spinner uses a div with animate-spin class, search in the root container
+      expect(rootContainer.querySelector('.animate-spin')).toBeInTheDocument();
     });
 
     // Resolve the promise to end refreshing
     (resolveRefresh!());
     await waitFor(() => {
-      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(rootContainer.querySelector('.animate-spin')).not.toBeInTheDocument();
     });
   });
 });
