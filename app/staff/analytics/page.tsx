@@ -19,28 +19,46 @@ const Legend = dynamic(() => import('recharts').then(mod => mod.Legend), { ssr: 
 const LineChart = dynamic(() => import('recharts').then(mod => mod.LineChart), { ssr: false });
 const Line = dynamic(() => import('recharts').then(mod => mod.Line), { ssr: false });
 
-interface AnalyticsData {
+interface SummaryData {
   totalStudents: number;
   totalScans: number;
+}
+
+interface ChartData {
   scansPerOrg: { name: string; scans: number }[];
   scansOverTime: { time: string; scans: number }[];
 }
 
 export default function AnalyticsPage() {
   const [scans, setScans] = useState<Scan[]>([]);
-  const [data, setData] = useState<AnalyticsData>({
+  
+  // Priority 1: Summary metrics (shown immediately)
+  const [summary, setSummary] = useState<SummaryData>({
     totalStudents: 0,
     totalScans: 0,
+  });
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  
+  // Priority 2: Chart data (deferred, computationally expensive)
+  const [chartData, setChartData] = useState<ChartData>({
     scansPerOrg: [],
     scansOverTime: [],
   });
+  const [chartsLoading, setChartsLoading] = useState(true);
+  
   const [mounted, setMounted] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
-  const processScans = useCallback((scansData: Scan[]) => {
-    const totalScans = scansData.length;
+  // Process summary data (fast operation)
+  const processSummary = useCallback((scansData: Scan[]): SummaryData => {
+    return {
+      totalScans: scansData.length,
+      totalStudents: new Set(scansData.map((s) => s.studentId)).size,
+    };
+  }, []);
 
+  // Process chart data (slower, deferred)
+  const processCharts = useCallback((scansData: Scan[]): ChartData => {
     const scansPerOrg: { [key: string]: number } = {};
     scansData.forEach((scan) => {
       const orgName = scan.organizationName || 'Unknown';
@@ -60,28 +78,37 @@ export default function AnalyticsPage() {
       ([time, scans]) => ({ time, scans })
     );
 
-    const totalStudents = new Set(scansData.map((s) => s.studentId)).size;
-
     return {
-      totalStudents,
-      totalScans,
       scansPerOrg: scansPerOrgArray,
       scansOverTime: scansOverTimeArray,
     };
   }, []);
 
+  // Priority 1: Fetch and show summary first
   const fetchData = useCallback(async () => {
     try {
+      setSummaryLoading(true);
       const scansData = await getAllScans() as unknown as Scan[];
       setScans(scansData);
-      setData(processScans(scansData));
+      
+      // Immediately show summary (fast)
+      setSummary(processSummary(scansData));
+      setSummaryLoading(false);
       setLastRefresh(new Date());
+      
+      // Defer chart processing (slower, non-blocking)
+      setChartsLoading(true);
+      // Use setTimeout to allow UI to update before heavy computation
+      setTimeout(() => {
+        setChartData(processCharts(scansData));
+        setChartsLoading(false);
+      }, 100);
     } catch (error) {
       console.error('Error fetching analytics:', error);
-    } finally {
-      setLoading(false);
+      setSummaryLoading(false);
+      setChartsLoading(false);
     }
-  }, [processScans]);
+  }, [processSummary, processCharts]);
 
   useEffect(() => {
     setMounted(true);
@@ -118,10 +145,10 @@ export default function AnalyticsPage() {
         <div className="flex gap-2">
           <button
               onClick={fetchData}
-              disabled={loading}
+              disabled={summaryLoading}
               className="btn-secondary flex items-center gap-2"
           >
-              <svg className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              <svg className={`w-5 h-5 ${summaryLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
               Refresh
           </button>
           <button
@@ -141,11 +168,11 @@ export default function AnalyticsPage() {
             <h3 className="text-gray-500 text-sm font-medium uppercase tracking-wider">
               Total Students
             </h3>
-            {loading ? (
+            {summaryLoading ? (
                 <Skeleton className="h-10 w-24 mt-2" />
             ) : (
                 <p className="text-4xl font-bold text-blue-600 mt-2">
-                {data.totalStudents}
+                {summary.totalStudents}
                 </p>
             )}
           </div>
@@ -158,11 +185,11 @@ export default function AnalyticsPage() {
             <h3 className="text-gray-500 text-sm font-medium uppercase tracking-wider">
               Total Scans
             </h3>
-            {loading ? (
+            {summaryLoading ? (
                 <Skeleton className="h-10 w-24 mt-2" />
             ) : (
                 <p className="text-4xl font-bold text-emerald-600 mt-2">
-                {data.totalScans}
+                {summary.totalScans}
                 </p>
             )}
           </div>
@@ -173,7 +200,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Charts */}
-      {loading ? (
+      {chartsLoading ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="card-modern">
                 <Skeleton className="h-8 w-48 mb-6" />
@@ -191,7 +218,7 @@ export default function AnalyticsPage() {
               Scans per Organization
             </h3>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={data.scansPerOrg}>
+              <BarChart data={chartData.scansPerOrg}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="name" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
@@ -215,7 +242,7 @@ export default function AnalyticsPage() {
               Scans over Time
             </h3>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={data.scansOverTime}>
+              <LineChart data={chartData.scansOverTime}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="time" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />

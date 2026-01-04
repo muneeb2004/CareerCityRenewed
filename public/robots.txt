@@ -1,0 +1,33 @@
+# Career City 2026 - robots.txt
+# https://www.robotstxt.org/
+
+# Allow all crawlers for public pages
+User-agent: *
+Allow: /
+Allow: /student
+Allow: /volunteer
+
+# Disallow sensitive areas
+Disallow: /api/
+Disallow: /staff/
+Disallow: /_next/
+Disallow: /sw.js
+
+# Disallow search engine indexing of dynamic content
+Disallow: /*?*
+
+# Crawl-delay for polite crawling (optional)
+Crawl-delay: 1
+
+# Sitemap location (uncomment when created)
+# Sitemap: https://careercity.edu/sitemap.xml
+
+# Block bad bots (optional - add known bad actors)
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /

@@ -3,6 +3,15 @@
 import dbConnect from '@/lib/db';
 import { Organization, IOrganization } from '@/models/Organization';
 import { revalidatePath } from 'next/cache';
+import { 
+  OrganizationIdSchema, 
+  CreateOrganizationSchema, 
+  UpdateOrganizationSchema,
+  validateOrThrow 
+} from '@/lib/schemas';
+import { safeEquals, sanitizeForMongo } from '@/lib/sanitize';
+import { handleError } from '@/lib/error-handler';
+import { logOrganizationOperation, logUnhandledError } from '@/lib/security-logger';
 
 // Helper to serialize MongoDB documents for client components
 // Converts _id to string and Date objects to ISO strings
@@ -19,7 +28,10 @@ export async function getOrganization(organizationId: string): Promise<IOrganiza
   await dbConnect();
   
   try {
-    const org = await Organization.findOne({ organizationId }).lean();
+    // Validate input
+    const validatedOrgId = validateOrThrow(OrganizationIdSchema, organizationId);
+    
+    const org = await Organization.findOne({ organizationId: safeEquals(validatedOrgId) }).lean();
     if (!org) return null;
 
     return serializeOrg(org);
@@ -33,15 +45,25 @@ export async function createOrganization(organization: Omit<IOrganization, 'visi
   await dbConnect();
 
   try {
+    // Validate input
+    const validated = validateOrThrow(CreateOrganizationSchema, organization);
+    
     await Organization.create({
-      ...organization,
+      ...validated,
       visitors: [],
       visitorCount: 0,
     });
+    
+    // Log organization creation
+    await logOrganizationOperation('create', validated.organizationId, undefined, true);
+    
     revalidatePath('/staff/organizations');
   } catch (error) {
-    console.error('Error creating organization:', error);
-    throw new Error('Failed to create organization');
+    // Log failed creation
+    await logOrganizationOperation('create', organization?.organizationId || 'unknown', undefined, false);
+    
+    const handled = handleError(error);
+    throw new Error(handled.message);
   }
 }
 
@@ -49,11 +71,28 @@ export async function updateOrganization(organizationId: string, data: Partial<I
   await dbConnect();
 
   try {
-    await Organization.findOneAndUpdate({ organizationId }, data);
+    // Validate inputs
+    const validatedOrgId = validateOrThrow(OrganizationIdSchema, organizationId);
+    const validatedData = validateOrThrow(UpdateOrganizationSchema, data);
+    
+    // Sanitize for MongoDB injection
+    const sanitizedData = sanitizeForMongo(validatedData, 'update data');
+    
+    await Organization.findOneAndUpdate(
+      { organizationId: safeEquals(validatedOrgId) }, 
+      sanitizedData
+    );
+    
+    // Log organization update
+    await logOrganizationOperation('update', validatedOrgId, undefined, true);
+    
     revalidatePath('/staff/organizations');
   } catch (error) {
-    console.error('Error updating organization:', error);
-    throw new Error('Failed to update organization');
+    // Log failed update
+    await logOrganizationOperation('update', organizationId, undefined, false);
+    
+    const handled = handleError(error);
+    throw new Error(handled.message);
   }
 }
 
@@ -61,11 +100,21 @@ export async function deleteOrganization(organizationId: string): Promise<void> 
   await dbConnect();
 
   try {
-    await Organization.findOneAndDelete({ organizationId });
+    // Validate input
+    const validatedOrgId = validateOrThrow(OrganizationIdSchema, organizationId);
+    
+    await Organization.findOneAndDelete({ organizationId: safeEquals(validatedOrgId) });
+    
+    // Log organization deletion
+    await logOrganizationOperation('delete', validatedOrgId, undefined, true);
+    
     revalidatePath('/staff/organizations');
   } catch (error) {
-    console.error('Error deleting organization:', error);
-    throw new Error('Failed to delete organization');
+    // Log failed deletion
+    await logOrganizationOperation('delete', organizationId, undefined, false);
+    
+    const handled = handleError(error);
+    throw new Error(handled.message);
   }
 }
 
@@ -87,7 +136,10 @@ export async function getOrganizationsByIds(organizationIds: string[]): Promise<
   if (organizationIds.length === 0) return [];
 
   try {
-    const orgs = await Organization.find({ organizationId: { $in: organizationIds } }).lean();
+    // Validate each ID
+    const validatedIds = organizationIds.map(id => validateOrThrow(OrganizationIdSchema, id));
+    
+    const orgs = await Organization.find({ organizationId: { $in: validatedIds } }).lean();
     return orgs.map(serializeOrg);
   } catch (error) {
     console.error('Error getting organizations by IDs:', error);

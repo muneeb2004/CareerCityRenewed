@@ -1,0 +1,27 @@
+# Security Policy for Career City 2026
+# https://securitytxt.org/
+
+# Contact for security issues
+Contact: mailto:security@careercity.edu
+Contact: https://careercity.edu/security
+
+# Encryption key for secure communication (optional)
+# Encryption: https://careercity.edu/.well-known/pgp-key.txt
+
+# Policy document
+Policy: https://careercity.edu/security-policy
+
+# Acknowledgments page for security researchers
+Acknowledgments: https://careercity.edu/security/thanks
+
+# Preferred languages for communication
+Preferred-Languages: en
+
+# Canonical URL for this file
+Canonical: https://careercity.edu/.well-known/security.txt
+
+# Expiry date (update annually)
+Expires: 2027-01-04T00:00:00.000Z
+
+# Hiring security researchers?
+# Hiring: https://careercity.edu/careers/security

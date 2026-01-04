@@ -3,6 +3,15 @@
 import dbConnect from '@/lib/db';
 import { VolunteerQuestion, OrgQuestion, IQuestion } from '@/models/Question';
 import { revalidatePath } from 'next/cache';
+import { QuestionSlugSchema, QuestionSchema, validateOrThrow } from '@/lib/schemas';
+import { safeEquals, sanitizeSlug, sanitizeText } from '@/lib/sanitize';
+import { handleError } from '@/lib/error-handler';
+import { 
+  logResourceCreated, 
+  logResourceUpdated, 
+  logResourceDeleted,
+  logUnhandledError 
+} from '@/lib/security-logger';
 
 // Helper to serialize MongoDB documents for client components
 function serializeQuestion(q: any): any {
@@ -17,12 +26,7 @@ function serializeQuestion(q: any): any {
 
 // Helper to create a meaningful ID from text
 const createSlug = (text: string): string => {
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, '') // Remove non-word chars (except spaces and hyphens)
-    .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
-    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+  return sanitizeSlug(text) || `question-${Date.now()}`;
 };
 
 // --- Volunteer Questions ---
@@ -30,20 +34,25 @@ const createSlug = (text: string): string => {
 export async function createVolunteerQuestion(question: Omit<IQuestion, 'slug'>): Promise<string> {
   await dbConnect();
   
-  const slug = createSlug(question.text) || `question-${Date.now()}`;
-  
   try {
+    // Validate question data
+    const validated = validateOrThrow(QuestionSchema, question);
+    const slug = createSlug(validated.text);
+    
     await VolunteerQuestion.findOneAndUpdate(
-      { slug }, 
-      { ...question, slug }, 
+      { slug: safeEquals(slug) }, 
+      { ...validated, slug }, 
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
+
+    // Log question creation
+    await logResourceCreated('volunteer_question', slug);
 
     revalidatePath('/staff/student-questions');
     return slug;
   } catch (error) {
-    console.error('Error creating volunteer question:', error);
-    throw error;
+    const handled = handleError(error);
+    throw new Error(handled.message);
   }
 }
 
@@ -63,11 +72,19 @@ export async function updateVolunteerQuestion(slug: string, data: Partial<IQuest
   await dbConnect();
   
   try {
-    await VolunteerQuestion.findOneAndUpdate({ slug }, data);
+    // Validate inputs
+    const validatedSlug = validateOrThrow(QuestionSlugSchema, slug);
+    const validatedData = validateOrThrow(QuestionSchema.partial(), data);
+    
+    await VolunteerQuestion.findOneAndUpdate({ slug: safeEquals(validatedSlug) }, validatedData);
+    
+    // Log question update
+    await logResourceUpdated('volunteer_question', validatedSlug, undefined, Object.keys(validatedData));
+    
     revalidatePath('/staff/student-questions');
   } catch (error) {
-    console.error('Error updating volunteer question:', error);
-    throw error;
+    const handled = handleError(error);
+    throw new Error(handled.message);
   }
 }
 
@@ -75,30 +92,43 @@ export async function deleteVolunteerQuestion(slug: string): Promise<void> {
   await dbConnect();
   
   try {
-    await VolunteerQuestion.findOneAndDelete({ slug });
+    // Validate input
+    const validatedSlug = validateOrThrow(QuestionSlugSchema, slug);
+    
+    await VolunteerQuestion.findOneAndDelete({ slug: safeEquals(validatedSlug) });
+    
+    // Log question deletion
+    await logResourceDeleted('volunteer_question', validatedSlug);
+    
     revalidatePath('/staff/student-questions');
   } catch (error) {
-    console.error('Error deleting volunteer question:', error);
-    throw error;
+    const handled = handleError(error);
+    throw new Error(handled.message);
   }
 }
 
 export async function bulkUpdateVolunteerQuestions(updates: { slug: string; data: Partial<IQuestion> }[]): Promise<void> {
   await dbConnect();
   
-  const bulkOps = updates.map(update => ({
-    updateOne: {
-      filter: { slug: update.slug },
-      update: { $set: update.data }
-    }
-  }));
-
   try {
+    // Validate each update
+    const validatedUpdates = updates.map(update => ({
+      slug: validateOrThrow(QuestionSlugSchema, update.slug),
+      data: validateOrThrow(QuestionSchema.partial(), update.data),
+    }));
+
+    const bulkOps = validatedUpdates.map(update => ({
+      updateOne: {
+        filter: { slug: safeEquals(update.slug) },
+        update: { $set: update.data }
+      }
+    }));
+
     await VolunteerQuestion.bulkWrite(bulkOps);
     revalidatePath('/staff/student-questions');
   } catch (error) {
-    console.error('Error bulk updating volunteer questions:', error);
-    throw error;
+    const handled = handleError(error);
+    throw new Error(handled.message);
   }
 }
 
@@ -107,20 +137,25 @@ export async function bulkUpdateVolunteerQuestions(updates: { slug: string; data
 export async function createOrganizationFeedbackQuestion(question: Omit<IQuestion, 'slug'>): Promise<string> {
   await dbConnect();
 
-  const slug = createSlug(question.text) || `question-${Date.now()}`;
-
   try {
+    // Validate question data
+    const validated = validateOrThrow(QuestionSchema, question);
+    const slug = createSlug(validated.text);
+
     await OrgQuestion.findOneAndUpdate(
-      { slug },
-      { ...question, slug },
+      { slug: safeEquals(slug) },
+      { ...validated, slug },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
+
+    // Log question creation
+    await logResourceCreated('org_question', slug);
 
     revalidatePath('/staff/organization-feedback-questions');
     return slug;
   } catch (error) {
-    console.error('Error creating org question:', error);
-    throw error;
+    const handled = handleError(error);
+    throw new Error(handled.message);
   }
 }
 
@@ -140,11 +175,19 @@ export async function updateOrganizationFeedbackQuestion(slug: string, data: Par
   await dbConnect();
   
   try {
-    await OrgQuestion.findOneAndUpdate({ slug }, data);
+    // Validate inputs
+    const validatedSlug = validateOrThrow(QuestionSlugSchema, slug);
+    const validatedData = validateOrThrow(QuestionSchema.partial(), data);
+    
+    await OrgQuestion.findOneAndUpdate({ slug: safeEquals(validatedSlug) }, validatedData);
+    
+    // Log question update
+    await logResourceUpdated('org_question', validatedSlug, undefined, Object.keys(validatedData));
+    
     revalidatePath('/staff/organization-feedback-questions');
   } catch (error) {
-    console.error('Error updating org question:', error);
-    throw error;
+    const handled = handleError(error);
+    throw new Error(handled.message);
   }
 }
 
@@ -152,29 +195,42 @@ export async function deleteOrganizationFeedbackQuestion(slug: string): Promise<
   await dbConnect();
   
   try {
-    await OrgQuestion.findOneAndDelete({ slug });
+    // Validate input
+    const validatedSlug = validateOrThrow(QuestionSlugSchema, slug);
+    
+    await OrgQuestion.findOneAndDelete({ slug: safeEquals(validatedSlug) });
+    
+    // Log question deletion
+    await logResourceDeleted('org_question', validatedSlug);
+    
     revalidatePath('/staff/organization-feedback-questions');
   } catch (error) {
-    console.error('Error deleting org question:', error);
-    throw error;
+    const handled = handleError(error);
+    throw new Error(handled.message);
   }
 }
 
 export async function bulkUpdateOrganizationFeedbackQuestions(updates: { slug: string; data: Partial<IQuestion> }[]): Promise<void> {
   await dbConnect();
   
-  const bulkOps = updates.map(update => ({
-    updateOne: {
-      filter: { slug: update.slug },
-      update: { $set: update.data }
-    }
-  }));
-
   try {
+    // Validate each update
+    const validatedUpdates = updates.map(update => ({
+      slug: validateOrThrow(QuestionSlugSchema, update.slug),
+      data: validateOrThrow(QuestionSchema.partial(), update.data),
+    }));
+
+    const bulkOps = validatedUpdates.map(update => ({
+      updateOne: {
+        filter: { slug: safeEquals(update.slug) },
+        update: { $set: update.data }
+      }
+    }));
+
     await OrgQuestion.bulkWrite(bulkOps);
     revalidatePath('/staff/organization-feedback-questions');
   } catch (error) {
-    console.error('Error bulk updating org questions:', error);
-    throw error;
+    const handled = handleError(error);
+    throw new Error(handled.message);
   }
 }

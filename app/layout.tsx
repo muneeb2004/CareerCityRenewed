@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import CameraCleanup from '../src/components/CameraCleanup';
+import { OfflineIndicator } from '@/lib/components/ui/OfflineIndicator';
+import { WebVitalsReporter } from '@/lib/components/ui/WebVitalsReporter';
 import './globals.css';
 import { Analytics } from "@vercel/analytics/next"
 
@@ -55,6 +57,8 @@ export default function RootLayout({
       >
         <CameraCleanup />
         <Toaster position="top-center" />
+        <OfflineIndicator />
+        <WebVitalsReporter />
         {children}
       </body>
     </html>

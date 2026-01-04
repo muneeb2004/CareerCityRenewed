@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   getAllOrganizations,
@@ -9,6 +9,7 @@ import {
   deleteOrganization,
 } from '@/actions/organizations';
 import QRCodeGenerator from '@/components/organization/QRCodeGenerator';
+import { OrganizationCard } from '@/components/organization/OrganizationCard';
 import { Organization } from '@/types';
 import { Toaster } from 'react-hot-toast';
 import { showSuccess, showError } from '@/lib/utils/toast';
@@ -122,7 +123,7 @@ export default function OrganizationManagement() {
     }
   };
 
-  const handleEdit = (org: Organization) => {
+  const handleEdit = useCallback((org: Organization) => {
     setEditingOrganization(org.organizationId);
     // Reset form with organization values
     reset({
@@ -135,12 +136,12 @@ export default function OrganizationManagement() {
         category: org.category || '',
     });
     setShowAddForm(true);
-  };
+  }, [reset]);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = useCallback((id: string) => {
     setDeleteId(id);
     setShowDeleteModal(true);
-  };
+  }, []);
 
   const confirmDelete = async () => {
     if (!deleteId) return;
@@ -370,46 +371,13 @@ export default function OrganizationManagement() {
             ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {organizations.map((organization) => (
-                <div
-                key={organization.organizationId}
-                className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col items-center relative group transition-all duration-300 hover:shadow-md hover:border-blue-300"
-                >
-                <div className="transform transition-transform group-hover:scale-105">
-                    <QRCodeGenerator organization={organization} />
-                </div>
-                
-                <div className="mt-4 text-center w-full">
-                    <h3 className="font-bold text-gray-800 truncate w-full" title={organization.name}>
-                        {organization.name}
-                    </h3>
-                    
-                    <div className="flex items-center justify-center gap-2 mt-1 text-xs text-gray-500">
-                        <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md font-medium border border-blue-100">
-                            Booth {organization.boothNumber}
-                        </span>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1 truncate">
-                        {organization.industry}
-                    </p>
-                </div>
-
-                <div className="flex items-center gap-2 mt-4 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200 absolute top-2 right-2 bg-white border border-gray-100 p-1 rounded-lg shadow-sm">
-                    <button
-                    onClick={() => handleEdit(organization)}
-                    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                    title="Edit"
-                    >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                    </button>
-                    <button
-                    onClick={() => handleDelete(organization.organizationId)}
-                    className="p-1.5 text-red-500 hover:bg-red-50 rounded-md transition-colors"
-                    title="Delete"
-                    >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                    </button>
-                </div>
-                </div>
+                  <OrganizationCard
+                    key={organization.organizationId}
+                    organization={organization}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    showActions={true}
+                  />
             ))}
             </div>
             )}

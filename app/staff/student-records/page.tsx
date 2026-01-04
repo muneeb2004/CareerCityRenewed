@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getAllStudents } from '@/actions/student';
 import { getAllStudentFeedback, StudentFeedbackRecord } from '@/actions/feedback';
 import { getAllOrganizations } from '@/actions/organizations';
@@ -13,13 +13,22 @@ import { Skeleton } from '@/lib/components/ui/Skeleton';
 import { EmptyState } from '@/lib/components/ui/EmptyState';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 import { List } from 'react-window';
+import { StudentRowItem } from '@/components/student/StudentRowItem';
 
 export default function StudentRecordsPage() {
+  // Priority 1: Students (critical, shown immediately)
   const [students, setStudents] = useState<Student[]>([]);
-  const [feedbackRecords, setFeedbackRecords] = useState<StudentFeedbackRecord[]>([]);
+  const [studentsLoading, setStudentsLoading] = useState(true);
+  
+  // Priority 2: Organizations (needed for display names)
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [orgsLoading, setOrgsLoading] = useState(true);
+  
+  // Priority 3: Feedback and questions (deferred, less critical for initial view)
+  const [feedbackRecords, setFeedbackRecords] = useState<StudentFeedbackRecord[]>([]);
   const [questions, setQuestions] = useState<VolunteerQuestion[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [feedbackLoading, setFeedbackLoading] = useState(true);
+  
   const [mounted, setMounted] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -32,30 +41,77 @@ export default function StudentRecordsPage() {
 
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  useEffect(() => {
-    setMounted(true);
-    fetchData();
+  // Priority 1: Load students first (critical for list view)
+  const fetchStudents = useCallback(async () => {
+    try {
+      setStudentsLoading(true);
+      const studentsData = await getAllStudents();
+      setStudents(studentsData as unknown as Student[]);
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      showError('Failed to load students');
+    } finally {
+      setStudentsLoading(false);
+    }
   }, []);
 
-  const fetchData = async () => {
+  // Priority 2: Load organizations (needed for org name display)
+  const fetchOrganizations = useCallback(async () => {
     try {
-      setLoading(true);
-      const [studentsData, feedbackData, orgsData, questionsData] = await Promise.all([
-        getAllStudents(),
+      setOrgsLoading(true);
+      const orgsData = await getAllOrganizations();
+      setOrganizations(orgsData as unknown as Organization[]);
+    } catch (error) {
+      console.error('Error fetching organizations:', error);
+    } finally {
+      setOrgsLoading(false);
+    }
+  }, []);
+
+  // Priority 3: Load feedback and questions (deferred)
+  const fetchFeedbackData = useCallback(async () => {
+    try {
+      setFeedbackLoading(true);
+      const [feedbackData, questionsData] = await Promise.all([
         getAllStudentFeedback(),
-        getAllOrganizations(),
         getAllVolunteerQuestions(),
       ]);
-      setStudents(studentsData as unknown as Student[]);
       setFeedbackRecords(feedbackData);
-      setOrganizations(orgsData as unknown as Organization[]);
       setQuestions(questionsData as unknown as VolunteerQuestion[]);
     } catch (error) {
-      console.error('Error fetching data:', error);
-      showError('Failed to load student records');
+      console.error('Error fetching feedback data:', error);
     } finally {
-      setLoading(false);
+      setFeedbackLoading(false);
     }
+  }, []);
+
+  // Progressive loading sequence
+  useEffect(() => {
+    setMounted(true);
+    fetchStudents();
+  }, [fetchStudents]);
+
+  // Load organizations after students (or in parallel, but show students first)
+  useEffect(() => {
+    if (!studentsLoading) {
+      fetchOrganizations();
+    }
+  }, [studentsLoading, fetchOrganizations]);
+
+  // Load feedback data last (deferred, non-blocking)
+  useEffect(() => {
+    if (!orgsLoading) {
+      // Small delay to ensure UI is responsive
+      const timer = setTimeout(fetchFeedbackData, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [orgsLoading, fetchFeedbackData]);
+
+  // Full refresh function for manual refresh
+  const fetchData = async () => {
+    await fetchStudents();
+    await fetchOrganizations();
+    await fetchFeedbackData();
   };
 
   // Get organization name by ID
@@ -70,10 +126,15 @@ export default function StudentRecordsPage() {
     return question?.text || questionId;
   };
 
-  // Get feedback for a specific student
-  const getStudentFeedback = (studentId: string) => {
+  // Get feedback for a specific student - memoized for stable reference
+  const getStudentFeedback = useCallback((studentId: string) => {
     return feedbackRecords.find(f => f.studentId === studentId);
-  };
+  }, [feedbackRecords]);
+
+  // Memoized callback for selecting a student
+  const handleSelectStudent = useCallback((student: Student) => {
+    setSelectedStudent(student);
+  }, []);
 
   // Filter students by search term and advanced filters
   const filteredStudents = students.filter(student => {
@@ -231,16 +292,20 @@ export default function StudentRecordsPage() {
           )}
         </div>
         <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-3 md:p-4 text-center">
-          <div className="text-2xl md:text-3xl font-bold text-blue-600">{students.length}</div>
+          <div className="text-2xl md:text-3xl font-bold text-blue-600">
+            {studentsLoading ? <Skeleton className="h-8 w-12 mx-auto" /> : students.length}
+          </div>
           <div className="text-xs md:text-sm text-gray-500">Students</div>
         </div>
         <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-3 md:p-4 text-center">
-          <div className="text-2xl md:text-3xl font-bold text-violet-600">{feedbackRecords.length}</div>
+          <div className="text-2xl md:text-3xl font-bold text-violet-600">
+            {feedbackLoading ? <Skeleton className="h-8 w-12 mx-auto" /> : feedbackRecords.length}
+          </div>
           <div className="text-xs md:text-sm text-gray-500">Feedback</div>
         </div>
       </div>
 
-      {loading ? (
+      {studentsLoading ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Student List Skeleton */}
           <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-4 md:p-6">
@@ -320,44 +385,14 @@ export default function StudentRecordsPage() {
                     const student = filteredStudents[index];
                     const hasFeedback = !!getStudentFeedback(student.studentId);
                     return (
-                      <div style={{ ...style, paddingBottom: '8px' }}>
-                        <div
-                          key={student.studentId}
-                          onClick={() => setSelectedStudent(student)}
-                          className={`p-4 rounded-xl border cursor-pointer h-full transition-all duration-200 ${
-                            selectedStudent?.studentId === student.studentId
-                              ? 'border-blue-500 bg-blue-50 shadow-md'
-                              : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div className="truncate">
-                              <div className="font-bold text-gray-800 truncate">
-                                {student.fullName || 'No Name'}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                ID: {student.studentId}
-                              </div>
-                              <div className="text-sm text-gray-500 truncate">
-                                {student.email}
-                              </div>
-                            </div>
-                            <div className="text-right shrink-0">
-                              <div className="text-sm">
-                                <span className="font-semibold text-blue-600">
-                                  {student.visitedStalls?.length || 0}
-                                </span>{' '}
-                                <span className="text-gray-500">visits</span>
-                              </div>
-                              {hasFeedback && (
-                                <span className="inline-block px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded-full mt-1">
-                                  Feedback ✓
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      <StudentRowItem
+                        key={student.studentId}
+                        student={student}
+                        isSelected={selectedStudent?.studentId === student.studentId}
+                        hasFeedback={hasFeedback}
+                        onSelect={handleSelectStudent}
+                        style={style}
+                      />
                     );
                   }}
                   rowProps={{}}

@@ -856,26 +856,350 @@ export function measurePerformance() {
 ## Quick Implementation Priority
 
 **Stage 1 (High Impact):**
-- [ ] Add React.memo to list items
-- [ ] Implement optimistic UI for QR scanning
-- [ ] Add loading skeletons
-- [ ] Optimize images with Next.js Image
+- [x] Add React.memo to list items *(Implemented: OrganizationCard, StudentRowItem, ScanHistoryItem)*
+- [x] Implement optimistic UI for QR scanning *(Implemented in `app/student/page.tsx` with `useOptimistic`)*
+- [x] Add loading skeletons *(Implemented in `src/lib/components/ui/Skeleton.tsx` - Skeleton, CardSkeleton, ListRowSkeleton, etc.)*
+- [x] Optimize images with Next.js Image *(Used throughout: page.tsx, student-records, login, volunteer pages)*
 
 **Stage 2 (Medium Impact):**
-- [ ] Add virtualization to long lists
-- [ ] Implement debounced search
-- [ ] Set up Zustand for state management
-- [ ] Add error boundaries
+- [x] Add virtualization to long lists *(Implemented with `react-window` in `app/staff/student-records/page.tsx`)*
+- [x] Implement debounced search *(Implemented via `useDebounce` hook in `src/lib/hooks/useDebounce.ts`, used in student-records)*
+- [x] Set up Zustand for state management *(Implemented in `src/lib/store/organizationStore.ts` with 5-min cache)*
+- [x] Add error boundaries *(Implemented using `react-error-boundary` in `app/staff/layout.tsx`)*
 
 **Stage 3 (Polish):**
-- [ ] Implement offline support
-- [ ] Add progressive loading
-- [ ] Lazy load heavy components
-- [ ] Set up performance monitoring
+- [x] Implement offline support *(Implemented with next-pwa + OfflineQueue in `src/lib/offline-queue.ts`)*
+- [x] Add progressive loading *(Implemented in staff/page.tsx, staff/analytics/page.tsx, staff/student-records/page.tsx)*
+- [x] Lazy load heavy components *(QRScanner and Recharts use `next/dynamic`)*
+- [x] Set up performance monitoring *(Implemented in `src/lib/monitoring.ts` - MongoDB query/transaction monitoring)*
+
+**Additional Observations:**
+- [x] `useCallback` extensively used in student page, hooks, and UI components
+- [x] `useMemo` used in student page for scannedIds
+- [x] Client-side Web Vitals monitoring *(Implemented in `src/lib/web-vitals.ts` + `WebVitalsReporter.tsx`)*
 
 **Expected Results:**
 - Initial page load: < 2 seconds
 - Time to interactive: < 3 seconds
 - Smooth 60fps scrolling
-- Works offline with queued actions
-- No crashes from single component failures
+- Works offline with queued actions *(Implemented)*
+- No crashes from single component failures *(Error boundaries in place)*
+
+---
+
+# Remaining Implementation Stages
+
+## Stage 4: Component Optimization ✅ COMPLETED
+*Goal: Reduce unnecessary re-renders in list-heavy pages.*
+
+### 4.1 Add React.memo to List Item Components
+**Priority:** Medium | **Effort:** Low | **Impact:** 30-50% fewer re-renders
+
+**Files created:**
+- [x] `src/components/organization/OrganizationCard.tsx` - Memoized with custom comparison
+- [x] `src/components/student/StudentRowItem.tsx` - Memoized for virtualized lists  
+- [x] `src/components/student/ScanHistoryItem.tsx` - Memoized for scan history
+
+**Pages updated to use memoized components:**
+- [x] `app/staff/organizations/page.tsx` - Uses `OrganizationCard`
+- [x] `app/staff/student-records/page.tsx` - Uses `StudentRowItem`
+- [x] `app/student/page.tsx` - Uses `ScanHistoryItem`
+
+---
+
+## Stage 5: Progressive Loading ✅ COMPLETED
+*Goal: Show critical content faster by deferring non-essential data.*
+
+### 5.1 Implement Priority-Based Data Loading
+**Priority:** Medium | **Effort:** Medium | **Impact:** 40-60% faster initial render
+
+**Files updated:**
+- [x] `app/staff/page.tsx` - Loads student stats first, then defers recent scans
+- [x] `app/staff/analytics/page.tsx` - Loads summary metrics first, defers chart computation
+- [x] `app/staff/student-records/page.tsx` - Loads students first, then orgs, then feedback/questions
+
+**Implementation Pattern:**
+```tsx
+'use client';
+
+import { useState, useEffect } from 'react';
+
+export default function StaffDashboard() {
+  // Priority 1: Critical data (blocks render)
+  const [stats, setStats] = useState<Stats | null>(null);
+  
+  // Priority 2: Important but deferrable
+  const [recentScans, setRecentScans] = useState<Scan[] | null>(null);
+  
+  // Priority 3: Nice-to-have (load last)
+  const [analytics, setAnalytics] = useState<Analytics | null>(null);
+
+  useEffect(() => {
+    // Load in priority order
+    getQuickStats().then(setStats);
+  }, []);
+
+  useEffect(() => {
+    // Only load after stats are ready
+    if (stats) {
+      getRecentScans(5).then(setRecentScans);
+    }
+  }, [stats]);
+
+  useEffect(() => {
+    // Load analytics after a delay (non-blocking)
+    const timer = setTimeout(() => {
+      getAnalytics().then(setAnalytics);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!stats) return <DashboardSkeleton />;
+
+  return (
+    <div>
+      <StatsCards stats={stats} />
+      {recentScans ? <RecentScans scans={recentScans} /> : <ScansSkeleton />}
+      {analytics ? <AnalyticsPanel data={analytics} /> : <AnalyticsSkeleton />}
+    </div>
+  );
+}
+```
+
+---
+
+## Stage 6: Offline Support (PWA) ✅ COMPLETED
+*Goal: App works without network, queues actions for later sync.*
+
+### 6.1 Install and Configure next-pwa
+**Priority:** Low | **Effort:** Medium | **Impact:** Works offline
+
+**Steps:**
+- [x] Install `next-pwa`: `npm install next-pwa`
+- [x] Update `next.config.js` with PWA configuration (CacheFirst for assets, NetworkFirst for API/pages)
+- [x] Verify `public/manifest.json` exists (already present)
+- [x] Create `src/lib/offline-queue.ts` for action queuing
+- [x] Create `src/lib/hooks/useOfflineQueue.ts` for React integration
+- [x] Create `src/lib/components/ui/OfflineIndicator.tsx` for status display
+- [x] Add `OfflineIndicator` to root layout
+
+**next.config.js update:**
+```javascript
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  disable: process.env.NODE_ENV === 'development',
+  register: true,
+  skipWaiting: true,
+  runtimeCaching: [
+    {
+      urlPattern: /^https:\/\/.*\.(?:png|jpg|jpeg|svg|gif|webp)$/,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'image-cache',
+        expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 * 30 },
+      },
+    },
+  ],
+});
+
+module.exports = withPWA(nextConfig);
+```
+
+### 6.2 Create Offline Action Queue
+**File:** `src/lib/offline-queue.ts`
+
+```typescript
+interface QueuedAction {
+  id: string;
+  action: 'recordVisit' | 'submitFeedback';
+  data: any;
+  timestamp: number;
+  retries: number;
+}
+
+class OfflineQueue {
+  private readonly STORAGE_KEY = 'career_city_offline_queue';
+  
+  constructor() {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', () => this.processQueue());
+    }
+  }
+
+  add(action: string, data: any): void {
+    const queue = this.getQueue();
+    queue.push({
+      id: crypto.randomUUID(),
+      action: action as any,
+      data,
+      timestamp: Date.now(),
+      retries: 0,
+    });
+    this.saveQueue(queue);
+  }
+
+  async processQueue(): Promise<void> {
+    const queue = this.getQueue();
+    const remaining: QueuedAction[] = [];
+
+    for (const item of queue) {
+      try {
+        await this.executeAction(item);
+      } catch {
+        if (item.retries < 3) {
+          remaining.push({ ...item, retries: item.retries + 1 });
+        }
+      }
+    }
+    
+    this.saveQueue(remaining);
+  }
+
+  private getQueue(): QueuedAction[] {
+    const saved = localStorage.getItem(this.STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  }
+
+  private saveQueue(queue: QueuedAction[]): void {
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(queue));
+  }
+
+  private async executeAction(item: QueuedAction): Promise<void> {
+    // Import and call the appropriate server action
+    const { recordVisit, submitFeedback } = await import('@/actions/scans');
+    
+    switch (item.action) {
+      case 'recordVisit':
+        await recordVisit(item.data.studentId, /* ... */);
+        break;
+      // Add other actions as needed
+    }
+  }
+}
+
+export const offlineQueue = new OfflineQueue();
+```
+
+---
+
+## Stage 7: Client-Side Web Vitals ✅ COMPLETED
+*Goal: Monitor real user performance metrics.*
+
+### 7.1 Add Web Vitals Tracking
+**Priority:** Low | **Effort:** Low | **Impact:** Visibility into real performance
+
+**Files created:**
+- [x] `src/lib/web-vitals.ts` - Comprehensive Web Vitals tracking with CLS, FCP, INP, LCP, TTFB
+- [x] `src/lib/components/ui/WebVitalsReporter.tsx` - Client component for layout integration
+
+**Implementation details:**
+- Tracks all Core Web Vitals: CLS, FCP, INP (replaced FID), LCP, TTFB
+- Includes thresholds for good/needs-improvement/poor ratings
+- Color-coded console logging in development
+- Analytics support ready for production
+- `getPerformanceSummary()` helper for debugging
+
+**Usage in layout:**
+```tsx
+// app/layout.tsx
+import { WebVitalsReporter } from '@/lib/components/ui/WebVitalsReporter';
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <WebVitalsReporter />
+        {children}
+      </body>
+    </html>
+  );
+}
+```
+
+**Dependency installed:**
+```bash
+npm install web-vitals
+```
+
+**File:** `src/lib/web-vitals.ts`
+
+```typescript
+import { onCLS, onFID, onLCP, onFCP, onTTFB } from 'web-vitals';
+
+type MetricName = 'CLS' | 'FID' | 'LCP' | 'FCP' | 'TTFB';
+
+interface WebVitalMetric {
+  name: MetricName;
+  value: number;
+  rating: 'good' | 'needs-improvement' | 'poor';
+}
+
+const thresholds: Record<MetricName, [number, number]> = {
+  CLS: [0.1, 0.25],
+  FID: [100, 300],
+  LCP: [2500, 4000],
+  FCP: [1800, 3000],
+  TTFB: [800, 1800],
+};
+
+function getRating(name: MetricName, value: number): WebVitalMetric['rating'] {
+  const [good, poor] = thresholds[name];
+  if (value <= good) return 'good';
+  if (value <= poor) return 'needs-improvement';
+  return 'poor';
+}
+
+export function initWebVitals(onMetric?: (metric: WebVitalMetric) => void) {
+  const report = (name: MetricName) => (metric: any) => {
+    const data: WebVitalMetric = {
+      name,
+      value: metric.value,
+      rating: getRating(name, metric.value),
+    };
+    
+    console.log(`[Web Vital] ${name}: ${metric.value.toFixed(2)} (${data.rating})`);
+    onMetric?.(data);
+  };
+
+  onCLS(report('CLS'));
+  onFID(report('FID'));
+  onLCP(report('LCP'));
+  onFCP(report('FCP'));
+  onTTFB(report('TTFB'));
+}
+```
+
+**Usage in layout:**
+```tsx
+// app/layout.tsx
+'use client';
+
+import { useEffect } from 'react';
+import { initWebVitals } from '@/lib/web-vitals';
+
+export default function RootLayout({ children }) {
+  useEffect(() => {
+    initWebVitals();
+  }, []);
+  
+  return <html>...</html>;
+}
+```
+
+**Install dependency:**
+```bash
+npm install web-vitals
+```
+
+---
+
+## Implementation Timeline
+
+| Stage | Tasks | Effort | Priority |
+|-------|-------|--------|----------|
+| **Stage 4** | React.memo for list items | 2-3 hours | Medium |
+| **Stage 5** | Progressive loading | 4-6 hours | Medium |
+| **Stage 6** | PWA + Offline queue | 6-8 hours | Low |
+| **Stage 7** | Web Vitals tracking | 1-2 hours | Low |
+
+**Recommended order:** Stage 4 → Stage 7 → Stage 5 → Stage 6

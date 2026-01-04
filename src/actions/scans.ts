@@ -9,6 +9,14 @@ import { revalidatePath } from 'next/cache';
 import { isDuplicate } from '@/lib/deduplication';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { dbBreaker } from '@/lib/circuit-breaker';
+import { RecordVisitSchema, StudentIdSchema, OrganizationIdSchema, validateOrThrow } from '@/lib/schemas';
+import { safeEquals } from '@/lib/sanitize';
+import { handleError } from '@/lib/error-handler';
+import { 
+  logScanOperation, 
+  logRateLimitExceeded, 
+  logUnhandledError 
+} from '@/lib/security-logger';
 
 // Helper to serialize MongoDB documents for client components
 // Converts _id to string and Date objects to ISO strings
@@ -35,16 +43,28 @@ export async function recordVisit(
   organizationName: string,
   boothNumber: string
 ) {
-  // 0. Rate Limit Check (10 scans per 10s per student)
-  const rateLimit = checkRateLimit(studentId, 10, 10000);
+  // Validate all inputs first
+  const validated = validateOrThrow(RecordVisitSchema, {
+    studentId,
+    studentEmail,
+    studentProgram,
+    organizationId,
+    organizationName,
+    boothNumber,
+  });
+
+  // 0. Rate Limit Check (using 'scan' endpoint type)
+  const rateLimit = checkRateLimit(validated.studentId, 'scan');
   if (!rateLimit.allowed) {
-    throw new Error('Too many requests. Please wait a moment.');
+    // Log rate limit exceeded
+    await logRateLimitExceeded(validated.studentId, 'recordVisit');
+    throw new Error(rateLimit.message || 'Too many requests. Please wait a moment.');
   }
 
   // 1. Deduplication check
-  const dedupKey = `scan:${studentId}:${organizationId}`;
+  const dedupKey = `scan:${validated.studentId}:${validated.organizationId}`;
   if (isDuplicate(dedupKey)) {
-    console.log(`[DEDUP] Duplicate scan prevented for ${studentId} at ${organizationId}`);
+    console.log(`[DEDUP] Duplicate scan prevented for ${validated.studentId} at ${validated.organizationId}`);
     return { success: true, deduplicated: true };
   }
 
@@ -68,9 +88,9 @@ export async function recordVisit(
 
                 // ... (keep existing transaction logic)
 
-                // 1. Find student (Lean & Selected Fields)
+                // 1. Find student (Lean & Selected Fields) - Use safe equals
 
-                const student = await Student.findOne({ studentId })
+                const student = await Student.findOne({ studentId: safeEquals(validated.studentId) })
 
                   .select('visitedStalls scanCount')
 
@@ -88,7 +108,7 @@ export async function recordVisit(
 
                 // @ts-ignore - lean() returns POJO
 
-                if (student.visitedStalls && student.visitedStalls.includes(organizationId)) {
+                if (student.visitedStalls && student.visitedStalls.includes(validated.organizationId)) {
 
                   throw new Error('Already visited this organization'); // Logic error
 
@@ -98,27 +118,27 @@ export async function recordVisit(
 
                 const newScanCount = (student.scanCount || 0) + 1;
 
-                const scanId = `${studentId}_${newScanCount}`;
+                const scanId = `${validated.studentId}_${newScanCount}`;
 
     
 
-                // 3. Create scan record
+                // 3. Create scan record with validated data
 
                 await Scan.create([{
 
                   scanId,
 
-                  studentId,
+                  studentId: validated.studentId,
 
-                  studentEmail,
+                  studentEmail: validated.studentEmail,
 
-                  studentProgram,
+                  studentProgram: validated.studentProgram,
 
-                  organizationId,
+                  organizationId: validated.organizationId,
 
-                  organizationName,
+                  organizationName: validated.organizationName,
 
-                  boothNumber,
+                  boothNumber: validated.boothNumber,
 
                   timestamp: new Date(),
 
@@ -128,17 +148,17 @@ export async function recordVisit(
 
                 
 
-                // 4. Update student
+                // 4. Update student - Use safe equals
 
                 await Student.updateOne(
 
-                  { studentId },
+                  { studentId: safeEquals(validated.studentId) },
 
                   { 
 
                     $inc: { scanCount: 1 },
 
-                    $push: { visitedStalls: organizationId },
+                    $push: { visitedStalls: validated.organizationId },
 
                     $set: { lastScanTime: new Date() }
 
@@ -148,17 +168,17 @@ export async function recordVisit(
 
                 
 
-                // 5. Update organization
+                // 5. Update organization - Use safe equals
 
                 await Organization.updateOne(
 
-                  { organizationId },
+                  { organizationId: safeEquals(validated.organizationId) },
 
                   { 
 
                     $inc: { visitorCount: 1 },
 
-                    $push: { visitors: studentId }
+                    $push: { visitors: validated.studentId }
 
                   }
 
@@ -180,7 +200,10 @@ export async function recordVisit(
 
               
 
-              console.log(`Visit recorded successfully for ${studentId} at ${organizationId}`);
+              console.log(`Visit recorded successfully for ${validated.studentId} at ${validated.organizationId}`);
+              
+              // Log successful scan
+              await logScanOperation(validated.studentId, validated.organizationId, true);
 
     
 
@@ -249,16 +272,25 @@ export async function recordVisit(
         });
 
       } catch (error) {
+        // Log failed scan
+        await logScanOperation(studentId, organizationId, false, error instanceof Error ? error.message : 'Unknown error');
+        
+        const handled = handleError(error);
 
-        throw error;
+        throw new Error(handled.message);
 
       }
 
-    }export async function getScansByStudent(studentId: string): Promise<IScan[]> {
+    }
+
+export async function getScansByStudent(studentId: string): Promise<IScan[]> {
   await dbConnect();
   
   try {
-    const scans = await Scan.find({ studentId })
+    // Validate input
+    const validatedStudentId = validateOrThrow(StudentIdSchema, studentId);
+    
+    const scans = await Scan.find({ studentId: safeEquals(validatedStudentId) })
       .sort({ timestamp: -1 })
       .lean();
 
@@ -288,7 +320,10 @@ export async function getScansByOrganization(organizationId: string): Promise<IS
   await dbConnect();
   
   try {
-    const scans = await Scan.find({ organizationId })
+    // Validate input
+    const validatedOrgId = validateOrThrow(OrganizationIdSchema, organizationId);
+    
+    const scans = await Scan.find({ organizationId: safeEquals(validatedOrgId) })
       .sort({ timestamp: -1 })
       .lean();
 

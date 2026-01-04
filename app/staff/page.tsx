@@ -8,36 +8,66 @@ import { getAllStudents } from '@/actions/student';
 import { getAllScans } from '@/actions/scans';
 
 export default function StaffDashboard() {
+  // Priority 1: Quick stats (blocks initial render)
+  const [totalStudents, setTotalStudents] = useState<number | null>(null);
+  const [totalScans, setTotalScans] = useState<number | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  
+  // Priority 2: Recent activity (loaded after stats)
   const [recentScans, setRecentScans] = useState<Scan[]>([]);
-  const [totalScans, setTotalScans] = useState(0);
-  const [totalStudents, setTotalStudents] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [scansLoading, setScansLoading] = useState(true);
+  
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
-  const fetchData = useCallback(async () => {
+  // Priority 1: Load quick stats first (fast, critical for dashboard)
+  const fetchStats = useCallback(async () => {
     try {
-      const [students, scans] = await Promise.all([
-        getAllStudents(),
-        getAllScans(),
-      ]);
+      setStatsLoading(true);
+      const students = await getAllStudents();
       setTotalStudents(students.length);
-      setTotalScans(scans.length);
-      // Get recent 5 scans (already sorted by timestamp desc from action)
-      setRecentScans((scans as unknown as Scan[]).slice(0, 5));
       setLastRefresh(new Date());
     } catch (error) {
-      console.error("Error fetching dashboard data", error);
+      console.error("Error fetching stats:", error);
     } finally {
-      setLoading(false);
+      setStatsLoading(false);
     }
   }, []);
 
+  // Priority 2: Load recent scans after stats are ready
+  const fetchRecentScans = useCallback(async () => {
+    try {
+      setScansLoading(true);
+      const scans = await getAllScans();
+      setTotalScans(scans.length);
+      // Get recent 5 scans (already sorted by timestamp desc from action)
+      setRecentScans((scans as unknown as Scan[]).slice(0, 5));
+    } catch (error) {
+      console.error("Error fetching recent scans:", error);
+    } finally {
+      setScansLoading(false);
+    }
+  }, []);
+
+  // Progressive loading: stats first, then scans
   useEffect(() => {
-    fetchData();
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(fetchData, 30000);
+    fetchStats();
+  }, [fetchStats]);
+
+  // Load scans after stats are loaded (or after a short delay)
+  useEffect(() => {
+    if (!statsLoading) {
+      fetchRecentScans();
+    }
+  }, [statsLoading, fetchRecentScans]);
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchStats();
+      fetchRecentScans();
+    }, 30000);
     return () => clearInterval(interval);
-  }, [fetchData]);
+  }, [fetchStats, fetchRecentScans]);
 
   const formatDate = (date: any) => {
     if (!date) return '';
@@ -66,7 +96,7 @@ export default function StaffDashboard() {
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between group hover:border-blue-300 transition-all duration-200">
           <div>
             <p className="text-gray-500 text-sm font-medium uppercase tracking-wider">Total Students</p>
-            {loading ? (
+            {statsLoading ? (
                <Skeleton className="h-10 w-24 mt-2" />
             ) : (
               <p className="text-4xl font-bold text-gray-900 mt-2">{totalStudents}</p>
@@ -81,7 +111,7 @@ export default function StaffDashboard() {
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between group hover:border-emerald-300 transition-all duration-200">
           <div>
             <p className="text-gray-500 text-sm font-medium uppercase tracking-wider">Active Scans</p>
-            {loading ? (
+            {scansLoading ? (
                <Skeleton className="h-10 w-24 mt-2" />
             ) : (
                <div className="flex items-center gap-2 mt-2">
@@ -126,7 +156,7 @@ export default function StaffDashboard() {
           </div>
           
           <div className="space-y-0 divide-y divide-gray-100">
-            {loading ? (
+            {scansLoading ? (
                Array.from({length: 5}).map((_, i) => (
                    <div key={i} className="flex items-center gap-4 py-4">
                       <Skeleton className="h-10 w-10 rounded-full" />

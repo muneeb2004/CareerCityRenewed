@@ -23,6 +23,7 @@ const QRScanner = dynamic(() => import('../../src/components/student/QRScanner')
 import { Student, Scan } from '../../src/types';
 import toast, { Toaster } from 'react-hot-toast';
 import Image from 'next/image';
+import { ScanHistoryItem } from '../../src/components/student/ScanHistoryItem';
 
 export default function StudentPortal() {
   const [session, setSession] = useState<StudentSession | null>(null);
@@ -243,27 +244,11 @@ export default function StudentPortal() {
                 </h2>
                 <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                   {optimisticScans.map((scan) => (
-                    <div
+                    <ScanHistoryItem
                       key={scan.scanId}
-                      className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between hover:shadow-md hover:border-blue-300 transition-all duration-200"
-                    >
-                      <div>
-                        <p className="font-bold text-gray-900 text-lg">
-                          {scan.organizationName}
-                        </p>
-                        <p className="text-sm text-blue-700 font-medium bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md inline-block mt-1">
-                          Booth: {scan.boothNumber}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                          {mounted && new Date(scan.timestamp as unknown as string).toLocaleDateString()}
-                        </p>
-                        <p className="text-sm font-bold text-gray-700">
-                          {mounted && new Date(scan.timestamp as unknown as string).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        </p>
-                      </div>
-                    </div>
+                      scan={scan}
+                      mounted={mounted}
+                    />
                   ))}
                 </div>
               </div>
