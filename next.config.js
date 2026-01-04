@@ -131,6 +131,13 @@ const nextConfig = {
         socks: false,
       };
     }
+    
+    // Suppress webpack cache serialization warnings for large strings
+    config.infrastructureLogging = {
+      ...config.infrastructureLogging,
+      level: 'error',
+    };
+    
     return config;
   },
 };
