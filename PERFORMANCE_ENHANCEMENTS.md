@@ -294,7 +294,7 @@ async function handleScan(data) {
 **Solution:** Use Next.js built-in ISR. It caches the HTML at the Edge (CDN).
 
 ```tsx
-// src/app/staff/organizations/page.tsx
+// Only works in SERVER COMPONENTS (no 'use client' directive)
 export const revalidate = 300; // Re-generate page every 5 minutes
 
 export default async function Page() {
@@ -302,6 +302,8 @@ export default async function Page() {
   return <OrgList orgs={orgs} />;
 }
 ```
+
+**⚠️ Important:** ISR (`export const revalidate`) is **only available in Server Components**. Pages with `'use client'` directive cannot use ISR. For interactive admin pages that require client-side state (forms, modals, drag-and-drop), use Server Actions instead—the data is fetched on-demand via `useEffect` and server actions handle caching at the action level.
 
 **Impact:** Reduces Server/DB hits to near-zero for static content.
 
@@ -363,7 +365,7 @@ Follow this priority order to ensure maximum stability and performance impact.
 *Goal: Make the app feel fast and responsive.*
 1.  **[x] Dynamic Imports:** Refactor `QRScanner` and `Recharts` components to use `next/dynamic`.
 2.  **[x] List Virtualization:** Implement `react-window` for the "Student Records" and any "Scan History" tables.
-3.  **[x] ISR Implementation:** Add `export const revalidate = 300` to `src/app/staff/organizations/page.tsx` and public-facing static pages.
+3.  **[N/A] ISR Implementation:** Staff pages use `'use client'` for interactivity (forms, modals, drag-and-drop), so ISR is not applicable. Data is fetched via Server Actions which handle their own caching. The static home page (`app/page.tsx`) is already a Server Component and benefits from default static generation.
 
 ## Stage 3: Data Integrity & High-Volume Handling
 *Goal: Handle concurrent users without data corruption.*

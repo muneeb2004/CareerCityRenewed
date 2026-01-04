@@ -1,3 +1,5 @@
+'use server';
+
 import mongoose from 'mongoose';
 import dbConnect from '@/lib/db';
 import { Scan, IScan } from '@/models/Scan';

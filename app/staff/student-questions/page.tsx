@@ -1,7 +1,5 @@
 'use client';
 
-export const revalidate = 300; // Revalidate every 5 minutes
-
 import { useState, useEffect } from 'react';
 import {
   createVolunteerQuestion,
