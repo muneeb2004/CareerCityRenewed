@@ -36,6 +36,7 @@ const ScanSchema = new Schema<IScan>(
 
 // Compound indexes for common queries
 ScanSchema.index({ studentId: 1, organizationId: 1 }); // "Has this student visited this org?"
-ScanSchema.index({ timestamp: -1 }); // Sorting by date
+ScanSchema.index({ organizationId: 1, timestamp: -1 }); // Org analytics
+ScanSchema.index({ studentId: 1, timestamp: -1 }); // Student history
 
 export const Scan = models.Scan || model<IScan>('Scan', ScanSchema);

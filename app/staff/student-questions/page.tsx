@@ -1,11 +1,14 @@
 'use client';
 
+export const revalidate = 300; // Revalidate every 5 minutes
+
 import { useState, useEffect } from 'react';
 import {
   createVolunteerQuestion,
   getAllVolunteerQuestions,
   updateVolunteerQuestion,
   deleteVolunteerQuestion,
+  bulkUpdateVolunteerQuestions,
 } from '@/actions/questions';
 import {
   VolunteerQuestion,
@@ -264,9 +267,10 @@ export default function StudentQuestionManagement() {
       
       const newItems = arrayMove(categoryQuestions, oldIndex, newIndex);
       
-      const updates = newItems.map((item, index) => 
-          updateVolunteerQuestion(item.questionId, { order: index })
-      );
+      const bulkUpdates = newItems.map((item, index) => ({
+        slug: item.questionId,
+        data: { order: index }
+      }));
       
       setQuestions(prev => {
         const updatedQuestions = [...prev];
@@ -280,7 +284,7 @@ export default function StudentQuestionManagement() {
       });
 
       try {
-        await Promise.all(updates);
+        await bulkUpdateVolunteerQuestions(bulkUpdates);
         showSuccess('Order updated');
       } catch (err) {
         console.error("Failed to update order", err);

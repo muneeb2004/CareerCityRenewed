@@ -1,13 +1,25 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, useOptimistic } from 'react';
 import { getStudentSession, clearStudentSession, StudentSession } from '../../src/lib/storage';
 import { getOrganization } from '../../src/actions/organizations';
 import { getStudent } from '../../src/actions/student';
 import { getScansByStudent, recordVisit } from '../../src/actions/scans';
 import { generateEmail } from '../../src/lib/validation';
 import StudentRegistration from '../../src/components/student/StudentRegistration';
-import QRScanner from '../../src/components/student/QRScanner';
+import dynamic from 'next/dynamic';
+
+const QRScanner = dynamic(() => import('../../src/components/student/QRScanner'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full aspect-square bg-gray-100 rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-300">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-gray-500 font-medium">Initializing Camera...</p>
+      </div>
+    </div>
+  )
+});
 import { Student, Scan } from '../../src/types';
 import toast, { Toaster } from 'react-hot-toast';
 import Image from 'next/image';
@@ -16,6 +28,13 @@ export default function StudentPortal() {
   const [session, setSession] = useState<StudentSession | null>(null);
   const [student, setStudent] = useState<Student | null>(null);
   const [scans, setScans] = useState<Scan[]>([]);
+  
+  // Optimistic UI for scans
+  const [optimisticScans, addOptimisticScan] = useOptimistic(
+    scans,
+    (state, newScan: Scan) => [newScan, ...state]
+  );
+
   const [showRegistration, setShowRegistration] = useState(false);
   const [scannedOrganization, setScannedOrganization] = useState<{
     id: string;
@@ -29,11 +48,11 @@ export default function StudentPortal() {
 
   // Update scanned IDs ref when scans change
   useEffect(() => {
-    scannedIdsRef.current = scans.map(s => s.organizationId);
-  }, [scans]);
+    scannedIdsRef.current = optimisticScans.map(s => s.organizationId);
+  }, [optimisticScans]);
 
-  // Memoize scanned IDs array to prevent QRScanner re-renders
-  const scannedIds = useMemo(() => scans.map(s => s.organizationId), [scans]);
+  // Memoize scanned IDs array
+  const scannedIds = useMemo(() => optimisticScans.map(s => s.organizationId), [optimisticScans]);
 
   useEffect(() => {
     setSession(getStudentSession());
@@ -64,7 +83,7 @@ export default function StudentPortal() {
   const handleScanSuccess = useCallback(async (organizationId: string) => {
     console.log('Portal: Scan detected', organizationId);
     
-    // Check using ref for immediate feedback (before state updates)
+    // Check using ref
     if (scannedIdsRef.current.includes(organizationId)) {
       toast.error('You have already visited this employer!');
       return;
@@ -78,7 +97,24 @@ export default function StudentPortal() {
       }
 
       if (session) {
-        // Record the visit using a transaction
+        // 1. Optimistic Update
+        const tempScanId = `temp_${Date.now()}`;
+        const newScan: Scan = {
+          scanId: tempScanId,
+          studentId: session.studentId,
+          studentEmail: generateEmail(session.studentId),
+          studentProgram: session.program,
+          organizationId: organizationId,
+          organizationName: organizationData.name,
+          boothNumber: organizationData.boothNumber,
+          timestamp: new Date(),
+          scanMethod: 'qr_code'
+        };
+        addOptimisticScan(newScan);
+        
+        toast.success(`Visited ${organizationData.name}!`);
+
+        // 2. Background Server Call
         await recordVisit(
           session.studentId,
           generateEmail(session.studentId),
@@ -87,11 +123,6 @@ export default function StudentPortal() {
           organizationData.name,
           organizationData.boothNumber
         );
-
-        toast.success(`Visited ${organizationData.name}!`);
-        
-        // Update scanned IDs ref immediately for next scan
-        scannedIdsRef.current = [...scannedIdsRef.current, organizationId];
         
         // Refresh data
         await loadStudentData();
@@ -108,7 +139,7 @@ export default function StudentPortal() {
       console.error('Error recording visit:', error);
       toast.error('Failed to record visit.');
     }
-  }, [session, loadStudentData]); // Removed scans dependency
+  }, [session, loadStudentData, addOptimisticScan]);
 
   const handleRegistrationComplete = useCallback(() => {
     setShowRegistration(false);
@@ -202,7 +233,7 @@ export default function StudentPortal() {
 
           {/* Visit History */}
           <div className="lg:col-span-2 order-2">
-            {scans.length > 0 ? (
+            {optimisticScans.length > 0 ? (
               <div className="card-modern h-full">
                 <h2 className="text-xl font-bold mb-4 text-gray-900 flex items-center gap-2">
                   <svg className="w-6 h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -211,7 +242,7 @@ export default function StudentPortal() {
                   Your Visit History
                 </h2>
                 <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                  {scans.map((scan) => (
+                  {optimisticScans.map((scan) => (
                     <div
                       key={scan.scanId}
                       className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between hover:shadow-md hover:border-blue-300 transition-all duration-200"

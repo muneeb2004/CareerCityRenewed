@@ -83,6 +83,25 @@ export async function deleteVolunteerQuestion(slug: string): Promise<void> {
   }
 }
 
+export async function bulkUpdateVolunteerQuestions(updates: { slug: string; data: Partial<IQuestion> }[]): Promise<void> {
+  await dbConnect();
+  
+  const bulkOps = updates.map(update => ({
+    updateOne: {
+      filter: { slug: update.slug },
+      update: { $set: update.data }
+    }
+  }));
+
+  try {
+    await VolunteerQuestion.bulkWrite(bulkOps);
+    revalidatePath('/staff/student-questions');
+  } catch (error) {
+    console.error('Error bulk updating volunteer questions:', error);
+    throw error;
+  }
+}
+
 // --- Organization Feedback Questions ---
 
 export async function createOrganizationFeedbackQuestion(question: Omit<IQuestion, 'slug'>): Promise<string> {
@@ -137,6 +156,25 @@ export async function deleteOrganizationFeedbackQuestion(slug: string): Promise<
     revalidatePath('/staff/organization-feedback-questions');
   } catch (error) {
     console.error('Error deleting org question:', error);
+    throw error;
+  }
+}
+
+export async function bulkUpdateOrganizationFeedbackQuestions(updates: { slug: string; data: Partial<IQuestion> }[]): Promise<void> {
+  await dbConnect();
+  
+  const bulkOps = updates.map(update => ({
+    updateOne: {
+      filter: { slug: update.slug },
+      update: { $set: update.data }
+    }
+  }));
+
+  try {
+    await OrgQuestion.bulkWrite(bulkOps);
+    revalidatePath('/staff/organization-feedback-questions');
+  } catch (error) {
+    console.error('Error bulk updating org questions:', error);
     throw error;
   }
 }

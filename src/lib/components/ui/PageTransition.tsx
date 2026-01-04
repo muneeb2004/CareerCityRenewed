@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { LazyMotion, domAnimation, m } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 
 export default function PageTransition({
@@ -14,15 +14,17 @@ export default function PageTransition({
   const isStudentRecords = pathname === '/staff/student-records';
 
   return (
-    <motion.div
-      key={pathname}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 20 }}
-      transition={{ duration: 0.3, ease: 'easeInOut' }}
-      className={isStudentRecords ? "flex-1 flex flex-col min-h-0" : ""}
-    >
-      {children}
-    </motion.div>
+    <LazyMotion features={domAnimation}>
+      <m.div
+        key={pathname}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 20 }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        className={isStudentRecords ? "flex-1 flex flex-col min-h-0" : ""}
+      >
+        {children}
+      </m.div>
+    </LazyMotion>
   );
 }

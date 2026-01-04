@@ -1,11 +1,14 @@
 'use client';
 
+export const revalidate = 300; // Revalidate every 5 minutes
+
 import { useState, useEffect } from 'react';
 import {
   createOrganizationFeedbackQuestion,
   getAllOrganizationFeedbackQuestions,
   updateOrganizationFeedbackQuestion,
   deleteOrganizationFeedbackQuestion,
+  bulkUpdateOrganizationFeedbackQuestions,
 } from '@/actions/questions';
 import {
   OrganizationFeedbackQuestion,
@@ -213,31 +216,32 @@ export default function OrganizationFeedbackQuestionManagement() {
     }
   };
 
-  // Reorder questions
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      setQuestions((items) => {
-        const oldIndex = items.findIndex((item) => item.questionId === active.id);
-        const newIndex = items.findIndex((item) => item.questionId === over.id);
-        
-        const newItems = arrayMove(items, oldIndex, newIndex);
-        
-        // Update order in backend for all affected items
-        // Optimistic update first
-        const updates = newItems.map((item, index) => 
-            updateOrganizationFeedbackQuestion(item.questionId, { order: index })
-        );
-        
-        Promise.all(updates).catch(err => {
-            console.error("Failed to update order", err);
-            showError("Failed to save new order");
-            fetchQuestions(); // Revert on error
-        });
+      const oldIndex = questions.findIndex((item) => item.questionId === active.id);
+      const newIndex = questions.findIndex((item) => item.questionId === over.id);
+      
+      const newItems = arrayMove(questions, oldIndex, newIndex);
+      
+      // Prepare bulk updates
+      const bulkUpdates = newItems.map((item, index) => ({
+        slug: item.questionId,
+        data: { order: index }
+      }));
+      
+      // Optimistic update
+      setQuestions(newItems);
 
-        return newItems;
-      });
+      try {
+        await bulkUpdateOrganizationFeedbackQuestions(bulkUpdates);
+        showSuccess('Order updated');
+      } catch (err) {
+        console.error("Failed to update order", err);
+        showError("Failed to save new order");
+        fetchQuestions(); // Revert on error
+      }
     }
   };
 

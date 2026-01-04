@@ -25,7 +25,7 @@ const StudentSchema = new Schema<IStudent>(
     email: { type: String, required: true },
     fullName: { type: String, required: true },
     program: { type: String },
-    visitedStalls: [{ type: String }],
+    visitedStalls: [{ type: String, index: true }],
     scanCount: { type: Number, default: 0 },
     feedbackSubmitted: { type: Boolean, default: false },
     feedbackId: { type: String },
@@ -36,5 +36,8 @@ const StudentSchema = new Schema<IStudent>(
     timestamps: true 
   }
 );
+
+// Compound index for common queries
+StudentSchema.index({ studentId: 1, scanCount: -1 });
 
 export const Student = models.Student || model<IStudent>('Student', StudentSchema);

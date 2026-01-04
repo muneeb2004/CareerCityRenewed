@@ -12,6 +12,7 @@ import Image from 'next/image';
 import { Skeleton } from '@/lib/components/ui/Skeleton';
 import { EmptyState } from '@/lib/components/ui/EmptyState';
 import { useDebounce } from '@/lib/hooks/useDebounce';
+import { List } from 'react-window';
 
 export default function StudentRecordsPage() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -19,6 +20,7 @@ export default function StudentRecordsPage() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [questions, setQuestions] = useState<VolunteerQuestion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [activeTab, setActiveTab] = useState<'visits' | 'feedback'>('visits');
@@ -31,6 +33,7 @@ export default function StudentRecordsPage() {
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   useEffect(() => {
+    setMounted(true);
     fetchData();
   }, []);
 
@@ -302,57 +305,64 @@ export default function StudentRecordsPage() {
                 </svg>
               </button>
             </div>
-            <div className="space-y-2 lg:max-h-[60vh] lg:overflow-y-auto lg:pr-2">
+            <div className="lg:h-[60vh] lg:pr-2 min-h-[400px]">
               {filteredStudents.length === 0 ? (
                 <EmptyState
                   title="No Students Found"
                   description={searchTerm ? `No students match "${searchTerm}"` : "No students have registered yet."}
                 />
-              ) : (
-                <div className="space-y-2">
-                  {filteredStudents.map((student) => {
+              ) : mounted ? (
+                <List
+                  rowCount={filteredStudents.length}
+                  rowHeight={110}
+                  style={{ height: 500, width: '100%' }}
+                  rowComponent={({ index, style }) => {
+                    const student = filteredStudents[index];
                     const hasFeedback = !!getStudentFeedback(student.studentId);
                     return (
-                      <div
-                        key={student.studentId}
-                        onClick={() => setSelectedStudent(student)}
-                        className={`p-4 rounded-xl border cursor-pointer transition-all duration-200 ${
-                          selectedStudent?.studentId === student.studentId
-                            ? 'border-blue-500 bg-blue-50 shadow-md'
-                            : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
-                        }`}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="font-bold text-gray-800">
-                              {student.fullName || 'No Name'}
+                      <div style={{ ...style, paddingBottom: '8px' }}>
+                        <div
+                          key={student.studentId}
+                          onClick={() => setSelectedStudent(student)}
+                          className={`p-4 rounded-xl border cursor-pointer h-full transition-all duration-200 ${
+                            selectedStudent?.studentId === student.studentId
+                              ? 'border-blue-500 bg-blue-50 shadow-md'
+                              : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="truncate">
+                              <div className="font-bold text-gray-800 truncate">
+                                {student.fullName || 'No Name'}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                ID: {student.studentId}
+                              </div>
+                              <div className="text-sm text-gray-500 truncate">
+                                {student.email}
+                              </div>
                             </div>
-                            <div className="text-sm text-gray-500">
-                              ID: {student.studentId}
+                            <div className="text-right shrink-0">
+                              <div className="text-sm">
+                                <span className="font-semibold text-blue-600">
+                                  {student.visitedStalls?.length || 0}
+                                </span>{' '}
+                                <span className="text-gray-500">visits</span>
+                              </div>
+                              {hasFeedback && (
+                                <span className="inline-block px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded-full mt-1">
+                                  Feedback ✓
+                                </span>
+                              )}
                             </div>
-                            <div className="text-sm text-gray-500">
-                              {student.email}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm">
-                              <span className="font-semibold text-blue-600">
-                                {student.visitedStalls?.length || 0}
-                              </span>{' '}
-                              <span className="text-gray-500">visits</span>
-                            </div>
-                            {hasFeedback && (
-                              <span className="inline-block px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded-full mt-1">
-                                Feedback ✓
-                              </span>
-                            )}
                           </div>
                         </div>
                       </div>
                     );
-                  })}
-                </div>
-              )}
+                  }}
+                  rowProps={{}}
+                />
+              ) : null}
             </div>
           </div>
 

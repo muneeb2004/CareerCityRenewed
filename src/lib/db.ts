@@ -39,7 +39,9 @@ async function dbConnect() {
   if (!cached!.promise) {
     const opts = {
       bufferCommands: false,
-      maxPoolSize: 10,
+      maxPoolSize: 50,        // Allow up to 50 concurrent connections
+      minPoolSize: 10,        // Keep 10 connections always ready
+      maxIdleTimeMS: 10000,   // Close idle connections after 10s
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
       family: 4, // Use IPv4, skip trying IPv6
