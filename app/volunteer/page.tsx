@@ -1,12 +1,43 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import VolunteerLogin from '../../src/components/volunteer/VolunteerLogin';
+import VolunteerStatus from '../../src/components/volunteer/VolunteerStatus';
+import { useIsVolunteerLoggedIn } from '../../src/lib/store/volunteerStore';
 
 export default function VolunteerPortal() {
+  const isLoggedIn = useIsVolunteerLoggedIn();
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch - only render auth-dependent content after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Show loading state until hydration is complete
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-gray-400">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
-      <div className="w-full max-w-4xl space-y-8">
+      {/* Show login modal if not logged in */}
+      {!isLoggedIn && <VolunteerLogin />}
+
+      <div className="w-full max-w-4xl space-y-6">
+        {/* Volunteer Status Card - only show when logged in */}
+        {isLoggedIn && (
+          <div className="animate-in fade-in slide-in-from-top duration-300">
+            <VolunteerStatus showStats={true} />
+          </div>
+        )}
+
         <div className="card-modern text-center">
           <div className="flex justify-center mb-6">
             <Image

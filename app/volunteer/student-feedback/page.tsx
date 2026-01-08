@@ -7,6 +7,9 @@ import { getAllOrganizations } from '../../../src/actions/organizations';
 import { VolunteerQuestion, Organization, QuestionType } from '../../../src/types';
 import toast, { Toaster } from 'react-hot-toast';
 import Image from 'next/image';
+import VolunteerLogin from '../../../src/components/volunteer/VolunteerLogin';
+import VolunteerStatus from '../../../src/components/volunteer/VolunteerStatus';
+import { useIsVolunteerLoggedIn, useVolunteerSession, useVolunteerStore } from '../../../src/lib/store/volunteerStore';
 
 // Form step types
 type FormStep = 'student-id' | 'org-selection' | 'per-org-questions' | 'general-questions' | 'complete';
@@ -15,6 +18,12 @@ export default function StudentFeedbackPage() {
   const [loading, setLoading] = useState(false);
   const [questions, setQuestions] = useState<VolunteerQuestion[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [mounted, setMounted] = useState(false);
+  
+  // Volunteer session
+  const isLoggedIn = useIsVolunteerLoggedIn();
+  const session = useVolunteerSession();
+  const clearStats = useVolunteerStore((state) => state.clearStats);
   
   // Form state
   const [studentId, setStudentId] = useState('');
@@ -164,8 +173,11 @@ export default function StudentFeedbackPage() {
     setLoading(true);
     try {
       // Store studentId in lowercase to match the student records format
-      await addStudentFeedback(studentId.toLowerCase(), responses);
+      // Include volunteer ID who collected this feedback
+      await addStudentFeedback(studentId.toLowerCase(), responses, session?.volunteerId);
       toast.success('Feedback submitted successfully!');
+      // Clear cached stats to force refresh
+      clearStats();
       setCurrentStep('complete');
     } catch (error) {
       console.error(error);
@@ -474,10 +486,34 @@ export default function StudentFeedbackPage() {
     return Math.round((currentIndex / steps.length) * 100);
   };
 
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Show loading state until hydration is complete
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-gray-400">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6">
+      {/* Show login modal if not logged in */}
+      {!isLoggedIn && <VolunteerLogin />}
+      
       <Toaster position="top-center" />
-      <div className="w-full max-w-2xl">
+      <div className="w-full max-w-2xl space-y-4">
+        {/* Volunteer Status Bar */}
+        {isLoggedIn && (
+          <div className="animate-in fade-in slide-in-from-top duration-300">
+            <VolunteerStatus showStats={true} compact={true} />
+          </div>
+        )}
+        
         <div className="card-modern">
           <div className="flex justify-center mb-6">
             <Image

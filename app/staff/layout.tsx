@@ -139,6 +139,13 @@ export default function StaffLayout({
             >
                 <span className="group-hover:text-blue-300 transition-colors">Student Records</span>
             </Link>
+
+            <Link 
+                href="/staff/volunteers" 
+                className={`flex px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 items-center gap-3 group ${pathname === '/staff/volunteers' ? 'bg-white/10 text-blue-300' : ''}`}
+            >
+                <span className="group-hover:text-blue-300 transition-colors">Volunteers</span>
+            </Link>
             
             <Link 
                 href="/staff/analytics" 

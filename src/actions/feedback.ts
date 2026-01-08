@@ -21,11 +21,13 @@ import { verifyChecksum, generateChecksum } from '@/lib/integrity';
  * Add student feedback with optional integrity verification
  * @param studentId - Student identifier
  * @param responses - Feedback responses
+ * @param collectedBy - Optional volunteer ID who collected this feedback
  * @param checksum - Optional SHA-256 checksum of responses for integrity verification
  */
 export async function addStudentFeedback(
   studentId: string,
   responses: Record<string, string | number | string[]>,
+  collectedBy?: string,
   checksum?: string
 ): Promise<void> {
   await dbConnect();
@@ -56,6 +58,7 @@ export async function addStudentFeedback(
     await StudentFeedback.create({
       feedbackId,
       studentId: validatedStudentId,
+      collectedBy: collectedBy?.toLowerCase().trim(),
       responses: sanitizedResponses,
       timestamp: new Date()
     });
@@ -98,11 +101,13 @@ export async function hasStudentSubmittedFeedback(studentId: string): Promise<bo
  * Add organization feedback with optional integrity verification
  * @param organizationId - Organization identifier
  * @param responses - Feedback responses
+ * @param collectedBy - Optional volunteer ID who collected this feedback
  * @param checksum - Optional SHA-256 checksum of responses for integrity verification
  */
 export async function addOrganizationFeedback(
   organizationId: string,
   responses: Record<string, string | number | string[]>,
+  collectedBy?: string,
   checksum?: string
 ): Promise<void> {
   await dbConnect();
@@ -133,6 +138,7 @@ export async function addOrganizationFeedback(
     await OrgFeedback.create({
       feedbackId,
       organizationId: validatedOrgId,
+      collectedBy: collectedBy?.toLowerCase().trim(),
       responses: sanitizedResponses,
       timestamp: new Date()
     });

@@ -7,6 +7,9 @@ import { getAllOrganizations } from '../../../src/actions/organizations';
 import { OrganizationFeedbackQuestion, Organization } from '../../../src/types';
 import toast, { Toaster } from 'react-hot-toast';
 import Image from 'next/image';
+import VolunteerLogin from '../../../src/components/volunteer/VolunteerLogin';
+import VolunteerStatus from '../../../src/components/volunteer/VolunteerStatus';
+import { useIsVolunteerLoggedIn, useVolunteerSession, useVolunteerStore } from '../../../src/lib/store/volunteerStore';
 
 export default function OrganizationFeedbackPage() {
   const [loading, setLoading] = useState(false);
@@ -15,6 +18,12 @@ export default function OrganizationFeedbackPage() {
   const [selectedOrgId, setSelectedOrgId] = useState('');
   const [responses, setResponses] = useState<Record<string, string | string[]>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  
+  // Volunteer session
+  const isLoggedIn = useIsVolunteerLoggedIn();
+  const session = useVolunteerSession();
+  const clearStats = useVolunteerStore((state) => state.clearStats);
   
   // Searchable dropdown state
   const [searchQuery, setSearchQuery] = useState('');
@@ -88,8 +97,11 @@ export default function OrganizationFeedbackPage() {
         return;
       }
       
-      await addOrganizationFeedback(selectedOrgId, responses);
+      // Include volunteer ID who collected this feedback
+      await addOrganizationFeedback(selectedOrgId, responses, session?.volunteerId);
       toast.success('Feedback submitted successfully!');
+      // Clear cached stats to force refresh
+      clearStats();
       setSubmitted(true);
     } catch (error) {
       console.error(error);
@@ -353,11 +365,32 @@ export default function OrganizationFeedbackPage() {
     }
   };
 
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Show loading state until hydration is complete
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-gray-400">Loading...</div>
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6">
         <Toaster position="top-center" />
-        <div className="w-full max-w-2xl">
+        <div className="w-full max-w-2xl space-y-4">
+          {/* Volunteer Status Bar */}
+          {isLoggedIn && (
+            <div className="animate-in fade-in slide-in-from-top duration-300">
+              <VolunteerStatus showStats={true} compact={true} />
+            </div>
+          )}
+          
           <div className="card-modern text-center py-12 space-y-4">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
               <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -380,8 +413,18 @@ export default function OrganizationFeedbackPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6">
+      {/* Show login modal if not logged in */}
+      {!isLoggedIn && <VolunteerLogin />}
+      
       <Toaster position="top-center" />
-      <div className="w-full max-w-2xl">
+      <div className="w-full max-w-2xl space-y-4">
+        {/* Volunteer Status Bar */}
+        {isLoggedIn && (
+          <div className="animate-in fade-in slide-in-from-top duration-300">
+            <VolunteerStatus showStats={true} compact={true} />
+          </div>
+        )}
+        
         <div className="card-modern">
           <div className="flex justify-center mb-6">
             <Image

@@ -4,6 +4,7 @@ export interface IFeedback {
   feedbackId: string;
   studentId?: string; // For StudentFeedback
   organizationId?: string; // For OrgFeedback
+  collectedBy?: string; // Volunteer ID who collected this feedback
   responses: Record<string, string | number | string[]>;
   timestamp: Date;
 }
@@ -18,6 +19,7 @@ const FeedbackSchema = new Schema<IFeedback>(
     },
     studentId: { type: String, index: true },
     organizationId: { type: String, index: true },
+    collectedBy: { type: String, index: true }, // Volunteer ID for tracking
     responses: { type: Map, of: Schema.Types.Mixed }, // Flexible key-value storage
     timestamp: { type: Date, default: Date.now }
   },
