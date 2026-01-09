@@ -14,7 +14,7 @@ export interface IQuestion {
   order?: number;
   // Specific to volunteer questions
   isPerOrganization?: boolean;
-  linkedToQuestionSlug?: string;
+  linkedToQuestionId?: string;
   selectionCount?: number;
   selectionMode?: 'exactly' | 'up_to';
 }
@@ -40,7 +40,7 @@ const QuestionSchema = new Schema<IQuestion>(
     
     // Specific fields
     isPerOrganization: Boolean,
-    linkedToQuestionSlug: String,
+    linkedToQuestionId: String,
     selectionCount: Number,
     selectionMode: { type: String, enum: ['exactly', 'up_to'] }
   },

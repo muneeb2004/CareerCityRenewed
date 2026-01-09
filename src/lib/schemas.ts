@@ -113,8 +113,8 @@ export const EmailSchema = z.string()
  */
 export const FeedbackResponseValueSchema = z.union([
   z.string().max(1000, 'Response too long'),
-  z.number().min(1).max(10),
-  z.array(z.string().max(200)).max(10),
+  z.number().min(0).max(10),
+  z.array(z.string().max(200)).max(50),
 ]);
 
 /**
@@ -192,17 +192,19 @@ export const QuestionSchema = z.object({
 
 /**
  * Organization creation
+ * Note: industry, boothNumber, contactPerson, email, category are optional
+ * to match frontend forms that may send empty strings
  */
 export const CreateOrganizationSchema = z.object({
   organizationId: OrganizationIdSchema,
   name: OrganizationNameSchema,
-  industry: IndustrySchema,
-  boothNumber: BoothNumberSchema,
+  industry: z.string().max(100).default(''),
+  boothNumber: z.string().max(10).default(''),
   qrCode: z.string().max(5000),
   logo: z.string().url().max(500).optional(),
-  contactPerson: ContactPersonSchema,
-  email: EmailSchema,
-  category: z.string().min(2).max(100),
+  contactPerson: z.string().max(100).default(''),
+  email: z.string().email('Invalid email format').max(255).optional().or(z.literal('')),
+  category: z.string().max(100).default(''),
 });
 
 /**
