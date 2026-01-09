@@ -1,8 +1,8 @@
-// Prompt for Copilot: "Create React component to generate QR code using qrcode.react for employer ID with download button"
+// QR Code Generator - Creates scannable URLs for native camera apps
 
 'use client';
 
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Organization } from '../../types';
 
@@ -10,8 +10,32 @@ interface QRCodeGeneratorProps {
   organization: Organization;
 }
 
+// Production URL for QR codes
+const PRODUCTION_URL = 'https://career-city-renewed.vercel.app';
+
+// Get base URL for QR codes
+function getBaseUrl(): string {
+  // Use environment variable if set, otherwise use production URL
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL;
+  }
+  // In development, use localhost; in production, use the deployed URL
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    return window.location.origin;
+  }
+  return PRODUCTION_URL;
+}
+
 export default function QRCodeGenerator({ organization }: QRCodeGeneratorProps) {
   const qrRef = useRef<SVGSVGElement>(null);
+  
+  // Generate full URL for QR code - enables native camera scanning
+  const qrValue = useMemo(() => {
+    const baseUrl = getBaseUrl();
+    const url = `${baseUrl}/student?org=${encodeURIComponent(organization.organizationId)}`;
+    console.log('QR Code URL:', url); // Debug log
+    return url;
+  }, [organization.organizationId]);
 
   const downloadQR = useCallback(() => {
     if (!qrRef.current) return;
@@ -45,7 +69,7 @@ export default function QRCodeGenerator({ organization }: QRCodeGeneratorProps) 
         <QRCodeSVG
             ref={qrRef}
             id={`qr-${organization.organizationId}`}
-            value={organization.organizationId}
+            value={qrValue}
             size={180}
             level="H"
             includeMargin

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef, useOptimistic } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { getStudentSession, clearStudentSession, StudentSession } from '../../src/lib/storage';
 import { getOrganization } from '../../src/actions/organizations';
 import { getStudent } from '../../src/actions/student';
@@ -55,10 +56,29 @@ export default function StudentPortal() {
   // Memoize scanned IDs array
   const scannedIds = useMemo(() => optimisticScans.map(s => s.organizationId), [optimisticScans]);
 
+  // Handle QR code scans from URL (native camera app support)
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const orgFromUrl = searchParams.get('org');
+  const [urlOrgProcessed, setUrlOrgProcessed] = useState(false);
+
   useEffect(() => {
     setSession(getStudentSession());
     setMounted(true);
   }, []);
+
+  // Process organization from URL parameter (from native camera QR scan)
+  useEffect(() => {
+    if (orgFromUrl && mounted && !urlOrgProcessed) {
+      setUrlOrgProcessed(true);
+      
+      // Clear the URL parameter to prevent re-processing on refresh
+      router.replace('/student', { scroll: false });
+      
+      // Trigger the scan handler
+      handleScanSuccess(orgFromUrl);
+    }
+  }, [orgFromUrl, mounted, urlOrgProcessed, router, handleScanSuccess]);
 
   const loadStudentData = useCallback(async () => {
     if (!session) return;
