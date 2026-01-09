@@ -146,33 +146,44 @@ export const OrganizationFeedbackSchema = z.object({
 // ============================================
 
 /**
- * Question types
+ * Question types - matches QUESTION_TYPES from @/types
  */
 export const QuestionTypeSchema = z.enum([
-  'text',
-  'rating',
-  'multiple_choice',
+  'range',
+  'number',
+  'multiplechoice',
   'checkbox',
-  'dropdown',
+  'text',
+  'textarea',
+  'scale_text',
+  'multiplechoice_text',
+  'organization_select',
 ]);
 
 /**
- * Question option
- */
-export const QuestionOptionSchema = z.object({
-  value: z.string().max(200),
-  label: z.string().max(200),
-});
-
-/**
- * Question creation/update
+ * Question creation/update - flexible schema for all question types
  */
 export const QuestionSchema = z.object({
-  text: z.string().min(5, 'Question too short').max(500, 'Question too long'),
+  text: z.string().min(1, 'Question text is required').max(500, 'Question too long'),
   type: QuestionTypeSchema,
-  required: z.boolean().default(true),
-  order: z.number().int().min(0).max(100).default(0),
-  options: z.array(QuestionOptionSchema).max(20).optional(),
+  order: z.number().int().min(0).max(1000).default(0),
+  // For multiplechoice, checkbox types
+  options: z.array(z.string().max(200)).max(50).optional(),
+  allowOther: z.boolean().optional(),
+  // For range/scale types
+  minLabel: z.string().max(100).optional(),
+  maxLabel: z.string().max(100).optional(),
+  scaleMax: z.number().int().min(2).max(10).optional(),
+  // For combined types (scale_text, multiplechoice_text)
+  followUpLabel: z.string().max(200).optional(),
+  // For text inputs
+  placeholder: z.string().max(200).optional(),
+  // For organization_select type
+  selectionCount: z.number().int().min(1).max(20).optional(),
+  selectionMode: z.enum(['exactly', 'up_to']).optional(),
+  // For per-organization questions
+  isPerOrganization: z.boolean().optional(),
+  linkedToQuestionId: z.string().max(100).optional(),
 });
 
 // ============================================
