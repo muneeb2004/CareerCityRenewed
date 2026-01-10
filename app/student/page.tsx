@@ -67,19 +67,6 @@ export default function StudentPortal() {
     setMounted(true);
   }, []);
 
-  // Process organization from URL parameter (from native camera QR scan)
-  useEffect(() => {
-    if (orgFromUrl && mounted && !urlOrgProcessed) {
-      setUrlOrgProcessed(true);
-      
-      // Clear the URL parameter to prevent re-processing on refresh
-      router.replace('/student', { scroll: false });
-      
-      // Trigger the scan handler
-      handleScanSuccess(orgFromUrl);
-    }
-  }, [orgFromUrl, mounted, urlOrgProcessed, router, handleScanSuccess]);
-
   const loadStudentData = useCallback(async () => {
     if (!session) return;
     try {
@@ -93,12 +80,6 @@ export default function StudentPortal() {
       console.error('Error loading student data:', error);
     }
   }, [session]);
-
-  useEffect(() => {
-    if (session) {
-      loadStudentData();
-    }
-  }, [session, loadStudentData]);
 
   // Stable callback using ref to avoid re-renders
   const handleScanSuccess = useCallback(async (organizationId: string) => {
@@ -161,6 +142,25 @@ export default function StudentPortal() {
       toast.error('Failed to record visit.');
     }
   }, [session, loadStudentData, addOptimisticScan]);
+
+  useEffect(() => {
+    if (session) {
+      loadStudentData();
+    }
+  }, [session, loadStudentData]);
+
+  // Process organization from URL parameter (from native camera QR scan)
+  useEffect(() => {
+    if (orgFromUrl && mounted && !urlOrgProcessed) {
+      setUrlOrgProcessed(true);
+      
+      // Clear the URL parameter to prevent re-processing on refresh
+      router.replace('/student', { scroll: false });
+      
+      // Trigger the scan handler
+      handleScanSuccess(orgFromUrl);
+    }
+  }, [orgFromUrl, mounted, urlOrgProcessed, router, handleScanSuccess]);
 
   const handleRegistrationComplete = useCallback(() => {
     setShowRegistration(false);
