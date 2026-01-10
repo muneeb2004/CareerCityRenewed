@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef, useOptimistic } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, useOptimistic, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getStudentSession, clearStudentSession, StudentSession } from '../../src/lib/storage';
 import { getOrganization } from '../../src/actions/organizations';
@@ -26,7 +26,23 @@ import toast, { Toaster } from 'react-hot-toast';
 import Image from 'next/image';
 import { ScanHistoryItem } from '../../src/components/student/ScanHistoryItem';
 
-export default function StudentPortal() {
+// Wrapper component to handle Suspense for useSearchParams
+export default function StudentPortalWrapper() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-500 font-medium">Loading...</p>
+        </div>
+      </div>
+    }>
+      <StudentPortal />
+    </Suspense>
+  );
+}
+
+function StudentPortal() {
   const [session, setSession] = useState<StudentSession | null>(null);
   const [student, setStudent] = useState<Student | null>(null);
   const [scans, setScans] = useState<Scan[]>([]);
