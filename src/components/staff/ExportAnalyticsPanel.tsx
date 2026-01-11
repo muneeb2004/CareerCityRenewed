@@ -176,13 +176,13 @@ export function ExportAnalyticsPanel() {
         {exportOptions.map((option) => (
           <div
             key={option.id}
-            className="border border-gray-200 rounded-xl p-4 hover:border-blue-300 hover:shadow-md transition-all duration-200"
+            className="border border-gray-200 rounded-xl p-4 hover:border-blue-300 hover:shadow-md transition-all duration-200 flex flex-col h-full"
           >
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
+            <div className="flex items-start gap-3 flex-1">
+              <div className="p-2 bg-blue-100 rounded-lg text-blue-600 shrink-0">
                 {option.icon}
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <h4 className="font-semibold text-gray-800">{option.label}</h4>
                 <p className="text-sm text-gray-500 mt-1">{option.description}</p>
               </div>
