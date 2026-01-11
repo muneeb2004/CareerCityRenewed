@@ -216,3 +216,43 @@ export async function toggleVolunteerStatus(volunteerId: string): Promise<{ succ
     return { success: false, error: handled.message };
   }
 }
+
+export interface UpdateVolunteerInput {
+  name: string;
+  email?: string;
+  phone?: string;
+  role: 'Captain' | 'Member';
+}
+
+/**
+ * Update an existing volunteer's details (admin function)
+ */
+export async function updateVolunteer(
+  volunteerId: string,
+  input: UpdateVolunteerInput
+): Promise<{ success: boolean; error?: string }> {
+  await dbConnect();
+
+  try {
+    const trimmedId = volunteerId.toLowerCase().trim();
+    
+    const volunteer = await Volunteer.findOne({ volunteerId: safeEquals(trimmedId) });
+    if (!volunteer) {
+      return { success: false, error: 'Volunteer not found' };
+    }
+
+    // Update fields
+    volunteer.name = input.name.trim();
+    volunteer.email = input.email?.trim() || undefined;
+    volunteer.phone = input.phone?.trim() || undefined;
+    volunteer.role = input.role;
+    
+    await volunteer.save();
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating volunteer:', error);
+    const handled = handleError(error);
+    return { success: false, error: handled.message };
+  }
+}
