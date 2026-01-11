@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { getAnalyticsDashboardData, AnalyticsDashboardData } from '@/actions/analytics';
 import { Skeleton } from '@/lib/components/ui/Skeleton';
@@ -31,31 +31,63 @@ const COLORS = {
 
 export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsDashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true); // Only for first load
+  const [isRefreshing, setIsRefreshing] = useState(false); // Background refresh indicator
+  const [refreshError, setRefreshError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (isBackgroundRefresh = false) => {
     try {
-      setLoading(true);
+      // Only show full loading state on initial load
+      if (!isBackgroundRefresh) {
+        setInitialLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
+      setRefreshError(null);
+      
       const dashboardData = await getAnalyticsDashboardData();
+      
+      // Smoothly update data
       setData(dashboardData);
       setLastRefresh(new Date());
+      
     } catch (error) {
       console.error('Error fetching analytics:', error);
+      // On error during background refresh, show error but keep existing data
+      if (isBackgroundRefresh && data) {
+        setRefreshError('Failed to refresh data. Showing last known data.');
+        // Auto-clear error after 5 seconds
+        if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
+        refreshTimeoutRef.current = setTimeout(() => setRefreshError(null), 5000);
+      }
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setIsRefreshing(false);
     }
-  }, []);
+  }, [data]);
 
   useEffect(() => {
     setMounted(true);
-    fetchData();
+    fetchData(false); // Initial fetch
 
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
-  }, [fetchData]);
+    // Auto-refresh every 30 seconds (background refresh)
+    const interval = setInterval(() => fetchData(true), 30000);
+    
+    return () => {
+      clearInterval(interval);
+      if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Manual refresh handler
+  const handleManualRefresh = () => {
+    if (!isRefreshing) {
+      fetchData(data ? true : false); // Background if we have data, full if not
+    }
+  };
 
   // Get color based on value relative to average
   const getBarColor = (value: number, avg: number) => {
@@ -69,6 +101,9 @@ export default function AnalyticsPage() {
     ? Math.round(data!.organizationVisits.reduce((sum, org) => sum + (org.visitorCount || 0), 0) / data!.organizationVisits.length)
     : 0;
 
+  // Show skeletons only on initial load when there's no data
+  const showSkeletons = initialLoading && !data;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -77,34 +112,55 @@ export default function AnalyticsPage() {
           <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-violet-600">
             Live Analytics
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Auto-refreshes every 30s • Last updated: {lastRefresh.toLocaleTimeString()}
-          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-gray-500 text-sm">
+              Auto-refreshes every 30s • Last updated: {lastRefresh.toLocaleTimeString()}
+            </p>
+            {/* Subtle refresh indicator */}
+            {isRefreshing && (
+              <span className="inline-flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full animate-pulse">
+                <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Updating...
+              </span>
+            )}
+          </div>
+          {/* Error message */}
+          {refreshError && (
+            <p className="text-amber-600 text-xs mt-1 flex items-center gap-1">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              {refreshError}
+            </p>
+          )}
         </div>
         <button
-          onClick={fetchData}
-          disabled={loading}
-          className="btn-secondary flex items-center gap-2"
+          onClick={handleManualRefresh}
+          disabled={isRefreshing}
+          className="btn-secondary flex items-center gap-2 disabled:opacity-50"
         >
-          <svg className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          Refresh
+          {isRefreshing ? 'Refreshing...' : 'Refresh'}
         </button>
       </div>
 
       {/* Key Metrics - 4 Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 transition-opacity duration-300 ${isRefreshing ? 'opacity-90' : 'opacity-100'}`}>
         {/* Total Students */}
         <div className="card-modern flex items-center justify-between">
           <div>
             <h3 className="text-gray-500 text-sm font-medium uppercase tracking-wider">
               Total Students
             </h3>
-            {loading ? (
+            {showSkeletons ? (
               <Skeleton className="h-10 w-24 mt-2" />
             ) : (
-              <p className="text-4xl font-bold text-blue-600 mt-2">
+              <p className="text-4xl font-bold text-blue-600 mt-2 transition-all duration-300">
                 {data?.summary.totalStudents || 0}
               </p>
             )}
@@ -122,11 +178,11 @@ export default function AnalyticsPage() {
             <h3 className="text-gray-500 text-sm font-medium uppercase tracking-wider">
               Total Scans
             </h3>
-            {loading ? (
+            {showSkeletons ? (
               <Skeleton className="h-10 w-24 mt-2" />
             ) : (
               <>
-                <p className="text-4xl font-bold text-emerald-600 mt-2">
+                <p className="text-4xl font-bold text-emerald-600 mt-2 transition-all duration-300">
                   {data?.summary.totalScans || 0}
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
@@ -148,11 +204,11 @@ export default function AnalyticsPage() {
             <h3 className="text-gray-500 text-sm font-medium uppercase tracking-wider">
               Organizations
             </h3>
-            {loading ? (
+            {showSkeletons ? (
               <Skeleton className="h-10 w-24 mt-2" />
             ) : (
               <>
-                <p className="text-4xl font-bold text-purple-600 mt-2">
+                <p className="text-4xl font-bold text-purple-600 mt-2 transition-all duration-300">
                   {data?.summary.totalOrganizations || 0}
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
@@ -174,11 +230,11 @@ export default function AnalyticsPage() {
             <h3 className="text-gray-500 text-sm font-medium uppercase tracking-wider">
               Student Feedback
             </h3>
-            {loading ? (
+            {showSkeletons ? (
               <Skeleton className="h-10 w-24 mt-2" />
             ) : (
               <>
-                <p className="text-4xl font-bold text-amber-600 mt-2">
+                <p className="text-4xl font-bold text-amber-600 mt-2 transition-all duration-300">
                   {data?.summary.studentFeedbackRate || 0}%
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
@@ -196,7 +252,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Feedback Progress Bars */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 transition-opacity duration-300 ${isRefreshing ? 'opacity-90' : 'opacity-100'}`}>
         <div className="card-modern">
           <div className="flex justify-between items-center mb-2">
             <h3 className="font-semibold text-gray-800">Student Feedback Progress</h3>
@@ -235,7 +291,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Charts Row 1: Activity Over Time & Engagement Distribution */}
-      {loading ? (
+      {showSkeletons ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card-modern">
             <Skeleton className="h-8 w-48 mb-6" />
@@ -247,7 +303,7 @@ export default function AnalyticsPage() {
           </div>
         </div>
       ) : mounted && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 transition-opacity duration-300 ${isRefreshing ? 'opacity-90' : 'opacity-100'}`}>
           {/* Activity Over Time - Area Chart */}
           <div className="card-modern">
             <h3 className="text-xl font-bold mb-2 text-gray-800">Activity Over Time</h3>
@@ -338,13 +394,13 @@ export default function AnalyticsPage() {
       )}
 
       {/* Top Organizations - Horizontal Bar Chart */}
-      {loading ? (
+      {showSkeletons ? (
         <div className="card-modern">
           <Skeleton className="h-8 w-64 mb-6" />
           <Skeleton className="h-[400px] w-full rounded-xl" />
         </div>
       ) : mounted && (
-        <div className="card-modern">
+        <div className={`card-modern transition-opacity duration-300 ${isRefreshing ? 'opacity-90' : 'opacity-100'}`}>
           <h3 className="text-xl font-bold mb-2 text-gray-800">Organization Popularity</h3>
           <p className="text-sm text-gray-500 mb-4">
             Ranked by visitor count{avgVisitors > 0 ? ` • Average: ${avgVisitors} visitors` : ''}
@@ -406,11 +462,11 @@ export default function AnalyticsPage() {
       )}
 
       {/* Volunteer Performance & Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 transition-opacity duration-300 ${isRefreshing ? 'opacity-90' : 'opacity-100'}`}>
         {/* Volunteer Leaderboard */}
         <div className="card-modern">
           <h3 className="text-xl font-bold mb-4 text-gray-800">Volunteer Leaderboard</h3>
-          {loading ? (
+          {showSkeletons ? (
             <div className="space-y-3">
               {[1, 2, 3, 4, 5].map(i => (
                 <Skeleton key={i} className="h-12 w-full rounded-lg" />
@@ -424,7 +480,7 @@ export default function AnalyticsPage() {
                 data?.volunteerPerformance.map((volunteer, index) => (
                   <div 
                     key={volunteer.volunteerId}
-                    className={`flex items-center justify-between p-3 rounded-lg ${
+                    className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300 ${
                       index === 0 ? 'bg-amber-50 border border-amber-200' :
                       index === 1 ? 'bg-gray-50 border border-gray-200' :
                       index === 2 ? 'bg-orange-50 border border-orange-200' :
@@ -461,7 +517,7 @@ export default function AnalyticsPage() {
         {/* Recent Activity Feed */}
         <div className="card-modern">
           <h3 className="text-xl font-bold mb-4 text-gray-800">Recent Activity</h3>
-          {loading ? (
+          {showSkeletons ? (
             <div className="space-y-3">
               {[1, 2, 3, 4, 5].map(i => (
                 <Skeleton key={i} className="h-12 w-full rounded-lg" />
@@ -475,7 +531,7 @@ export default function AnalyticsPage() {
                 data?.recentScans.map((scan, index) => (
                   <div 
                     key={index}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100"
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 transition-all duration-300"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
