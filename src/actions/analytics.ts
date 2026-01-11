@@ -89,11 +89,32 @@ export async function getAnalyticsDashboardData(): Promise<AnalyticsDashboardDat
     const totalScans = scans.length;
     const totalOrganizations = organizations.length;
     const activeVolunteers = volunteers.length;
-    const avgScansPerStudent = totalStudents > 0 ? Math.round((totalScans / totalStudents) * 10) / 10 : 0;
+    
+    // Safe average calculation - avoid NaN when no students
+    const avgScansPerStudent = totalStudents > 0 
+      ? Math.round((totalScans / totalStudents) * 10) / 10 
+      : 0;
+    
+    // Count total feedback entries
     const studentFeedbackCount = studentFeedbacks.length;
     const orgFeedbackCount = orgFeedbacks.length;
-    const studentFeedbackRate = totalStudents > 0 ? Math.round((studentFeedbackCount / totalStudents) * 100) : 0;
-    const orgFeedbackRate = totalOrganizations > 0 ? Math.round((orgFeedbackCount / totalOrganizations) * 100) : 0;
+    
+    // Calculate feedback rate based on UNIQUE students/orgs who have given feedback
+    // This ensures rate never exceeds 100%
+    const uniqueStudentsWithFeedback = new Set(
+      studentFeedbacks.map(f => f.studentId).filter(Boolean)
+    ).size;
+    const uniqueOrgsWithFeedback = new Set(
+      orgFeedbacks.map(f => f.organizationId).filter(Boolean)
+    ).size;
+    
+    // Cap rates at 100% as safeguard (should never exceed if data is consistent)
+    const studentFeedbackRate = totalStudents > 0 
+      ? Math.min(100, Math.round((uniqueStudentsWithFeedback / totalStudents) * 100))
+      : 0;
+    const orgFeedbackRate = totalOrganizations > 0 
+      ? Math.min(100, Math.round((uniqueOrgsWithFeedback / totalOrganizations) * 100))
+      : 0;
 
     // === ORGANIZATION VISITS (sorted by visitor count) ===
     const organizationVisits: OrganizationVisits[] = organizations
@@ -106,11 +127,15 @@ export async function getAnalyticsDashboardData(): Promise<AnalyticsDashboardDat
       .sort((a, b) => b.visitorCount - a.visitorCount);
 
     // === ENGAGEMENT DISTRIBUTION ===
-    const engagementMap: Record<number, number> = {};
+    // Initialize all buckets to 0 to ensure consistent output
+    const engagementMap: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    
     students.forEach(student => {
-      const stallCount = student.visitedStalls?.length || 0;
-      // Group 5+ together
-      const bucket = stallCount >= 5 ? 5 : stallCount;
+      const stallCount = Array.isArray(student.visitedStalls) 
+        ? student.visitedStalls.length 
+        : 0;
+      // Group 5+ together, ensure non-negative
+      const bucket = Math.max(0, Math.min(stallCount, 5));
       engagementMap[bucket] = (engagementMap[bucket] || 0) + 1;
     });
     
@@ -120,42 +145,65 @@ export async function getAnalyticsDashboardData(): Promise<AnalyticsDashboardDat
     }));
 
     // === HOURLY ACTIVITY ===
-    const hourlyMap: Record<string, { scans: number; students: Set<string> }> = {};
+    const hourlyMap: Record<number, { scans: number; students: Set<string> }> = {};
     scans.forEach(scan => {
+      if (!scan.timestamp) return; // Skip invalid timestamps
+      
       const date = new Date(scan.timestamp);
-      const hour = date.toLocaleTimeString([], { hour: '2-digit', hour12: true });
+      // Guard against invalid dates
+      if (isNaN(date.getTime())) return;
+      
+      const hour = date.getHours(); // Use numeric hour (0-23) for reliable sorting
       
       if (!hourlyMap[hour]) {
         hourlyMap[hour] = { scans: 0, students: new Set() };
       }
       hourlyMap[hour].scans++;
-      hourlyMap[hour].students.add(scan.studentId);
+      if (scan.studentId) {
+        hourlyMap[hour].students.add(scan.studentId);
+      }
     });
 
+    // Format hour for display (12-hour format)
+    const formatHour = (hour: number): string => {
+      if (hour === 0) return '12 AM';
+      if (hour === 12) return '12 PM';
+      if (hour < 12) return `${hour} AM`;
+      return `${hour - 12} PM`;
+    };
+
     const hourlyActivity: HourlyActivity[] = Object.entries(hourlyMap)
-      .map(([hour, data]) => ({
-        hour,
+      .map(([hourStr, data]) => ({
+        hour: formatHour(parseInt(hourStr)),
         scans: data.scans,
         uniqueStudents: data.students.size,
       }))
       .sort((a, b) => {
-        // Sort by hour chronologically
-        const parseHour = (h: string) => {
-          const match = h.match(/(\d+)\s*(AM|PM)/i);
+        // Sort by original hour value
+        const getHourNum = (h: string) => {
+          const match = h.match(/^(\d+)\s*(AM|PM)$/i);
           if (!match) return 0;
           let hour = parseInt(match[1]);
-          if (match[2].toUpperCase() === 'PM' && hour !== 12) hour += 12;
-          if (match[2].toUpperCase() === 'AM' && hour === 12) hour = 0;
-          return hour;
+          const isPM = match[2].toUpperCase() === 'PM';
+          if (hour === 12) return isPM ? 12 : 0;
+          return isPM ? hour + 12 : hour;
         };
-        return parseHour(a.hour) - parseHour(b.hour);
+        return getHourNum(a.hour) - getHourNum(b.hour);
       });
 
     // === VOLUNTEER PERFORMANCE ===
     const volunteerStatsMap: Record<string, { student: number; org: number }> = {};
     
+    // Initialize stats for all active volunteers to ensure they appear even with 0 feedback
+    volunteers.forEach(v => {
+      const id = v.volunteerId?.toLowerCase()?.trim();
+      if (id) {
+        volunteerStatsMap[id] = { student: 0, org: 0 };
+      }
+    });
+
     studentFeedbacks.forEach(f => {
-      const collectedBy = f.collectedBy?.toLowerCase();
+      const collectedBy = f.collectedBy?.toLowerCase()?.trim();
       if (collectedBy) {
         if (!volunteerStatsMap[collectedBy]) {
           volunteerStatsMap[collectedBy] = { student: 0, org: 0 };
@@ -165,7 +213,7 @@ export async function getAnalyticsDashboardData(): Promise<AnalyticsDashboardDat
     });
 
     orgFeedbacks.forEach(f => {
-      const collectedBy = f.collectedBy?.toLowerCase();
+      const collectedBy = f.collectedBy?.toLowerCase()?.trim();
       if (collectedBy) {
         if (!volunteerStatsMap[collectedBy]) {
           volunteerStatsMap[collectedBy] = { student: 0, org: 0 };
@@ -175,12 +223,13 @@ export async function getAnalyticsDashboardData(): Promise<AnalyticsDashboardDat
     });
 
     const volunteerPerformance: VolunteerPerformance[] = volunteers
+      .filter(v => v.volunteerId) // Ensure volunteer has valid ID
       .map(v => {
-        const stats = volunteerStatsMap[v.volunteerId.toLowerCase()] || { student: 0, org: 0 };
+        const stats = volunteerStatsMap[v.volunteerId.toLowerCase().trim()] || { student: 0, org: 0 };
         return {
           volunteerId: v.volunteerId,
-          name: v.name,
-          role: v.role,
+          name: v.name || 'Unknown',
+          role: v.role || 'Member',
           studentFeedbackCount: stats.student,
           orgFeedbackCount: stats.org,
           totalCollected: stats.student + stats.org,
@@ -189,15 +238,25 @@ export async function getAnalyticsDashboardData(): Promise<AnalyticsDashboardDat
       .sort((a, b) => b.totalCollected - a.totalCollected);
 
     // === RECENT SCANS (last 10) ===
-    const recentScans = scans.slice(0, 10).map(scan => ({
-      studentId: scan.studentId,
-      organizationName: scan.organizationName || 'Unknown',
-      timestamp: new Date(scan.timestamp).toLocaleTimeString([], { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        second: '2-digit'
-      }),
-    }));
+    const recentScans = scans
+      .filter(scan => scan.timestamp && scan.studentId) // Filter out invalid entries
+      .slice(0, 10)
+      .map(scan => {
+        const date = new Date(scan.timestamp);
+        const isValidDate = !isNaN(date.getTime());
+        
+        return {
+          studentId: scan.studentId || 'Unknown',
+          organizationName: scan.organizationName || 'Unknown',
+          timestamp: isValidDate 
+            ? date.toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit'
+              })
+            : 'Unknown time',
+        };
+      });
 
     return {
       summary: {

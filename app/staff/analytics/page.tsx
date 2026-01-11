@@ -64,8 +64,9 @@ export default function AnalyticsPage() {
     return COLORS.warning;
   };
 
-  const avgVisitors = data?.organizationVisits.length 
-    ? data.organizationVisits.reduce((sum, org) => sum + org.visitorCount, 0) / data.organizationVisits.length 
+  // Calculate average visitors with safeguard against empty arrays and NaN
+  const avgVisitors = (data?.organizationVisits?.length ?? 0) > 0
+    ? Math.round(data!.organizationVisits.reduce((sum, org) => sum + (org.visitorCount || 0), 0) / data!.organizationVisits.length)
     : 0;
 
   return (
@@ -171,7 +172,7 @@ export default function AnalyticsPage() {
         <div className="card-modern flex items-center justify-between">
           <div>
             <h3 className="text-gray-500 text-sm font-medium uppercase tracking-wider">
-              Feedback Rate
+              Student Feedback
             </h3>
             {loading ? (
               <Skeleton className="h-10 w-24 mt-2" />
@@ -181,7 +182,7 @@ export default function AnalyticsPage() {
                   {data?.summary.studentFeedbackRate || 0}%
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
-                  {data?.summary.studentFeedbackCount || 0} of {data?.summary.totalStudents || 0} students
+                  {data?.summary.studentFeedbackCount || 0} responses collected
                 </p>
               </>
             )}
@@ -200,17 +201,17 @@ export default function AnalyticsPage() {
           <div className="flex justify-between items-center mb-2">
             <h3 className="font-semibold text-gray-800">Student Feedback Progress</h3>
             <span className="text-sm font-medium text-gray-600">
-              {data?.summary.studentFeedbackCount || 0} / {data?.summary.totalStudents || 0}
+              {data?.summary.studentFeedbackCount || 0} responses
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
             <div 
               className="h-full bg-linear-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500"
-              style={{ width: `${data?.summary.studentFeedbackRate || 0}%` }}
+              style={{ width: `${Math.min(100, data?.summary.studentFeedbackRate || 0)}%` }}
             />
           </div>
           <p className="text-sm text-gray-500 mt-2">
-            {data?.summary.studentFeedbackRate || 0}% collected
+            {Math.min(100, data?.summary.studentFeedbackRate || 0)}% of students provided feedback
           </p>
         </div>
 
@@ -218,17 +219,17 @@ export default function AnalyticsPage() {
           <div className="flex justify-between items-center mb-2">
             <h3 className="font-semibold text-gray-800">Organization Feedback Progress</h3>
             <span className="text-sm font-medium text-gray-600">
-              {data?.summary.orgFeedbackCount || 0} / {data?.summary.totalOrganizations || 0}
+              {data?.summary.orgFeedbackCount || 0} responses
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
             <div 
               className="h-full bg-linear-to-r from-purple-500 to-purple-600 rounded-full transition-all duration-500"
-              style={{ width: `${data?.summary.orgFeedbackRate || 0}%` }}
+              style={{ width: `${Math.min(100, data?.summary.orgFeedbackRate || 0)}%` }}
             />
           </div>
           <p className="text-sm text-gray-500 mt-2">
-            {data?.summary.orgFeedbackRate || 0}% collected
+            {Math.min(100, data?.summary.orgFeedbackRate || 0)}% of organizations provided feedback
           </p>
         </div>
       </div>
@@ -346,7 +347,7 @@ export default function AnalyticsPage() {
         <div className="card-modern">
           <h3 className="text-xl font-bold mb-2 text-gray-800">Organization Popularity</h3>
           <p className="text-sm text-gray-500 mb-4">
-            Ranked by visitor count • Average: {Math.round(avgVisitors)} visitors
+            Ranked by visitor count{avgVisitors > 0 ? ` • Average: ${avgVisitors} visitors` : ''}
           </p>
           <ResponsiveContainer width="100%" height={Math.max(300, (data?.organizationVisits.length || 0) * 40)}>
             <BarChart 
