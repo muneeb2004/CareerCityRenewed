@@ -321,22 +321,21 @@ export default function VolunteerManagement() {
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search */}
-            <div className="relative flex-1">
-              <svg 
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by name or volunteer ID..."
-                className="input-modern w-full !pl-10"
-              />
+            <div className="flex-1">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by name or volunteer ID..."
+                  className="w-full bg-white border border-gray-300 text-gray-900 text-base md:text-sm rounded-lg focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 block pl-10 pr-3 py-2.5 placeholder-gray-400 shadow-xs transition-all duration-200 ease-out hover:border-gray-400 hover:shadow-sm focus:shadow-md"
+                />
+              </div>
             </div>
             
             {/* Filter & Sort Controls */}
