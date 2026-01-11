@@ -715,3 +715,28 @@ export async function logOrganizationOperation(
     }
   );
 }
+/**
+ * Log data access operation (for audit trail)
+ */
+export async function logDataAccess(
+  userId: string,
+  resource: string,
+  action: 'read' | 'write' | 'delete'
+): Promise<void> {
+  const eventType = action === 'read' 
+    ? 'access.resource_created' as const
+    : action === 'write' 
+      ? 'access.resource_updated' as const 
+      : 'access.resource_deleted' as const;
+      
+  await logSecurityEvent(
+    eventType,
+    'low',
+    `Data ${action} operation on ${resource}`,
+    {
+      userId,
+      resource,
+      action,
+    }
+  );
+}

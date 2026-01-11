@@ -1,11 +1,7 @@
-import { NextResponse } from 'next/server';
-import { createStaffSession } from '@/lib/auth';
-import credentials from '@/lib/staff-credentials.json';
+import { NextRequest, NextResponse } from 'next/server';
+import { authenticateUser } from '@/lib/auth-service';
 import { 
-  logLoginSuccess, 
-  logLoginFailure, 
   logUnhandledError,
-  getClientIp,
 } from '@/lib/security-logger';
 import {
   checkLoginAllowed,
@@ -13,38 +9,49 @@ import {
   clearLoginAttempts,
   getAttemptStatus,
 } from '@/lib/login-limiter';
+import { getClientIp } from '@/lib/api-security';
 
-export async function POST(request: Request) {
-  const ip = await getClientIp();
+// Session cookie configuration
+const SESSION_CONFIG = {
+  cookieName: 'staff_session',
+  maxAge: 60 * 60 * 24, // 24 hours in seconds
+};
+
+export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
   
   try {
     const body = await request.json();
     const { username, password } = body;
 
-    // Check if login is allowed (brute force protection)
+    // Validate input
+    if (!username || !password) {
+      return NextResponse.json(
+        { message: 'Username and password are required' },
+        { status: 400 }
+      );
+    }
+
+    // Check if login is allowed (brute force protection at IP level)
     const loginCheck = await checkLoginAllowed(username || 'unknown', ip);
     
     if (!loginCheck.allowed) {
-      await logLoginFailure(username || 'unknown', 'account_locked');
-      
       return NextResponse.json(
         { 
           message: loginCheck.message || 'Too many failed attempts. Please try again later.',
           lockedUntil: loginCheck.lockedUntil,
           attemptsRemaining: 0,
         },
-        { status: 429 } // Too Many Requests
+        { status: 429 }
       );
     }
 
-    const user = credentials.users.find(
-      (u) => u.username === username && u.password === password
-    );
+    // Authenticate user against database
+    const result = await authenticateUser(username, password, ip);
 
-    if (!user) {
-      // Record failed login attempt
+    if (!result.success) {
+      // Record failed login attempt for IP-based limiting
       await recordFailedLogin(username || 'unknown', ip);
-      await logLoginFailure(username || 'unknown', 'invalid_credentials');
       
       // Get updated attempt status
       const status = await getAttemptStatus(username || 'unknown', ip);
@@ -52,23 +59,37 @@ export async function POST(request: Request) {
       
       return NextResponse.json(
         { 
-          message: attemptsRemaining > 0 
-            ? `Invalid credentials. ${attemptsRemaining} attempt${attemptsRemaining !== 1 ? 's' : ''} remaining.`
-            : 'Invalid credentials.',
-          attemptsRemaining,
+          message: result.error || 'Invalid credentials',
+          attemptsRemaining: result.attemptsRemaining ?? attemptsRemaining,
+          lockedUntil: result.lockedUntil,
         },
-        { status: 401 }
+        { status: result.lockedUntil ? 429 : 401 }
       );
     }
 
-    // Success - create session and clear failed attempts
-    await createStaffSession(user.username, user.role);
+    // Success - clear IP-based failed attempts
     await clearLoginAttempts(username, ip);
-    await logLoginSuccess(user.username, user.role);
 
-    return NextResponse.json({ success: true });
+    // Create response with cookie
+    const response = NextResponse.json({ 
+      success: true,
+      user: result.user,
+    });
+
+    // Set the session cookie explicitly in the response
+    if (result.token) {
+      response.cookies.set(SESSION_CONFIG.cookieName, result.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: SESSION_CONFIG.maxAge,
+      });
+    }
+
+    return response;
+    
   } catch (error) {
-    // Log unhandled error
     await logUnhandledError(error, 'login_route');
     
     return NextResponse.json(

@@ -55,9 +55,32 @@ const nextConfig = {
     serverComponentsExternalPackages: ['mongoose', 'mongodb'],
   },
   
+  // Block access to sensitive directories
+  async rewrites() {
+    return {
+      beforeFiles: [
+        // Block access to /data directory (CSV files)
+        {
+          source: '/data/:path*',
+          destination: '/api/blocked',
+        },
+      ],
+    };
+  },
+  
   // Security Headers
   async headers() {
     return [
+      {
+        // Block access to /data directory - protect CSV files
+        source: '/data/:path*',
+        headers: [
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow',
+          },
+        ],
+      },
       {
         source: '/(.*)',
         headers: [

@@ -3,41 +3,29 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import PageTransition from '@/lib/components/ui/PageTransition';
 import Breadcrumbs from '@/lib/components/ui/Breadcrumbs';
 import { ErrorBoundary } from 'react-error-boundary';
 import { ErrorFallback } from '@/lib/components/ui/ErrorFallback';
-import { toast } from 'react-hot-toast';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
 
-export default function StaffLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function StaffLayoutContent({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
+  const { user, logout, isLoading } = useAuth();
 
   // Close mobile menu when route changes
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      toast.success('Logged out successfully');
-      router.push('/staff/login');
-      router.refresh();
-    } catch (error) {
-      toast.error('Failed to log out');
-    }
-  };
-
   if (pathname?.startsWith('/staff/login')) {
     return <>{children}</>;
   }
+
+  // If loading and not on login page, we might want to show a spinner or skeleton
+  // But to avoid flicker we just render. The protection is server-side/middleware mostly.
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -101,10 +89,18 @@ export default function StaffLayout({
                 Staff Portal
               </h2>
             </div>
-            <p className="text-gray-400 text-xs mt-1 uppercase tracking-wider">Administration</p>
+            
+            {user && (
+              <div className="mt-4 pb-4 border-b border-white/10">
+                <p className="font-medium text-sm text-white truncate">{user.name}</p>
+                <p className="text-xs text-gray-400 capitalize">{user.role}</p>
+              </div>
+            )}
+
+            <p className="text-gray-400 text-xs mt-4 uppercase tracking-wider">Administration</p>
         </div>
        
-        <nav className="space-y-2 overflow-y-auto overflow-x-hidden max-h-[calc(100vh-150px)]">
+        <nav className="space-y-2 overflow-y-auto overflow-x-hidden max-h-[calc(100vh-200px)]">
             <Link 
                 href="/staff" 
                 className={`flex px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 items-center gap-3 group ${pathname === '/staff' ? 'bg-white/10 text-blue-300' : ''}`}
@@ -154,9 +150,32 @@ export default function StaffLayout({
                  <span className="group-hover:text-blue-300 transition-colors">Analytics</span>
             </Link>
 
-            <div className="pt-4 mt-4 border-t border-white/10">
+            <Link 
+                href="/staff/import-students" 
+                className={`flex px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 items-center gap-3 group ${pathname === '/staff/import-students' ? 'bg-white/10 text-blue-300' : ''}`}
+            >
+                 <span className="group-hover:text-blue-300 transition-colors">Import Students</span>
+            </Link>
+
+            {user?.role === 'admin' && (
+              <Link 
+                  href="/staff/users" 
+                  className={`flex px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 items-center gap-3 group ${pathname === '/staff/users' ? 'bg-white/10 text-blue-300' : ''}`}
+              >
+                   <span className="group-hover:text-blue-300 transition-colors">User Management</span>
+              </Link>
+            )}
+
+            <div className="pt-4 mt-4 border-t border-white/10 space-y-2">
+              <Link 
+                  href="/staff/profile" 
+                  className={`flex px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 items-center gap-3 group ${pathname === '/staff/profile' ? 'bg-white/10 text-blue-300' : ''}`}
+              >
+                  <span className="group-hover:text-blue-300 transition-colors">My Profile</span>
+              </Link>
+              
               <button
-                onClick={handleLogout}
+                onClick={logout}
                 className="w-full flex px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 items-center gap-3 group text-red-300 hover:text-red-200"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -180,5 +199,17 @@ export default function StaffLayout({
         </div>
       </main>
     </div>
+  );
+}
+
+export default function StaffLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <AuthProvider>
+      <StaffLayoutContent>{children}</StaffLayoutContent>
+    </AuthProvider>
   );
 }

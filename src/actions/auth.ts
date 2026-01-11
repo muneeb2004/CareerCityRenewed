@@ -5,6 +5,7 @@
  * OWASP A07:2021 - Identification and Authentication Failures
  * 
  * Provides secure authentication flows with:
+ * - Database-backed user authentication with bcrypt password hashing
  * - Login attempt limiting for brute force protection
  * - Secure session management
  * - Proper logging for security monitoring
@@ -33,7 +34,7 @@ import {
   logUnhandledError,
   getClientIp,
 } from '@/lib/security-logger';
-import credentials from '@/lib/staff-credentials.json';
+import { authenticateUser } from '@/lib/auth-service';
 
 // =============================================================================
 // Types
@@ -68,7 +69,7 @@ export async function staffLogin(
   const ip = await getClientIp();
   
   try {
-    // Check if login is allowed (not locked out)
+    // Check if login is allowed (not locked out) - additional protection
     const loginCheck = await checkLoginAllowed(username, ip);
     
     if (!loginCheck.allowed) {
@@ -82,30 +83,28 @@ export async function staffLogin(
       };
     }
     
-    // Validate credentials
-    const user = credentials.users.find(
-      (u) => u.username === username && u.password === password
-    );
+    // Authenticate against database
+    const result = await authenticateUser(username, password);
     
-    if (!user) {
-      // Record failed attempt
+    if (!result.success || !result.user) {
+      // Record failed attempt in login limiter
       await recordFailedLogin(username, ip);
-      await logLoginFailure(username, 'invalid_credentials');
+      await logLoginFailure(username, result.error || 'invalid_credentials');
       
-      // Get updated attempt status
+      // Get updated attempt status from limiter
       const status = await getAttemptStatus(username, ip);
       const attemptsRemaining = Math.max(0, 5 - status.usernameAttempts);
       
       return {
         success: false,
-        message: attemptsRemaining > 0 
-          ? `Invalid credentials. ${attemptsRemaining} attempt${attemptsRemaining !== 1 ? 's' : ''} remaining.`
-          : 'Invalid credentials.',
+        message: result.error || 'Invalid credentials.',
         attemptsRemaining,
+        lockedUntil: result.lockedUntil,
       };
     }
     
     // Success - create session and clear attempts
+    const user = result.user;
     await createStaffSession(user.username, user.role);
     await clearLoginAttempts(username, ip);
     await logLoginSuccess(user.username, user.role);
