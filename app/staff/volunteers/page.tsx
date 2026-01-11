@@ -8,6 +8,7 @@ import { CardSkeleton } from '@/lib/components/ui/Skeleton';
 import { EmptyState } from '@/lib/components/ui/EmptyState';
 import { Modal } from '@/lib/components/ui/Modal';
 import { ConfirmationModal } from '@/lib/components/ui/ConfirmationModal';
+import { Select } from '@/lib/components/ui/Select';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -60,6 +61,7 @@ export default function VolunteerManagement() {
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<VolunteerFormData>({
     resolver: zodResolver(volunteerSchema),
@@ -71,6 +73,8 @@ export default function VolunteerManagement() {
       role: 'Member',
     }
   });
+
+  const selectedRole = watch('role');
 
   const fetchVolunteers = useCallback(async () => {
     try {
@@ -341,29 +345,33 @@ export default function VolunteerManagement() {
             {/* Filter & Sort Controls */}
             <div className="flex gap-2 flex-wrap">
               {/* Sort Dropdown */}
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="input-modern text-sm min-w-[140px]"
-              >
-                <option value="name">Sort: Name</option>
-                <option value="role">Sort: Role</option>
-                <option value="feedback">Sort: Feedback</option>
-                <option value="status">Sort: Status</option>
-              </select>
+              <div className="min-w-[160px]">
+                <Select
+                  options={[
+                    { value: 'name', label: 'Sort: Name' },
+                    { value: 'role', label: 'Sort: Role' },
+                    { value: 'feedback', label: 'Sort: Feedback' },
+                    { value: 'status', label: 'Sort: Status' },
+                  ]}
+                  value={sortBy}
+                  onChange={(value) => setSortBy(value as SortOption)}
+                />
+              </div>
               
               {/* Filter Dropdown */}
-              <select
-                value={filterBy}
-                onChange={(e) => setFilterBy(e.target.value as FilterOption)}
-                className="input-modern text-sm min-w-[140px]"
-              >
-                <option value="all">Filter: All</option>
-                <option value="active">Active Only</option>
-                <option value="inactive">Inactive Only</option>
-                <option value="captain">Captains</option>
-                <option value="member">Members</option>
-              </select>
+              <div className="min-w-[160px]">
+                <Select
+                  options={[
+                    { value: 'all', label: 'Filter: All' },
+                    { value: 'active', label: 'Active Only' },
+                    { value: 'inactive', label: 'Inactive Only' },
+                    { value: 'captain', label: 'Captains' },
+                    { value: 'member', label: 'Members' },
+                  ]}
+                  value={filterBy}
+                  onChange={(value) => setFilterBy(value as FilterOption)}
+                />
+              </div>
             </div>
           </div>
           
@@ -581,10 +589,15 @@ export default function VolunteerManagement() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Role <span className="text-red-500">*</span>
               </label>
-              <select {...register('role')} className="input-modern w-full">
-                <option value="Member">Member</option>
-                <option value="Captain">Captain</option>
-              </select>
+              <Select
+                options={[
+                  { value: 'Member', label: 'Member' },
+                  { value: 'Captain', label: 'Captain' },
+                ]}
+                value={selectedRole}
+                onChange={(value) => setValue('role', value as 'Member' | 'Captain')}
+                placeholder="Select role"
+              />
             </div>
 
             <div>
@@ -681,10 +694,15 @@ export default function VolunteerManagement() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Role <span className="text-red-500">*</span>
               </label>
-              <select {...register('role')} className="input-modern w-full">
-                <option value="Member">Member</option>
-                <option value="Captain">Captain</option>
-              </select>
+              <Select
+                options={[
+                  { value: 'Member', label: 'Member' },
+                  { value: 'Captain', label: 'Captain' },
+                ]}
+                value={selectedRole}
+                onChange={(value) => setValue('role', value as 'Member' | 'Captain')}
+                placeholder="Select role"
+              />
             </div>
 
             <div>
