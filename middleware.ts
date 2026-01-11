@@ -31,6 +31,14 @@ export async function middleware(request: NextRequest) {
         // Token invalid
        return NextResponse.redirect(new URL('/staff/login', request.url));
     }
+
+    // Admin-only routes protection
+    if (pathname.startsWith('/staff/users')) {
+      if (payload.role !== 'admin') {
+        // Non-admin trying to access user management - redirect to dashboard
+        return NextResponse.redirect(new URL('/staff', request.url));
+      }
+    }
   }
 
   return NextResponse.next();

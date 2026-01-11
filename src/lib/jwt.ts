@@ -1,7 +1,14 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { logInvalidToken, logSessionExpired } from './security-logger';
 
-const SECRET_KEY = process.env.JWT_SECRET_KEY || 'your-super-secret-key-change-this';
+// CRITICAL: JWT_SECRET must be set in environment variables
+const SECRET_KEY = process.env.JWT_SECRET;
+if (!SECRET_KEY) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
+if (SECRET_KEY.length < 32) {
+  throw new Error('JWT_SECRET must be at least 32 characters long');
+}
 const key = new TextEncoder().encode(SECRET_KEY);
 
 export async function signToken(payload: any) {

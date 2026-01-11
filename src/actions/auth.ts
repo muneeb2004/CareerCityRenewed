@@ -99,7 +99,7 @@ export async function staffLogin(
         success: false,
         message: result.error || 'Invalid credentials.',
         attemptsRemaining,
-        lockedUntil: result.lockedUntil,
+        lockedUntil: result.lockedUntil?.getTime(),
       };
     }
     

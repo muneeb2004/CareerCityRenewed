@@ -3,15 +3,36 @@ import { hasAnyUsers, createUser } from '@/lib/auth-service';
 import { createAuditLog } from '@/lib/audit-logger';
 import { getClientIp } from '@/lib/api-security';
 
+// Check if setup is explicitly disabled via environment variable
+const SETUP_DISABLED = process.env.SETUP_DISABLED === 'true';
+
 /**
  * POST /api/auth/setup
  * One-time setup to create the first admin user
- * Only works if no users exist in the database
+ * Only works if no users exist in the database and setup is not disabled
  */
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
   
   try {
+    // Check if setup is disabled
+    if (SETUP_DISABLED) {
+      await createAuditLog({
+        action: 'access_denied',
+        success: false,
+        details: { 
+          reason: 'setup_disabled',
+          endpoint: '/api/auth/setup',
+        },
+        ipAddress: ip,
+      });
+      
+      return NextResponse.json(
+        { error: 'Setup is disabled. Contact system administrator.' },
+        { status: 403 }
+      );
+    }
+    
     // Check if any users exist
     const usersExist = await hasAnyUsers();
     
@@ -88,14 +109,24 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/auth/setup
- * Check if setup is needed (no users exist)
+ * Check if setup is needed (no users exist and not disabled)
  */
 export async function GET(request: NextRequest) {
   try {
+    // If setup is disabled, it's never required
+    if (SETUP_DISABLED) {
+      return NextResponse.json({
+        setupRequired: false,
+        setupDisabled: true,
+        message: 'Setup is disabled',
+      });
+    }
+    
     const usersExist = await hasAnyUsers();
     
     return NextResponse.json({
       setupRequired: !usersExist,
+      setupDisabled: false,
       message: usersExist 
         ? 'Setup has already been completed' 
         : 'No users found. Setup is required.',

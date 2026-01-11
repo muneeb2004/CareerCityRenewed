@@ -8,7 +8,7 @@
 interface EnvConfig {
   // Required
   MONGODB_URI: string;
-  JWT_SECRET_KEY: string;
+  JWT_SECRET: string;
   
   // Optional with defaults
   NODE_ENV: 'development' | 'production' | 'test';
@@ -30,7 +30,7 @@ export function validateEnv(): ValidationResult {
   // Required variables
   const requiredVars = [
     'MONGODB_URI',
-    'JWT_SECRET_KEY',
+    'JWT_SECRET',
   ];
 
   for (const varName of requiredVars) {
@@ -44,14 +44,11 @@ export function validateEnv(): ValidationResult {
     errors.push('MONGODB_URI must be a valid MongoDB connection string');
   }
 
-  // Validate JWT_SECRET_KEY strength
-  const jwtSecret = process.env.JWT_SECRET_KEY;
+  // Validate JWT_SECRET strength
+  const jwtSecret = process.env.JWT_SECRET;
   if (jwtSecret) {
     if (jwtSecret.length < 32) {
-      errors.push('JWT_SECRET_KEY must be at least 32 characters long');
-    }
-    if (jwtSecret === 'your-super-secret-key-change-this') {
-      errors.push('JWT_SECRET_KEY is using the default value - please change it!');
+      errors.push('JWT_SECRET must be at least 32 characters long');
     }
   }
 

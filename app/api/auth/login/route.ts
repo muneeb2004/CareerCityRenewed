@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     // Validate input
     if (!username || !password) {
       return NextResponse.json(
-        { message: 'Username and password are required' },
+        { error: 'Username and password are required' },
         { status: 400 }
       );
     }
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     if (!loginCheck.allowed) {
       return NextResponse.json(
         { 
-          message: loginCheck.message || 'Too many failed attempts. Please try again later.',
+          error: loginCheck.message || 'Too many failed attempts. Please try again later.',
           lockedUntil: loginCheck.lockedUntil,
           attemptsRemaining: 0,
         },
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       
       return NextResponse.json(
         { 
-          message: result.error || 'Invalid credentials',
+          error: result.error || 'Invalid credentials',
           attemptsRemaining: result.attemptsRemaining ?? attemptsRemaining,
           lockedUntil: result.lockedUntil,
         },
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     await logUnhandledError(error, 'login_route');
     
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

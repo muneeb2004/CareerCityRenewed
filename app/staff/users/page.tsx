@@ -79,6 +79,7 @@ export default function UserManagement() {
   // Delete confirmation
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Add user form
   const addForm = useForm<UserFormData>({
@@ -260,6 +261,7 @@ export default function UserManagement() {
 
   const confirmDelete = async () => {
     if (!deleteUser) return;
+    setDeleteLoading(true);
     try {
       const res = await fetch(`/api/admin/users/${deleteUser.id}`, {
         method: 'DELETE',
@@ -268,6 +270,8 @@ export default function UserManagement() {
       if (res.ok) {
         showSuccess('User deleted');
         fetchUsers();
+        setShowDeleteModal(false);
+        setDeleteUser(null);
       } else {
         const result = await res.json();
         showError(result.error || 'Failed to delete user');
@@ -276,8 +280,7 @@ export default function UserManagement() {
       console.error(err);
       showError('Failed to delete user');
     } finally {
-      setShowDeleteModal(false);
-      setDeleteUser(null);
+      setDeleteLoading(false);
     }
   };
 
@@ -780,14 +783,17 @@ export default function UserManagement() {
         <ConfirmationModal
           isOpen={showDeleteModal}
           onClose={() => {
-            setShowDeleteModal(false);
-            setDeleteUser(null);
+            if (!deleteLoading) {
+              setShowDeleteModal(false);
+              setDeleteUser(null);
+            }
           }}
           onConfirm={confirmDelete}
           title="Delete User"
           message={`Are you sure you want to delete "${deleteUser?.name}"? This action will deactivate the account.`}
           confirmText="Delete"
           variant="danger"
+          isLoading={deleteLoading}
         />
       </div>
     </PullToRefresh>
