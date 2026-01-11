@@ -1,16 +1,25 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useOfflineQueue } from '@/lib/hooks/useOfflineQueue';
 
 /**
  * Offline Status Indicator
  * Shows when the app is offline and displays pending queue count
+ * 
+ * Uses mounted state to prevent hydration mismatch flash
  */
 export function OfflineIndicator() {
   const { isOnline, pendingCount, processing } = useOfflineQueue();
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  // Don't render anything if online and no pending items
-  if (isOnline && pendingCount === 0) {
+  // Don't render anything until mounted (prevents hydration flash)
+  // and don't render if online with no pending items
+  if (!mounted || (isOnline && pendingCount === 0)) {
     return null;
   }
 
@@ -89,11 +98,18 @@ export function OfflineIndicator() {
 
 /**
  * Compact offline badge for headers/navbars
+ * Uses mounted state to prevent hydration mismatch flash
  */
 export function OfflineBadge() {
   const { isOnline, pendingCount } = useOfflineQueue();
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  if (isOnline && pendingCount === 0) {
+  // Don't render until mounted or if online with no pending items
+  if (!mounted || (isOnline && pendingCount === 0)) {
     return null;
   }
 
