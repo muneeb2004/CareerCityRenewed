@@ -84,7 +84,7 @@ export async function staffLogin(
     }
     
     // Authenticate against database
-    const result = await authenticateUser(username, password);
+    const result = await authenticateUser(username, password, ip);
     
     if (!result.success || !result.user) {
       // Record failed attempt in login limiter
