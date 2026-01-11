@@ -6,6 +6,7 @@ import { getAllScans } from '@/actions/scans';
 import { Scan, toDate } from '@/types';
 import Papa from 'papaparse';
 import { Skeleton } from '@/lib/components/ui/Skeleton';
+import { ExportAnalyticsPanel } from '@/components/staff/ExportAnalyticsPanel';
 
 // Dynamically import Recharts components with SSR disabled
 const ResponsiveContainer = dynamic(() => import('recharts').then(mod => mod.ResponsiveContainer), { ssr: false });
@@ -269,6 +270,9 @@ export default function AnalyticsPage() {
           </div>
         </div>
       )}
+
+      {/* Excel Export Section */}
+      <ExportAnalyticsPanel />
     </div>
   );
 }
